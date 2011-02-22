@@ -40,7 +40,6 @@ class SoS_Cmd_System_Info(SoS_Cmd):
     def __init__(self, stick):
         SoS_Cmd.__init__(self, stick, cmd.SOS_SYSTEM_INFO_QUERY)
         self.response_length = 17
-        self.versionMajor = '?'
 
     def __repr__(self):
         if self.executed:

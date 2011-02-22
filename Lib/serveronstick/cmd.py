@@ -7,6 +7,7 @@ module for accessing a Server on a Stick
 
 import struct
 import basic_cmd
+import secrets_cmd
 
 __all__ = [
     # constants
@@ -45,13 +46,19 @@ SOS_DB_FULL             = 0x87    # The database storage is full
 SOS_MEMORY_ERROR        = 0x88    # Memory read/write error
 SOS_FUNCTION_DISABLED   = 0x89    # Funciton disabled via attribute(s)
 
-SOS_NULL		= 0x0
+SOS_NULL		= 0x00
 SOS_ECHO		= 0x01
 SOS_SYSTEM_INFO_QUERY	= 0x02
+SOS_SECRETS_GENERATE	= 0x03
+SOS_SECRETS_LOAD	= 0x04
+SOS_BLOB_GENERATE	= 0x05
+
 SOS_RANDOM_GENERATE	= 0x0b
 
 class SoS_Cmd():
-
+    """
+    Base class for Server-on-Stick commands.
+    """
     def __init__(self, stick, command, payload=''):
         self.stick = stick
         self.command = command
@@ -74,9 +81,15 @@ class SoS_Cmd():
         return ''
 
     def set_payload(self, data):
+        """ Update payload after instantiation. """
         self.payload = data
 
     def parse_result(self, data):
+        """
+        This function is intended to be overridden by sub-classes that
+        implements commands that should not just return the data read from
+        the SoS.
+        """
         return data
 
 def reset(stick):
@@ -96,3 +109,18 @@ def system_info(stick):
 def random(stick, bytes):
     """ Ask stick to generate a number of random bytes. """
     return basic_cmd.SoS_Cmd_Random(stick, bytes).execute()
+
+def generate_secret(stick, publicId):
+    """ Ask stick to generate a secret for a publicId. """
+    return secrets_cmd.SoS_Cmd_Secrets_Generate(stick, publicId).execute()
+
+def load_secret(stick, publicId, secrets):
+    """ Ask stick to load an existing secret for a publicId. """
+    return secrets_cmd.SoS_Cmd_Secrets_Load(stick, publicId, secrets).execute()
+
+def generate_blob(stick, keyHandle):
+    """
+    Ask stick to encrypt the previously generated secret with a specific key,
+    and return the resulting blob.
+    """
+    return secrets_cmd.SoS_Cmd_Blob_Generate(stick, keyHandle).execute()
