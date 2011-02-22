@@ -18,6 +18,24 @@ __all__ = [
 
 import cmd
 from cmd import SoS_Cmd
+import exception
+
+class SoS_Secrets():
+    """ Small class to represent a SOS_SECRETS struct. """
+    def __init__(self, key, uid):
+        if len(key) != defines.KEY_SIZE:
+            raise exception.SoS_WrongInputSize(
+                'key', defines.KEY_SIZE, len(key))
+
+        if type(uid) is not str:
+            raise exception.SoS_WrongInputType(
+                'uid', type(''), type(uid))
+
+        self.key = key
+        self.uid = uid
+
+    def pack(self):
+        return self.key + self.uid.ljust(defines.UID_SIZE, chr(0))
 
 class SoS_Cmd_Secrets_Generate(SoS_Cmd):
     """
@@ -29,7 +47,7 @@ class SoS_Cmd_Secrets_Generate(SoS_Cmd):
     def __init__(self, stick, publicId):
         # store padded publicId for comparision in parse_result
         self.publicId = publicId.ljust(defines.PUBLIC_ID_SIZE, chr(0x0))
-        SoS_Cmd.__init__(self, stick, cmd.SOS_SECRETS_GENERATE, self.publicId)
+        SoS_Cmd.__init__(self, stick, defines.SOS_SECRETS_GENERATE, self.publicId)
         self.response_length = defines.PUBLIC_ID_SIZE + 1
 
     def parse_result(self, data):
@@ -44,13 +62,17 @@ class SoS_Cmd_Secrets_Load(SoS_Cmd):
     This is for importing keys into the HSM system.
     """
     def __init__(self, stick, publicId, secrets):
-        if len(secrets) != defines.SOS_BLOCK_SIZE * 2:
-            assert()
         # store padded publicId for comparision in parse_result
         self.publicId = publicId.ljust(defines.PUBLIC_ID_SIZE, chr(0x0))
         self.secrets = secrets
-        packed = self.publicId + secrets
-        SoS_Cmd.__init__(self, stick, cmd.SOS_SECRETS_LOAD, packed)
+
+        packed_secrets = secrets.pack()
+        if len(packed_secrets) != defines.KEY_SIZE + defines.UID_SIZE:
+            raise exception.SoS_WrongInputSize(
+                'secrets.packed()', defines.KEY_SIZE + defines.UID_SIZE, len(packed_secrets))
+
+        packed = self.publicId + packed_secrets
+        SoS_Cmd.__init__(self, stick, defines.SOS_SECRETS_LOAD, packed)
         self.response_length = defines.PUBLIC_ID_SIZE + 1
 
     def parse_result(self, data):
@@ -66,7 +88,7 @@ class SoS_Cmd_Blob_Generate(SoS_Cmd):
     def __init__(self, stick, keyHandle):
         self.keyHandle = keyHandle
         packed = struct.pack('<I', self.keyHandle)
-        SoS_Cmd.__init__(self, stick, cmd.SOS_BLOB_GENERATE, packed)
+        SoS_Cmd.__init__(self, stick, defines.SOS_BLOB_GENERATE, packed)
         self.response_length = 60
 
     def __repr__(self):

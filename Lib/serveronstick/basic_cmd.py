@@ -6,6 +6,7 @@ implementations of basic commands to execute on a Server on Stick
 # All rights reserved.
 
 import struct
+import defines
 
 __all__ = [
     # constants
@@ -25,7 +26,7 @@ class SoS_Cmd_Echo(SoS_Cmd):
     """
     def __init__(self, stick, payload=''):
         packed = chr(len(payload)) + payload
-        SoS_Cmd.__init__(self, stick, cmd.SOS_ECHO, packed)
+        SoS_Cmd.__init__(self, stick, defines.SOS_ECHO, packed)
         self.response_length = len(payload) + 2
 
     def parse_result(self, data):
@@ -38,12 +39,12 @@ class SoS_Cmd_System_Info(SoS_Cmd):
     Request system information from the stick.
     """
     def __init__(self, stick):
-        SoS_Cmd.__init__(self, stick, cmd.SOS_SYSTEM_INFO_QUERY)
+        SoS_Cmd.__init__(self, stick, defines.SOS_SYSTEM_INFO_QUERY)
         self.response_length = 17
 
     def __repr__(self):
         if self.executed:
-            return '<%s instance at %s: ver=%s, proto=%s, sysid=%s>' % (
+            return '<%s instance at %s: ver=%s, proto=%s, sysid=0x%s>' % (
                 self.__class__.__name__,
                 hex(id(self)),
                 (self.versionMajor, self.versionMinor, self.versionBuild),
@@ -80,7 +81,7 @@ class SoS_Cmd_Random(SoS_Cmd):
     """
     def __init__(self, stick, bytes):
         packed = chr(bytes)
-        SoS_Cmd.__init__(self, stick, cmd.SOS_RANDOM_GENERATE, packed)
+        SoS_Cmd.__init__(self, stick, defines.SOS_RANDOM_GENERATE, packed)
         self.response_length = bytes + 2
 
     pass

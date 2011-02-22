@@ -55,6 +55,10 @@ class SoS_Stick():
         return res
 
     def flushInput(self):
+        if self.debug:
+            sys.stderr.write("%s: FLUSH INPUT\n" %(
+                    self.__class__.__name__
+                    ))
         self.ser.flushInput()
 
     def __repr__(self):
