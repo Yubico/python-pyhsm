@@ -35,7 +35,7 @@ class SoS_Secrets():
         self.uid = uid
 
     def pack(self):
-        return self.key + self.uid.ljust(defines.UID_SIZE, chr(0))
+        return self.key + self.uid.ljust(defines.SOS_BLOCK_SIZE, chr(0))
 
 class SoS_Cmd_Secrets_Generate(SoS_Cmd):
     """
@@ -67,9 +67,9 @@ class SoS_Cmd_Secrets_Load(SoS_Cmd):
         self.secrets = secrets
 
         packed_secrets = secrets.pack()
-        if len(packed_secrets) != defines.KEY_SIZE + defines.UID_SIZE:
+        if len(packed_secrets) != defines.SOS_BLOCK_SIZE * 2:
             raise exception.SoS_WrongInputSize(
-                'secrets.packed()', defines.KEY_SIZE + defines.UID_SIZE, len(packed_secrets))
+                'secrets.packed()', defines.SOS_BLOCK_SIZE * 2, len(packed_secrets))
 
         packed = self.publicId + packed_secrets
         SoS_Cmd.__init__(self, stick, defines.SOS_SECRETS_LOAD, packed)

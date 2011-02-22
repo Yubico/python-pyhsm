@@ -41,7 +41,7 @@ class SoS_Cmd_Blob_Validate_OTP(SoS_Cmd):
         self.blob = blob
         packed = self.publicId + otp + struct.pack('<I', self.keyHandle) + blob
         SoS_Cmd.__init__(self, stick, defines.SOS_OTP_BLOB_VALIDATE, packed)
-        self.response_length = 90
+        self.response_length = 14
 
     def __repr__(self):
         if self.executed:
