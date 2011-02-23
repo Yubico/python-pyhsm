@@ -14,6 +14,7 @@ __all__ = [
     'SoS_Error',
     'SoS_WrongInputSize',
     'SoS_WrongInputType',
+    'SoS_CommandFailed'
 ]
 
 class SoS_Error(Exception):
@@ -50,4 +51,12 @@ class SoS_WrongInputType(SoS_Error):
     """
     def __init__(self, name, expected, name_type):
         reason = "Bad type of argument '%s', expected %s got %s" % (name, expected, name_type)
+        SoS_Error.__init__(self, reason)
+
+class SoS_CommandFailed(SoS_Error):
+    """
+    Exception raised when a command sent to the SoS returned an error.
+    """
+    def __init__(self, name, status):
+        reason = "Command %s failed: %i" %(name, status)
         SoS_Error.__init__(self, reason)

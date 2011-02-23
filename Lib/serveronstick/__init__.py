@@ -6,7 +6,15 @@ the server-on-stick package
 
 __version__ = '0.0.1'
 
-__all__ = ["base",
-           "stick",
-           "cmd",
+__all__ = ["base"
+           "cmd"
+           "defines"
+           "exception"
+           "stick"
+           "util"
+           "yubikey"
+           #
+           "basic_cmd"
+           "secrets_cmd"
+           "validate_cmd"
            ]
