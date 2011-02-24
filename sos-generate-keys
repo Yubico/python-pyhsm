@@ -39,6 +39,11 @@ def parse_args():
                         required=False,
                         help='Number of secrets to generate.'
                         )
+    parser.add_argument('-v', '--verbose',
+                        dest='verbose',
+                        type=bool, default=False,
+                        help='Enable verbose operation.'
+                        )
     parser.add_argument('--public-id-chars',
                         dest='public_id_chars',
                         type=int, default=12,
@@ -60,12 +65,19 @@ def parse_args():
     return parser.parse_args()
 
 def args_fixup(args):
+    if not os.path.isdir(args.output_dir):
+        sys.stderr.write("Output directory '%s' does not exist.\n" % (args.output_dir))
+        sys.exit(1)
+
     keyhandles_fixup(args)
+
     try:
         n = int(args.start_id)
     except ValueError:
         mh = serveronstick.yubikey.modhex_decode(args.start_id)
-    args.start_id = int(mh)
+        n = int(mh)
+
+    args.start_id = n
 
 
 def keyhandles_fixup(args):
@@ -96,28 +108,57 @@ def gen_keys(sos, args):
     """
     The main key generating loop.
     """
+
+    if args.verbose:
+        print "Generating %i keys :" % (args.count)
+    else:
+        print "Generating %i keys" % (args.count)
+
     for int_id in range(args.start_id, args.start_id + args.count):
         public_id = str(int_id)
-        print "GEN %s" % public_id
+        modhex_id = serveronstick.yubikey.modhex_encode(public_id)
+        padded_id = modhex_id.rjust(args.public_id_chars, 'c')
+
+        if args.verbose:
+            print "  %s " % (padded_id),
+
         sos.generate_secret(public_id)
         for kh in args.key_handles.keys():
             blob = sos.generate_blob(kh)
-            modhex_id = serveronstick.yubikey.modhex_encode(public_id)
-            padded_id = modhex_id.rjust(args.public_id_chars, 'c')
-            filename = output_filename(args.output_dir, args.key_handles[kh], padded_id)
-            print "%i bytes, %s" % (len(blob.blob), filename)
 
-    return None
+            if args.verbose:
+                print " %s " % (args.key_handles[kh])
+
+            filename = output_filename(args.output_dir, args.key_handles[kh], padded_id)
+
+            if args.verbose:
+                print "%i bytes, %s" % (len(blob.blob), filename)
+
+            f = open(filename, "w")
+            f.write(blob.blob)
+            f.close()
+
+        if args.verbose:
+            print ""
+
+    print "\nDone\n"
+
 
 def output_filename(output_dir, key_handle, public_id):
     """
     Return an output filename for a generated blob. Creates a hashed directory structure
     using the last three bytes of the public id to get equal usage.
     """
-    return os.path.join(output_dir, key_handle,
-                        public_id[-1], public_id[-2], public_id[-3],
-                        public_id
+
+    path = os.path.join(output_dir, key_handle,
+                        public_id[-1], public_id[-2], public_id[-3]
                         )
+
+    if not os.path.isdir(path):
+        os.makedirs(path)
+
+    return os.path.join(path, public_id)
+
 
 
 def main():
@@ -130,6 +171,7 @@ def main():
     print "key handles		: %s" % (args.key_handles)
     print "start public_id		: %s" % (args.start_id)
     print "SoS device		: %s" % (args.device)
+    print ""
 
     sos = serveronstick.SoS(device = args.device)
 
