@@ -1,0 +1,140 @@
+#!/usr/bin/env python
+#
+# Tool to generate secret keys using Server on a Stick
+#
+
+import os
+import sys
+import argparse
+sys.path.append('Lib');
+import serveronstick
+import serveronstick.yubikey
+
+default_device = "/dev/serial/by-id/usb-Yubico_Yubico_ServerOnStick_498F517E3932-if00"
+
+def parse_args():
+    """
+    Parse the command line arguments
+    """
+    global default_device
+
+    parser = argparse.ArgumentParser(description = "Generate secrets using Server on a Stick",
+                                     add_help=True
+                                     )
+    parser.add_argument('-D', '--device',
+                        dest='device',
+                        default=default_device,
+                        required=False,
+                        help='Server-on-Stick device (default : %s).' % default_device
+                        )
+    parser.add_argument('-O', '--output-dir',
+                        dest='output_dir',
+                        default="/dev/shm/yubico/secrets",
+                        required=False,
+                        help='Output directory.'
+                        )
+    parser.add_argument('-c', '--count',
+                        dest='count',
+                        type=int, default=1,
+                        required=False,
+                        help='Number of secrets to generate.'
+                        )
+    parser.add_argument('--public-id-chars',
+                        dest='public_id_chars',
+                        type=int, default=12,
+                        required=False,
+                        help='Number of chars in generated public ids.'
+                        )
+    parser.add_argument('--key-handles',
+                        dest='key_handles',
+                        nargs='+',
+                        required=True,
+                        help='Key handles to encrypt the generated secrets with.'
+                        )
+    parser.add_argument('--start-public-id',
+                        dest='start_id',
+                        required=True,
+                        help='Key handles to encrypt the generated secrets with.'
+                        )
+
+    return parser.parse_args()
+
+def args_fixup(args):
+    keyhandles_fixup(args)
+    try:
+        n = int(args.start_id)
+    except ValueError:
+        mh = serveronstick.yubikey.modhex_decode(args.start_id)
+    args.start_id = int(mh)
+
+
+def keyhandles_fixup(args):
+    """
+    Walk through the supplied key handles. Turn "123" into 123 and
+    "KSM1" into 1263750449 (0x4b534d31, 'K' = 0x4b, S = '0x53', M = 0x4d).
+
+    Stores a dictionary with key = numeric, value = original to retain the
+    name KSM1 etc. for use in output paths.
+    """
+    new_handles = {}
+    for val in args.key_handles:
+        for this in val.split(','):
+            try:
+                n = int(this)
+            except ValueError:
+                if (len(this) == 4):
+                    n = (ord(this[0]) << 24) + \
+                        (ord(this[1]) << 16) + \
+                        (ord(this[2]) << 8) + \
+                        ord(this[3])
+            new_handles[n] = this
+
+    args.key_handles = new_handles
+
+
+def gen_keys(sos, args):
+    """
+    The main key generating loop.
+    """
+    for int_id in range(args.start_id, args.start_id + args.count):
+        public_id = str(int_id)
+        print "GEN %s" % public_id
+        sos.generate_secret(public_id)
+        for kh in args.key_handles.keys():
+            blob = sos.generate_blob(kh)
+            modhex_id = serveronstick.yubikey.modhex_encode(public_id)
+            padded_id = modhex_id.rjust(args.public_id_chars, 'c')
+            filename = output_filename(args.output_dir, args.key_handles[kh], padded_id)
+            print "%i bytes, %s" % (len(blob.blob), filename)
+
+    return None
+
+def output_filename(output_dir, key_handle, public_id):
+    """
+    Return an output filename for a generated blob. Creates a hashed directory structure
+    using the last three bytes of the public id to get equal usage.
+    """
+    return os.path.join(output_dir, key_handle,
+                        public_id[-1], public_id[-2], public_id[-3],
+                        public_id
+                        )
+
+
+def main():
+    args = parse_args()
+
+    args_fixup(args)
+
+    print "output dir		: %s" % (args.output_dir)
+    print "keys to generate	: %s" % (args.count)
+    print "key handles		: %s" % (args.key_handles)
+    print "start public_id		: %s" % (args.start_id)
+    print "SoS device		: %s" % (args.device)
+
+    sos = serveronstick.SoS(device = args.device)
+
+    gen_keys(sos, args)
+
+
+if __name__ == '__main__':
+    main()
