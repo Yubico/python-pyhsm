@@ -23,34 +23,34 @@ class SoS_Cmd_Blob_Validate_OTP(SoS_Cmd):
     Request the stick to validate an OTP using an externally stored
     blob and a keyhandle to decrypt that blob.
     """
-    def __init__(self, stick, publicId, otp, keyHandle, blob):
-        # store padded publicId for comparision in parse_result
-        if len(publicId) > defines.PUBLIC_ID_SIZE:
+    def __init__(self, stick, public_id, otp, key_handle, blob):
+        if len(public_id) > defines.PUBLIC_ID_SIZE:
             raise exception.SoS_WrongInputSize(
-                'publicId', defines.PUBLIC_ID_SIZE, len(publicId))
+                'public_id', defines.PUBLIC_ID_SIZE, len(public_id))
         if len(otp) != defines.OTP_SIZE:
             raise exception.SoS_WrongInputSize(
                 'otp', defines.OTP_SIZE, len(otp))
         if len(blob) != defines.BLOB_KEY_SIZE + defines.SOS_BLOCK_SIZE:
             raise exception.SoS_WrongInputSize(
                 'blob', defines.BLOB_KEY_SIZE + defines.SOS_BLOCK_SIZE, len(blob))
-        self.publicId = publicId.ljust(defines.PUBLIC_ID_SIZE, chr(0x0))
+
+        # store padded public_id for comparision in parse_result
+        self.public_id = public_id.ljust(defines.PUBLIC_ID_SIZE, chr(0x0))
         self.otp = otp
-        self.keyHandle = keyHandle
-        self.blob = blob
-        packed = self.publicId + otp + struct.pack('<I', self.keyHandle) + blob
+        self.key_handle = key_handle
+        self.response = None
+        self.status = None
+        packed = self.public_id + otp + struct.pack('<I', self.key_handle) + blob
         SoS_Cmd.__init__(self, stick, defines.SOS_OTP_BLOB_VALIDATE, packed)
         self.response_length = 14
 
     def __repr__(self):
         if self.executed:
-            return '<%s instance at %s: publicId=%s, keyHandle=0x%x, useCtr=%i, sessionCtr=%i, status=0x%x>' % (
+            return '<%s instance at %s: public_id=%s, key_handle=0x%x, status=0x%x>' % (
                 self.__class__.__name__,
                 hex(id(self)),
-                self.publicId.encode('hex'),
-                self.keyHandle,
-                self.useCtr,
-                self.sessionCtr,
+                self.public_id.encode('hex'),
+                self.key_handle,
                 self.status
                 )
         else:
@@ -61,19 +61,51 @@ class SoS_Cmd_Blob_Validate_OTP(SoS_Cmd):
 
     def parse_result(self, data):
         # typedef struct {
-        #   uint8_t publicId[PUBLIC_ID_SIZE];   // Public id                                                  
-        #   uint16_t useCtr;                    // Use counter                                                
-        #   uint8_t sessionCtr;                 // Session counter                                            
-        #   uint8_t tstph;                                      // Timestamp (high part)                      
-        #   uint16_t tstpl;                                     // Timestamp (low part)                       
-        #   SOS_STATUS status;                  // Validation status                                          
+        #   uint8_t public_id[PUBLIC_ID_SIZE];   // Public id
+        #   uint16_t use_ctr;                    // Use counter
+        #   uint8_t session_ctr;                 // Session counter
+        #   uint8_t tstph;                                      // Timestamp (high part)
+        #   uint16_t tstpl;                                     // Timestamp (low part)
+        #   SOS_STATUS status;                  // Validation status
         # } SOS_OTP_BLOB_VALIDATED_RESP;
-        self.publicId, rest = data[1:defines.PUBLIC_ID_SIZE], data[defines.PUBLIC_ID_SIZE + 1:]
-        self.useCtr, \
-            self.sessionCtr, \
-            self.tstph, \
-            self.tstpl, \
-            self.status = struct.unpack('HBBHB', rest)
-        return self
+        this_public_id, rest = data[1:defines.PUBLIC_ID_SIZE + 1], data[defines.PUBLIC_ID_SIZE + 1:]
+        if this_public_id != self.public_id:
+            raise exception.SoS_Error('Bad public_id in response (%s != %s)' %
+                                      (this_public_id.encode('hex'), self.public_id.encode('hex')))
 
-    pass
+        use_ctr, \
+            session_ctr, \
+            ts_high, \
+            ts_low, \
+            self.status = struct.unpack('HBBHB', rest)
+
+        if self.status == defines.SOS_STATUS_OK:
+            self.response = SoS_ValidationResult(self.public_id, use_ctr, session_ctr, ts_high, ts_low)
+            return self.response
+        else:
+            raise exception.SoS_CommandFailed('SOS_BLOB_GENERATE', self.status)
+
+
+class SoS_ValidationResult():
+    """
+    The result of a Validate operation.
+
+    Contains the counters and timestamps decrypted from the OTP.
+    """
+    def __init__(self, public_id, use_ctr, session_ctr, ts_high, ts_low):
+        self.public_id = public_id
+        self.use_ctr = use_ctr
+        self.session_ctr = session_ctr
+        self.ts_high = ts_high
+        self.ts_low = ts_low
+
+    def __repr__(self):
+        return '<%s instance at %s: public_id=%s, use_ctr=%i, session_ctr=%i, ts=%i/%i>' % (
+            self.__class__.__name__,
+            hex(id(self)),
+            self.public_id.encode('hex'),
+            self.use_ctr,
+            self.session_ctr,
+            self.ts_high,
+            self.ts_low
+            )
