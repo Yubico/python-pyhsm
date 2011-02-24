@@ -58,3 +58,8 @@ def modhex_decode(data):
     """ Convert a modhex string to ordinary hex. """
     t_map = string.maketrans("cbdefghijklnrtuv", "0123456789abcdef")
     return data.translate(t_map)
+
+def modhex_encode(data):
+    """ Convert an ordinary hex string to modhex. """
+    t_map = string.maketrans("0123456789abcdef", "cbdefghijklnrtuv")
+    return data.translate(t_map)
