@@ -30,6 +30,7 @@ class SoS_Stick():
         self.device = device
         self.num_read_bytes = 0
         self.num_write_bytes = 0
+        self.ser = None # to not bomb in destructor on open fail
         self.ser = serial.Serial(device, 115200, timeout = timeout)
         if self.debug:
             sys.stderr.write("%s: OPEN %s\n" %(
@@ -100,4 +101,5 @@ class SoS_Stick():
                     self.__class__.__name__,
                     self.ser
                     ))
-        self.ser.close()
+        if self.ser:
+            self.ser.close()
