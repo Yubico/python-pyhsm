@@ -4,6 +4,8 @@ common exceptions for the serveronstick package
 # Copyright (c) 2011, Yubico AB
 # All rights reserved.
 
+import defines
+
 __all__ = [
     # constants
     # functions
@@ -54,5 +56,10 @@ class SoS_CommandFailed(SoS_Error):
     Exception raised when a command sent to the SoS returned an error.
     """
     def __init__(self, name, status):
-        reason = "Command %s failed: 0x%x" % (name, status)
+        if status in defines.SoS_Status2String:
+            status_str = defines.SoS_Status2String[status]
+        else:
+            status_str = "0x%x" % (status)
+
+        reason = "Command %s failed: %s" % (name, status_str)
         SoS_Error.__init__(self, reason)

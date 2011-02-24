@@ -29,6 +29,8 @@ __all__ = [
     'SOS_ECHO',
     'SOS_SYSTEM_INFO_QUERY',
     'SOS_RANDOM_GENERATE',
+    ##
+    'SoS_Status2String',
     # functions
     # classes
 ]
@@ -65,3 +67,14 @@ SOS_OTP_BLOB_VALIDATE	= 0x09
 
 SOS_RANDOM_GENERATE	= 0x0b
 
+SoS_Status2String = {0x80: 'SOS_STATUS_OK',
+                     0x81: 'SOS_KEY_HANDLE_INVALID',
+                     0x82: 'SOS_BLOB_INVALID',
+                     0x83: 'SOS_OTP_INVALID',
+                     0x84: 'SOS_OTP_REPLAY',
+                     0x85: 'SOS_ID_DUPLICATE',
+                     0x86: 'SOS_ID_NOT_FOUND',
+                     0x87: 'SOS_DB_FULL',
+                     0x88: 'SOS_MEMORY_ERROR',
+                     0x89: 'SOS_FUNCTION_DISABLED',
+                     }
