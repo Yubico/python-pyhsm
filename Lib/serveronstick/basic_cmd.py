@@ -38,9 +38,9 @@ class SoS_Cmd_System_Info(SoS_Cmd):
     """
     def __init__(self, stick):
         SoS_Cmd.__init__(self, stick, defines.SOS_SYSTEM_INFO_QUERY)
-        self.versionMajor = 0
-        self.versionMinor = 0
-        self.versionBuild = 0
+        self.version_major = 0
+        self.version_minor = 0
+        self.version_build = 0
         self.protocolVersion = 0
         self.systemUid = None
         self.response_length = 17
@@ -50,7 +50,7 @@ class SoS_Cmd_System_Info(SoS_Cmd):
             return '<%s instance at %s: ver=%s, proto=%s, sysid=0x%s>' % (
                 self.__class__.__name__,
                 hex(id(self)),
-                (self.versionMajor, self.versionMinor, self.versionBuild),
+                (self.version_major, self.version_minor, self.version_build),
                 self.protocolVersion,
                 self.systemUid.encode('hex')
                 )
@@ -63,15 +63,15 @@ class SoS_Cmd_System_Info(SoS_Cmd):
     def parse_result(self, data):
         # #define SYSTEM_ID_SIZE          12
         # typedef struct {
-        #   uint8_t versionMajor;               // Major version #
-        #   uint8_t versionMinor;               // Minor version #
-        #   uint8_t versionBuild;               // Build version #
+        #   uint8_t version_major;               // Major version #
+        #   uint8_t version_minor;               // Minor version #
+        #   uint8_t version_build;               // Build version #
         #   uint8_t protocolVersion;            // Protocol version #
         #   uint8_t systemUid[SYSTEM_ID_SIZE];  // System unique identifier
         # } SOS_SYSTEM_INFO_RESP;
-        self.versionMajor, \
-            self.versionMinor, \
-            self.versionBuild, \
+        self.version_major, \
+            self.version_minor, \
+            self.version_build, \
             self.protocolVersion, \
             self.systemUid = struct.unpack('xBBBB12s', data)
         return self

@@ -23,33 +23,31 @@ import exception
 
 class SoS_Cmd_Secrets_Generate(SoS_Cmd):
     """
-    Ask stick to generate a secret for a specific publicId.
+    Ask stick to generate a secret for a specific public_id
 
     Generated secret is stored in stick's internal memory and is
     retreived using SoS_Cmd_Blob_Generate.
     """
-    def __init__(self, stick, publicId):
-        # store padded publicId for comparision in parse_result
-        self.publicId = publicId.ljust(defines.PUBLIC_ID_SIZE, chr(0x0))
-        SoS_Cmd.__init__(self, stick, defines.SOS_SECRETS_GENERATE, self.publicId)
+    def __init__(self, stick, public_id):
+        # store padded public_id for comparision in parse_result
+        self.public_id = public_id.ljust(defines.PUBLIC_ID_SIZE, chr(0x0))
+        SoS_Cmd.__init__(self, stick, defines.SOS_SECRETS_GENERATE, self.public_id)
         self.response_length = defines.PUBLIC_ID_SIZE + 1
 
     def parse_result(self, data):
-        """ Return True if the publicId in the response matches the one in the request. """
-        return data[1:] == self.publicId
-
-    pass
+        """ Return True if the public_id in the response matches the one in the request. """
+        return data[1:] == self.public_id
 
 
 class SoS_Cmd_Secrets_Load(SoS_Cmd):
     """
-    Ask stick to load a pre-existing secret for a specific publicId.
+    Ask stick to load a pre-existing secret for a specific public_id.
 
     This is for importing keys into the HSM system.
     """
-    def __init__(self, stick, publicId, secrets):
-        # store padded publicId for comparision in parse_result
-        self.publicId = publicId.ljust(defines.PUBLIC_ID_SIZE, chr(0x0))
+    def __init__(self, stick, public_id, secrets):
+        # store padded public_id for comparision in parse_result
+        self.public_id = public_id.ljust(defines.PUBLIC_ID_SIZE, chr(0x0))
         self.secrets = secrets
 
         packed_secrets = secrets.pack()
@@ -57,15 +55,13 @@ class SoS_Cmd_Secrets_Load(SoS_Cmd):
             raise exception.SoS_WrongInputSize(
                 'secrets.packed()', defines.SOS_BLOCK_SIZE * 2, len(packed_secrets))
 
-        packed = self.publicId + packed_secrets
+        packed = self.public_id + packed_secrets
         SoS_Cmd.__init__(self, stick, defines.SOS_SECRETS_LOAD, packed)
         self.response_length = defines.PUBLIC_ID_SIZE + 1
 
     def parse_result(self, data):
-        """ Return True if the publicId in the response matches the one in the request. """
-        return data[1:] == self.publicId
-
-    pass
+        """ Return True if the public_id in the response matches the one in the request. """
+        return data[1:] == self.public_id
 
 
 class SoS_Secrets():
@@ -92,19 +88,20 @@ class SoS_Cmd_Blob_Generate(SoS_Cmd):
     Request the stick to encrypt the previously generated secret with a
     specific key, and return the resulting blob.
     """
-    def __init__(self, stick, keyHandle):
-        self.keyHandle = keyHandle
-        packed = struct.pack('<I', self.keyHandle)
+    def __init__(self, stick, key_handle):
+        self.public_id = None
+        self.key_handle = key_handle
+        packed = struct.pack('<I', self.key_handle)
         SoS_Cmd.__init__(self, stick, defines.SOS_BLOB_GENERATE, packed)
         self.response_length = 60
 
     def __repr__(self):
         if self.executed:
-            return '<%s instance at %s: publicId=%s, keyHandle=0x%x, status=0x%x>' % (
+            return '<%s instance at %s: public_id=%s, key_handle=0x%x, status=0x%x>' % (
                 self.__class__.__name__,
                 hex(id(self)),
-                self.publicId.encode('hex'),
-                self.keyHandle,
+                self.public_id.encode('hex'),
+                self.key_handle,
                 self.status
                 )
         else:
@@ -123,36 +120,34 @@ class SoS_Cmd_Blob_Generate(SoS_Cmd):
         # typedef uint8_t SOS_STATUS;
 
         # typedef struct {
-        #   uint8_t publicId[PUBLIC_ID_SIZE];   // Public id
-        #   uint32_t keyHandle;                 // Key handle
+        #   uint8_t public_id[PUBLIC_ID_SIZE];   // Public id
+        #   uint32_t key_handle;                 // Key handle
         #   SOS_BLOB blob;                      // Blob
         #   SOS_STATUS status;                  // Status
         # } SOS_BLOB_GENERATED_RESP;
-        publicId, rest = data[1:defines.PUBLIC_ID_SIZE], data[defines.PUBLIC_ID_SIZE + 1:]
-        keyHandle = struct.unpack('<I', rest[:4])[0]
+        public_id, rest = data[1:defines.PUBLIC_ID_SIZE], data[defines.PUBLIC_ID_SIZE + 1:]
+        key_handle = struct.unpack('<I', rest[:4])[0]
         blob = rest[4:-1]
         self.status = ord(rest[-1])
         if self.status == defines.SOS_STATUS_OK:
-            self.response = SoS_GeneratedBlob(publicId, keyHandle, blob)
+            self.response = SoS_GeneratedBlob(public_id, key_handle, blob)
             return self.response
         else:
             raise exception.SoS_CommandFailed('SOS_BLOB_GENERATE', self.status)
 
-    pass
-
 
 class SoS_GeneratedBlob():
     """ Small class to represent a SOS_BLOB_GENERATED_RESP. """
-    def __init__(self, publicId, keyHandle, blob):
-        self.publicId = publicId
-        self.keyHandle = keyHandle
+    def __init__(self, public_id, key_handle, blob):
+        self.public_id = public_id
+        self.key_handle = key_handle
         self.blob = blob
 
     def __repr__(self):
-        return '<%s instance at %s: publicId=%s, keyHandle=0x%x, blob=%i bytes>' % (
+        return '<%s instance at %s: public_id=%s, key_handle=0x%x, blob=%i bytes>' % (
             self.__class__.__name__,
             hex(id(self)),
-            self.publicId.encode('hex'),
-            self.keyHandle,
+            self.public_id.encode('hex'),
+            self.key_handle,
             len(self.blob)
             )

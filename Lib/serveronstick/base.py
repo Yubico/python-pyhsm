@@ -76,51 +76,51 @@ class SoS():
     #
     # Secrets/blob commands
     #
-    def generate_secret(self, publicId):
+    def generate_secret(self, public_id):
         """
-        Ask SoS to generate a secret for a publicId.
+        Ask SoS to generate a secret for a public_id.
 
         The result is stored internally in the SoS in temporary memory -
         this operation would be followed by one or more generate_blob()
         commands to actually retreive the generated secret (in encrypted form).
         """
-        if type(publicId) is not str:
+        if type(public_id) is not str:
             raise exception.SoS_WrongInputType(
-                'publicId', type(''), type(publicId))
-        return secrets_cmd.SoS_Cmd_Secrets_Generate(self.stick, publicId).execute()
+                'public_id', type(''), type(public_id))
+        return secrets_cmd.SoS_Cmd_Secrets_Generate(self.stick, public_id).execute()
 
-    def load_secret(self, publicId, secrets):
+    def load_secret(self, public_id, secrets):
         """
-        Ask stick to load a pre-existing secret for a specific publicId.
+        Ask stick to load a pre-existing secret for a specific public_id.
         
         This is for importing keys into the HSM system.
         """
-        if type(publicId) is not str:
+        if type(public_id) is not str:
             raise exception.SoS_WrongInputType(
-                'publicId', type(''), type(publicId))
-        return secrets_cmd.SoS_Cmd_Secrets_Load(self.stick, publicId, secrets).execute()
+                'public_id', type(''), type(public_id))
+        return secrets_cmd.SoS_Cmd_Secrets_Load(self.stick, public_id, secrets).execute()
 
-    def generate_blob(self, keyHandle):
+    def generate_blob(self, key_handle):
         """
         Ask SoS to return the previously generated secret
-        (see generate_secret()) encrypted with the specified keyHandle.
+        (see generate_secret()) encrypted with the specified key_handle.
         """
-        if type(keyHandle) is not int:
+        if type(key_handle) is not int:
             assert()
-        return secrets_cmd.SoS_Cmd_Blob_Generate(self.stick, keyHandle).execute()
+        return secrets_cmd.SoS_Cmd_Blob_Generate(self.stick, key_handle).execute()
 
-    def validate_blob_otp(self, publicId, otp, keyHandle, blob):
+    def validate_blob_otp(self, public_id, otp, key_handle, blob):
         """
-        Ask SoS to validate an OTP using a blob and a keyHandle to
+        Ask SoS to validate an OTP using a blob and a key_handle to
         decrypt the blob.
         """
-        if type(publicId) is not str:
+        if type(public_id) is not str:
             assert()
         if type(otp) is not str:
             assert()
-        if type(keyHandle) is not int:
+        if type(key_handle) is not int:
             assert()
         if type(blob) is not str:
             assert()
         return validate_cmd.SoS_Cmd_Blob_Validate_OTP( \
-            self.stick, publicId, otp, keyHandle, blob).execute()
+            self.stick, public_id, otp, key_handle, blob).execute()

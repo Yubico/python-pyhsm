@@ -14,17 +14,18 @@ __all__ = [
     'SoS'
 ]
 
-def validate_yubikey_with_blob(SoS, from_key, blob, keyHandle):
+def validate_yubikey_with_blob(SoS, from_key, blob, key_handle):
     """
     Try to validate an OTP from a YubiKey using the blob that can decrypt this YubiKey's
-    internal secret, using the keyHandle for the blob.
+    internal secret, using the key_handle for the blob.
 
     The parameter blob is either a string, or an instance of SoS_GeneratedBlob.
     """
 
     try:
+        # check if blob is an instance of something with a 'blob' attribute
         blob = blob.blob
-    except:
+    except AttributeError:
         pass
 
     if type(from_key) is not str:
@@ -33,9 +34,9 @@ def validate_yubikey_with_blob(SoS, from_key, blob, keyHandle):
     if type(blob) is not str:
         raise exception.SoS_WrongInputType(
             'blob', type(''), type(blob))
-    if type(keyHandle) is not int:
+    if type(key_handle) is not int:
         raise exception.SoS_WrongInputType(
-            'keyHandle', type(1), type(keyHandle))
+            'key_handle', type(1), type(key_handle))
 
     if len(blob) == 48 * 2:
         blob = blob.decode('hex')
@@ -51,7 +52,7 @@ def validate_yubikey_with_blob(SoS, from_key, blob, keyHandle):
     public_id = modhex_decode(public_id)
     otp = modhex_decode(otp)
 
-    return SoS.validate_blob_otp(public_id.decode('hex'), otp.decode('hex'), keyHandle, blob)
+    return SoS.validate_blob_otp(public_id.decode('hex'), otp.decode('hex'), key_handle, blob)
 
 def modhex_decode(data):
     """ Convert a modhex string to ordinary hex. """
