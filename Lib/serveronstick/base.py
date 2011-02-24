@@ -17,6 +17,7 @@ import cmd
 import stick
 import util
 import defines
+import exception
 
 import basic_cmd
 import secrets_cmd

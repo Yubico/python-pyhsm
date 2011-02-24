@@ -51,6 +51,10 @@ class SoS_Cmd():
         return data
 
 def reset(stick):
-    stick.flushInput()
+    """
+    Send a bunch of zero-bytes to the SoS, and flush the input buffer.
+    """
     nulls = (defines.SOS_MAX_PKT_SIZE - 1) * '\x00'
-    return SoS_Cmd(stick, defines.SOS_NULL, payload = nulls).execute() == 0
+    res = SoS_Cmd(stick, defines.SOS_NULL, payload = nulls).execute()
+    stick.flush()
+    return res == 0

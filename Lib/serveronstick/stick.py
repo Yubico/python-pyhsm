@@ -1,3 +1,7 @@
+"""
+module for actually talking to the Server on Stick
+"""
+
 # Copyright (c) 2011, Yubico AB
 # All rights reserved.
 
@@ -13,7 +17,15 @@ import sys
 import util
 
 class SoS_Stick():
+    """
+    The current SoS is a USB device using serial communication.
+
+    This class exposes the basic functions read, write and flush (input).
+    """
     def __init__(self, device, timeout=1, debug=False):
+        """
+        Open SoS device.
+        """
         self.debug = debug
         self.device = device
         self.num_read_bytes = 0
@@ -27,6 +39,9 @@ class SoS_Stick():
         return None
 
     def write(self, data):
+        """
+        Write data to SoS device.
+        """
         self.num_write_bytes += len(data)
         if self.debug:
             sys.stderr.write("%s: WRITE %i:\n%s\n" %(
@@ -36,15 +51,18 @@ class SoS_Stick():
                     ))
         return self.ser.write(data)
 
-    def read(self, bytes):
-        if bytes < 1:
+    def read(self, num_bytes):
+        """
+        Read a number of bytes from SoS device.
+        """
+        if num_bytes < 1:
             return 0
         if self.debug:
             sys.stderr.write("%s: READING %i\n" %(
                     self.__class__.__name__,
-                    bytes
+                    num_bytes
                     ))
-        res = self.ser.read(bytes)
+        res = self.ser.read(num_bytes)
         if self.debug:
             sys.stderr.write("%s: READ %i:\n%s\n" %(
                     self.__class__.__name__,
@@ -54,7 +72,10 @@ class SoS_Stick():
         self.num_read_bytes += len(res)
         return res
 
-    def flushInput(self):
+    def flush(self):
+        """
+        Flush input buffers.
+        """
         if self.debug:
             sys.stderr.write("%s: FLUSH INPUT\n" %(
                     self.__class__.__name__
@@ -71,6 +92,9 @@ class SoS_Stick():
             )
 
     def __del__(self):
+        """
+        Close device when SoS instance is destroyed.
+        """
         if self.debug:
             sys.stderr.write("%s: CLOSE %s\n" %(
                     self.__class__.__name__,

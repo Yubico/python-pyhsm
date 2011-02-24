@@ -17,7 +17,6 @@ __all__ = [
     'SoS_Cmd_Random',
 ]
 
-import cmd
 from cmd import SoS_Cmd
 
 class SoS_Cmd_Echo(SoS_Cmd):
@@ -32,7 +31,6 @@ class SoS_Cmd_Echo(SoS_Cmd):
     def parse_result(self, data):
         return data[2:]
 
-    pass
 
 class SoS_Cmd_System_Info(SoS_Cmd):
     """
@@ -40,6 +38,11 @@ class SoS_Cmd_System_Info(SoS_Cmd):
     """
     def __init__(self, stick):
         SoS_Cmd.__init__(self, stick, defines.SOS_SYSTEM_INFO_QUERY)
+        self.versionMajor = 0
+        self.versionMinor = 0
+        self.versionBuild = 0
+        self.protocolVersion = 0
+        self.systemUid = None
         self.response_length = 17
 
     def __repr__(self):
@@ -73,16 +76,13 @@ class SoS_Cmd_System_Info(SoS_Cmd):
             self.systemUid = struct.unpack('xBBBB12s', data)
         return self
 
-    pass
 
 class SoS_Cmd_Random(SoS_Cmd):
     """
     Ask stick to generate a number of random bytes.
     """
-    def __init__(self, stick, bytes):
+    def __init__(self, stick, num_bytes):
         packed = chr(bytes)
         SoS_Cmd.__init__(self, stick, defines.SOS_RANDOM_GENERATE, packed)
-        self.response_length = bytes + 2
-
-    pass
+        self.response_length = num_bytes + 2
 

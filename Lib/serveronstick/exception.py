@@ -4,9 +4,6 @@ common exceptions for the serveronstick package
 # Copyright (c) 2011, Yubico AB
 # All rights reserved.
 
-import struct
-import defines
-
 __all__ = [
     # constants
     # functions
@@ -26,6 +23,7 @@ class SoS_Error(Exception):
     """
 
     def __init__(self, reason):
+        Exception.__init__(self)
         self.reason = reason
 
     def __str__(self):
@@ -34,8 +32,6 @@ class SoS_Error(Exception):
             hex(id(self)),
             self.reason
             )
-
-    pass
 
 class SoS_WrongInputSize(SoS_Error):
     """
@@ -58,5 +54,5 @@ class SoS_CommandFailed(SoS_Error):
     Exception raised when a command sent to the SoS returned an error.
     """
     def __init__(self, name, status):
-        reason = "Command %s failed: %i" %(name, status)
+        reason = "Command %s failed: %i" % (name, status)
         SoS_Error.__init__(self, reason)

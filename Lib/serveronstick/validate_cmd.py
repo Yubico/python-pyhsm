@@ -16,7 +16,6 @@ __all__ = [
     'SoS_Cmd_Blob_Validate',
 ]
 
-import cmd
 from cmd import SoS_Cmd
 
 class SoS_Cmd_Blob_Validate_OTP(SoS_Cmd):

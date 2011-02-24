@@ -18,7 +18,6 @@ __all__ = [
     'SoS_GeneratedBlob'
 ]
 
-import cmd
 from cmd import SoS_Cmd
 import exception
 

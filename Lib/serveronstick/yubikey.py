@@ -15,6 +15,18 @@ __all__ = [
 ]
 
 def validate_yubikey_with_blob(SoS, from_key, blob, keyHandle):
+    """
+    Try to validate an OTP from a YubiKey using the blob that can decrypt this YubiKey's
+    internal secret, using the keyHandle for the blob.
+
+    The parameter blob is either a string, or an instance of SoS_GeneratedBlob.
+    """
+
+    try:
+        blob = blob.blob
+    except:
+        pass
+
     if type(from_key) is not str:
         raise exception.SoS_WrongInputType(
             'from_key', type(''), type(from_key))
