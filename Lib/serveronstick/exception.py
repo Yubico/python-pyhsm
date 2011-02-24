@@ -54,5 +54,5 @@ class SoS_CommandFailed(SoS_Error):
     Exception raised when a command sent to the SoS returned an error.
     """
     def __init__(self, name, status):
-        reason = "Command %s failed: %i" % (name, status)
+        reason = "Command %s failed: 0x%x" % (name, status)
         SoS_Error.__init__(self, reason)
