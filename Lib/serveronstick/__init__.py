@@ -18,3 +18,5 @@ __all__ = ["base"
            "secrets_cmd"
            "validate_cmd"
            ]
+
+from base import SoS
