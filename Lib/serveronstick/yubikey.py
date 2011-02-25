@@ -41,13 +41,7 @@ def validate_yubikey_with_blob(SoS, from_key, blob, key_handle):
     if len(blob) == 48 * 2:
         blob = blob.decode('hex')
 
-    if len(from_key) > 32:
-        public_id, otp = from_key[:-32], from_key[-32:]
-    elif len(from_key) == 32:
-        public_id = ''
-        otp = from_key
-    else:
-        assert()
+    public_id, otp = split_id_otp(from_key)
 
     public_id = modhex_decode(public_id)
     otp = modhex_decode(otp)
@@ -63,3 +57,14 @@ def modhex_encode(data):
     """ Convert an ordinary hex string to modhex. """
     t_map = string.maketrans("0123456789abcdef", "cbdefghijklnrtuv")
     return data.translate(t_map)
+
+def split_id_otp(from_key):
+    """ Separate public id from OTP given a YubiKey OTP as input. """
+    if len(from_key) > 32:
+        public_id, otp = from_key[:-32], from_key[-32:]
+    elif len(from_key) == 32:
+        public_id = ''
+        otp = from_key
+    else:
+        assert()
+    return public_id, otp
