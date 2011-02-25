@@ -151,3 +151,15 @@ class SoS_GeneratedBlob():
             self.key_handle,
             len(self.blob)
             )
+
+    def save(self, filename):
+        """ Store blob in a file. """
+        f = open(filename, "w")
+        f.write(self.blob)
+        f.close()
+
+    def load(self, filename):
+        """ Load blob from a file. """
+        f = open(filename, "r")
+        self.blob = f.read(defines.BLOB_KEY_SIZE + defines.SOS_BLOCK_SIZE)
+        f.close()
