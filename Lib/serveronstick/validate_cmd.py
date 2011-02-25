@@ -83,7 +83,7 @@ class SoS_Cmd_Blob_Validate_OTP(SoS_Cmd):
             self.response = SoS_ValidationResult(self.public_id, use_ctr, session_ctr, ts_high, ts_low)
             return self.response
         else:
-            raise exception.SoS_CommandFailed('SOS_BLOB_GENERATE', self.status)
+            raise exception.SoS_CommandFailed('SOS_OTP_BLOB_VALIDATE', self.status)
 
 
 class SoS_ValidationResult():
