@@ -1,0 +1,171 @@
+#!/usr/bin/env python
+#
+# Copyright (c) 2011, Yubico AB
+# All rights reserved.
+#
+
+import os
+import sys
+import BaseHTTPServer
+import argparse
+sys.path.append('Lib');
+import serveronstick
+import serveronstick.yubikey
+
+default_device = "/dev/serial/by-id/usb-Yubico_Yubico_ServerOnStick_498F517E3932-if00"
+#default_device = "/dev/ttyACM0"
+default_dir = "/dev/shm/yubico/secrets"
+blob_dir = None
+serve_url = "/wsapi/decrypt?otp="
+sos = None
+key_handle = None
+key_handle_str = None
+
+
+class SoS_KSMRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
+
+    def do_GET(self):
+        # Example session:
+        # in  : GET /wsapi/decrypt?otp=ftftftccccdvvbfcfduvvcubikngtchlubtutucrld HTTP/1.0
+        # out : OK counter=0004 low=f585 high=3e use=03
+        global serve_url
+        if self.path.startswith(serve_url):
+            from_key=self.path[19:]
+            public_id, otp = serveronstick.yubikey.split_id_otp(from_key)
+
+            global blob_dir
+            global key_handle
+            global key_handle_str
+            filename = blob_filename(blob_dir, key_handle_str, public_id)
+            blob = serveronstick.secrets_cmd.SoS_GeneratedBlob(public_id, key_handle, '')
+            try:
+                blob.load(filename)
+            except IOError:
+                self.log_message("ERROR: File %s not found, or not readable" % (filename))
+                self.send_response(404, 'Unknown public_id')
+                return
+
+            res = serveronstick.yubikey.validate_yubikey_with_blob(sos, from_key, blob, key_handle)
+            # XXX double-check public_id in res, in case BaseHTTPServer suddenly becomes multi-threaded
+            val_res = "OK counter=%04d low=%2x high=%x use=%x" % \
+                (res.session_ctr, res.ts_low, res.ts_high, res.use_ctr)
+            self.log_message("%s", val_res)
+
+            self.send_response(200)
+            self.send_header('Content-type', 'text/html')
+            self.end_headers()
+            self.wfile.write("%s\n" % (val_res))
+        else:
+            self.log_message ("ERROR: Bad URL '%s' - I'm serving '%s'" % (self.path, serve_url))
+            self.send_response(403, 'Forbidden')
+            self.end_headers()
+
+def blob_filename(blob_dir, key_handle, public_id):
+    """
+    Return the filename of the blob for this public_id.
+    """
+    return os.path.join(blob_dir, key_handle,
+                        public_id[-1], public_id[-2], public_id[-3],
+                        public_id
+                        )
+
+def parse_args():
+    """
+    Parse the command line arguments
+    """
+    global default_device
+    global default_dir
+
+    parser = argparse.ArgumentParser(description = "Generate secrets using Server on a Stick",
+                                     add_help=True
+                                     )
+    parser.add_argument('-D', '--device',
+                        dest='device',
+                        default=default_device,
+                        required=False,
+                        help='Server-on-Stick device (default : %s).' % default_device
+                        )
+    parser.add_argument('-B', '--blob-dir',
+                        dest='blob_dir',
+                        default=default_dir,
+                        required=False,
+                        help='Blob directory - base directory of your blobs (default : %s).' % default_dir
+                        )
+    parser.add_argument('-v', '--verbose',
+                        dest='verbose',
+                        action='store_true', default=False,
+                        help='Enable verbose operation.'
+                        )
+    parser.add_argument('--debug',
+                        dest='debug',
+                        action='store_true', default=False,
+                        help='Enable debug operation.'
+                        )
+    parser.add_argument('--public-id-chars',
+                        dest='public_id_chars',
+                        type=int, default=12,
+                        required=False,
+                        help='Number of chars in generated public ids.'
+                        )
+    parser.add_argument('--port',
+                        dest='listen_port',
+                        type=int, default=8002,
+                        required=False,
+                        help='Port to listen on.'
+                        )
+    parser.add_argument('--addr',
+                        dest='listen_addr',
+                        default="127.0.0.1",
+                        required=False,
+                        help='Address to bind to.'
+                        )
+    parser.add_argument('--key-handle',
+                        dest='key_handle',
+                        required=True,
+                        help='Key handle to use to decrypt blobs on the SoS.'
+                        )
+
+    return parser.parse_args()
+
+def args_fixup(args):
+    if not os.path.isdir(args.blob_dir):
+        sys.stderr.write("Blob directory '%s' does not exist.\n" % (args.blob_dir))
+        sys.exit(1)
+
+    args.key_handle = serveronstick.util.key_handle_to_int(args.key_handle)
+
+
+def run(args):
+    server_address = (args.listen_addr, args.listen_port)
+    httpd = BaseHTTPServer.HTTPServer(server_address, SoS_KSMRequestHandler)
+    global serve_url
+    global blob_dir
+    global key_handle
+    sys.stderr.write("Serving requests to '%s' with key handle %s (SoS: '%s', blobs in '%s')\n" \
+                          % (serve_url, key_handle, args.device, blob_dir))
+    httpd.serve_forever()
+
+def main():
+    args = parse_args()
+
+    global key_handle_str
+    key_handle_str = args.key_handle
+
+    args_fixup(args)
+
+    global sos
+    global key_handle
+    global blob_dir
+    key_handle = args.key_handle
+    blob_dir = args.blob_dir
+    sos = serveronstick.SoS(device = args.device, debug=args.debug)
+
+    try:
+        run(args)
+    except KeyboardInterrupt:
+        print ""
+        print "Shutting down"
+        print ""
+
+if __name__ == '__main__':
+    main()
