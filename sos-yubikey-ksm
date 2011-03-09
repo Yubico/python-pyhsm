@@ -60,7 +60,7 @@ class SoS_KSMRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             # XXX double-check public_id in res, in case BaseHTTPServer suddenly becomes multi-threaded
             val_res = "OK counter=%04x low=%04x high=%02x use=%02x" % \
                 (res.session_ctr, res.ts_low, res.ts_high, res.use_ctr)
-            self.log_message("IN: %s, OUT: %s", from_key, val_res)
+            self.log_message("SUCCESS OTP %s PT sos %s", from_key, val_res)
 
             self.send_response(200)
             self.send_header('Content-type', 'text/html')
