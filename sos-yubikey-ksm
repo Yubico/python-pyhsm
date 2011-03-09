@@ -72,15 +72,20 @@ class SoS_KSMRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             self.end_headers()
 
     def log_error(self, format, *fmt_args):
+        """ Log to syslog. """
         global args
-        msg = format % fmt_args
-        my_log_message(args, syslog.LOG_ERR, "%s - - %s" % (self.address_string(), msg))
+        msg = self.my_address_string() + " - - " + format % fmt_args
+        my_log_message(args, syslog.LOG_ERR, msg)
 
     def log_message(self, format, *fmt_args):
+        """ Log to syslog. """
         global args
-        msg = format % fmt_args
-        my_log_message(args, syslog.LOG_INFO, "%s - - %s" % (self.address_string(), msg))
+        msg = self.my_address_string() + " - - " + format % fmt_args
+        my_log_message(args, syslog.LOG_INFO, msg)
 
+    def my_address_string(self):
+        """ For logging client host without resolving. """
+        return self.client_address[0]
 
 def blob_filename(blob_dir, key_handle, public_id):
     """
