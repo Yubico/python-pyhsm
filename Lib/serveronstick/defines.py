@@ -40,7 +40,8 @@ OTP_SIZE	= 16	# Size of OTP
 SOS_BLOCK_SIZE	= 16	# Size of block operations
 BLOB_KEY_SIZE	= 32	# Size of blob key
 
-UID_SIZE	= 6	# guessed
+# these two are in ykdef.h
+UID_SIZE	= 6
 KEY_SIZE	= 16
 
 SOS_RESPONSE		= 0x80    # Response bit
