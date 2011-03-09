@@ -14,7 +14,8 @@ sys.path.append('Lib');
 import serveronstick
 import serveronstick.yubikey
 
-default_device = "/dev/serial/by-id/usb-Yubico_Yubico_ServerOnStick_498F517E3932-if00"
+#default_device = "/dev/serial/by-id/usb-Yubico_Yubico_ServerOnStick_498F517E3932-if00"
+default_device = "/dev/ttyACM0"
 
 def parse_args():
     """

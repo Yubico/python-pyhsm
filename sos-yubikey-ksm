@@ -17,8 +17,8 @@ import serveronstick
 import serveronstick.yubikey
 import serial
 
-default_device = "/dev/serial/by-id/usb-Yubico_Yubico_ServerOnStick_498F517E3932-if00"
-#default_device = "/dev/ttyACM0"
+#default_device = "/dev/serial/by-id/usb-Yubico_Yubico_ServerOnStick_498F517E3932-if00"
+default_device = "/dev/ttyACM0"
 default_dir = "/dev/shm/yubico/secrets"
 default_serve_url = "/wsapi/decrypt?otp="
 
