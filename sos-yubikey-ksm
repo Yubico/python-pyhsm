@@ -4,23 +4,26 @@
 # All rights reserved.
 #
 
+# logging till syslog
+
 import os
 import sys
 import BaseHTTPServer
 import argparse
+import syslog
 sys.path.append('Lib');
 import serveronstick
 import serveronstick.yubikey
+import serial
 
 default_device = "/dev/serial/by-id/usb-Yubico_Yubico_ServerOnStick_498F517E3932-if00"
 #default_device = "/dev/ttyACM0"
 default_dir = "/dev/shm/yubico/secrets"
-blob_dir = None
-serve_url = "/wsapi/decrypt?otp="
-sos = None
-key_handle = None
-key_handle_str = None
+default_serve_url = "/wsapi/decrypt?otp="
 
+sos = None
+args = None
+saved_key_handle = None
 
 class SoS_KSMRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
@@ -28,37 +31,47 @@ class SoS_KSMRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         # Example session:
         # in  : GET /wsapi/decrypt?otp=ftftftccccdvvbfcfduvvcubikngtchlubtutucrld HTTP/1.0
         # out : OK counter=0004 low=f585 high=3e use=03
-        global serve_url
-        if self.path.startswith(serve_url):
+        global args
+        if self.path.startswith(args.serve_url):
             from_key=self.path[19:]
+            # XXX check that from_key is modhex
             public_id, otp = serveronstick.yubikey.split_id_otp(from_key)
 
-            global blob_dir
-            global key_handle
-            global key_handle_str
-            filename = blob_filename(blob_dir, key_handle_str, public_id)
-            blob = serveronstick.secrets_cmd.SoS_GeneratedBlob(public_id, key_handle, '')
+            global saved_key_handle
+            filename = blob_filename(args.blob_dir, saved_key_handle, public_id)
+            blob = serveronstick.secrets_cmd.SoS_GeneratedBlob(public_id, args.key_handle, '')
             try:
                 blob.load(filename)
             except IOError:
-                self.log_message("ERROR: File %s not found, or not readable" % (filename))
+                self.log_error("IN: %s, File %s not found, or not readable" % (from_key, filename))
                 self.send_response(404, 'Unknown public_id')
                 return
 
-            res = serveronstick.yubikey.validate_yubikey_with_blob(sos, from_key, blob, key_handle)
+            res = serveronstick.yubikey.validate_yubikey_with_blob(sos, from_key, blob, args.key_handle)
             # XXX double-check public_id in res, in case BaseHTTPServer suddenly becomes multi-threaded
             val_res = "OK counter=%04d low=%2x high=%x use=%x" % \
                 (res.session_ctr, res.ts_low, res.ts_high, res.use_ctr)
-            self.log_message("%s", val_res)
+            self.log_message("IN: %s, OUT: %s", from_key, val_res)
 
             self.send_response(200)
             self.send_header('Content-type', 'text/html')
             self.end_headers()
             self.wfile.write("%s\n" % (val_res))
         else:
-            self.log_message ("ERROR: Bad URL '%s' - I'm serving '%s'" % (self.path, serve_url))
+            self.log_error ("Bad URL '%s' - I'm serving '%s' (responding 403)" % (self.path, args.serve_url))
             self.send_response(403, 'Forbidden')
             self.end_headers()
+
+    def log_error(self, format, *fmt_args):
+        global args
+        msg = format % fmt_args
+        my_log_message(args, syslog.LOG_ERR, "%s - - %s" % (self.address_string(), msg))
+
+    def log_message(self, format, *fmt_args):
+        global args
+        msg = format % fmt_args
+        my_log_message(args, syslog.LOG_INFO, "%s - - %s" % (self.address_string(), msg))
+
 
 def blob_filename(blob_dir, key_handle, public_id):
     """
@@ -75,6 +88,7 @@ def parse_args():
     """
     global default_device
     global default_dir
+    global default_serve_url
 
     parser = argparse.ArgumentParser(description = "Generate secrets using Server on a Stick",
                                      add_help=True
@@ -83,13 +97,19 @@ def parse_args():
                         dest='device',
                         default=default_device,
                         required=False,
-                        help='Server-on-Stick device (default : %s).' % default_device
+                        help='Server-on-Stick device (default : "%s").' % default_device
                         )
     parser.add_argument('-B', '--blob-dir',
                         dest='blob_dir',
                         default=default_dir,
                         required=False,
-                        help='Blob directory - base directory of your blobs (default : %s).' % default_dir
+                        help='Blob directory - base directory of your blobs (default : "%s").' % default_dir
+                        )
+    parser.add_argument('-U', '--serve-url',
+                        dest='serve_url',
+                        default=default_serve_url,
+                        required=False,
+                        help='Base URL for decrypt web service (default : "%s").' % default_serve_url
                         )
     parser.add_argument('-v', '--verbose',
                         dest='verbose',
@@ -129,8 +149,11 @@ def parse_args():
 
 def args_fixup(args):
     if not os.path.isdir(args.blob_dir):
-        sys.stderr.write("Blob directory '%s' does not exist.\n" % (args.blob_dir))
+        my_log_message(args, syslog.LOG_ERR, "Blob directory '%s' does not exist." % (args.blob_dir))
         sys.exit(1)
+
+    global saved_key_handle
+    saved_key_handle = args.key_handle
 
     args.key_handle = serveronstick.util.key_handle_to_int(args.key_handle)
 
@@ -138,27 +161,32 @@ def args_fixup(args):
 def run(args):
     server_address = (args.listen_addr, args.listen_port)
     httpd = BaseHTTPServer.HTTPServer(server_address, SoS_KSMRequestHandler)
-    global serve_url
-    global blob_dir
-    global key_handle
-    sys.stderr.write("Serving requests to '%s' with key handle %s (SoS: '%s', blobs in '%s')\n" \
-                          % (serve_url, key_handle, args.device, blob_dir))
+    global saved_key_handle
+    my_log_message(args, syslog.LOG_INFO, "Serving requests to 'http://%s:%s%s' with key handle %s/%s (SoS: '%s', blobs in '%s')" \
+                       % (args.listen_addr, args.listen_port, args.serve_url, saved_key_handle, args.key_handle, args.device, args.blob_dir))
     httpd.serve_forever()
 
+def my_log_message(args, prio, msg):
+    syslog.syslog(prio, msg)
+    if args.debug or args.verbose or prio == syslog.LOG_ERR:
+        sys.stderr.write("%s\n" % (msg))
+
 def main():
+    my_name = os.path.basename(sys.argv[0])
+    if not my_name:
+        my_name = "sos-yubikey-ksm"
+    syslog.openlog(my_name, syslog.LOG_PID, syslog.LOG_LOCAL0)
+
+    global args
     args = parse_args()
-
-    global key_handle_str
-    key_handle_str = args.key_handle
-
     args_fixup(args)
 
     global sos
-    global key_handle
-    global blob_dir
-    key_handle = args.key_handle
-    blob_dir = args.blob_dir
-    sos = serveronstick.SoS(device = args.device, debug=args.debug)
+    try:
+        sos = serveronstick.SoS(device = args.device, debug = args.debug)
+    except serial.SerialException, e:
+        my_log_message(args, syslog.LOG_ERR, 'Failed opening SoS device "%s" : %s' %(args.device, e))
+        sys.exit(1)
 
     try:
         run(args)
