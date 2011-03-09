@@ -36,7 +36,7 @@ class SoS_KSMRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         # out : OK counter=0004 low=f585 high=3e use=03
         global args
         if self.path.startswith(args.serve_url):
-            from_key = self.path[19:]
+            from_key = self.path[len(args.serve_url):]
 
             global valid_input_from_key
             if not re.match(valid_input_from_key, from_key):
