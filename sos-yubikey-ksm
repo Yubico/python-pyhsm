@@ -11,6 +11,7 @@ import sys
 import BaseHTTPServer
 import argparse
 import syslog
+import re
 sys.path.append('Lib');
 import serveronstick
 import serveronstick.yubikey
@@ -20,6 +21,8 @@ default_device = "/dev/serial/by-id/usb-Yubico_Yubico_ServerOnStick_498F517E3932
 #default_device = "/dev/ttyACM0"
 default_dir = "/dev/shm/yubico/secrets"
 default_serve_url = "/wsapi/decrypt?otp="
+
+valid_input_from_key = re.compile('^[cbdefghijklnrtuv]{32,48}$')
 
 sos = None
 args = None
@@ -33,8 +36,14 @@ class SoS_KSMRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         # out : OK counter=0004 low=f585 high=3e use=03
         global args
         if self.path.startswith(args.serve_url):
-            from_key=self.path[19:]
-            # XXX check that from_key is modhex
+            from_key = self.path[19:]
+
+            global valid_input_from_key
+            if not re.match(valid_input_from_key, from_key):
+                self.log_error("IN: %s, Invalid public_id" % (from_key))
+                self.send_response(403, 'Invalid public_id')
+                return
+
             public_id, otp = serveronstick.yubikey.split_id_otp(from_key)
 
             global saved_key_handle
