@@ -86,10 +86,8 @@ def blob_filename(blob_dir, key_handle, public_id):
     """
     Return the filename of the blob for this public_id.
     """
-    return os.path.join(blob_dir, key_handle,
-                        public_id[-1], public_id[-2], public_id[-3],
-                        public_id
-                        )
+    parts = [blob_dir, key_handle] + serveronstick.util.group(public_id, 2) + [public_id]
+    return os.path.join(*parts)
 
 def parse_args():
     """

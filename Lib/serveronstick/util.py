@@ -10,7 +10,9 @@ import struct
 __all__ = [
     # constants
     # functions
-    'hexdump'
+    'hexdump',
+    'group',
+    'key_handle_to_int',
     # classes
 ]
 
