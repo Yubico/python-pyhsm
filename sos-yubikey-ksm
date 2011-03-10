@@ -56,17 +56,23 @@ class SoS_KSMRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                 self.send_response(404, 'Unknown public_id')
                 return
 
-            res = serveronstick.yubikey.validate_yubikey_with_blob(sos, from_key, blob, args.key_handle)
-            # XXX double-check public_id in res, in case BaseHTTPServer suddenly becomes multi-threaded
-            # XXX fix use vs session counter confusion
-            val_res = "OK counter=%04x low=%04x high=%02x use=%02x" % \
-                (res.use_ctr, res.ts_low, res.ts_high, res.session_ctr)
-            self.log_message("SUCCESS OTP %s PT sos %s", from_key, val_res)
+            try:
+                res = serveronstick.yubikey.validate_yubikey_with_blob(sos, from_key, blob, args.key_handle)
+                # XXX double-check public_id in res, in case BaseHTTPServer suddenly becomes multi-threaded
+                # XXX fix use vs session counter confusion
+                val_res = "OK counter=%04x low=%04x high=%02x use=%02x\n" % \
+                    (res.use_ctr, res.ts_low, res.ts_high, res.session_ctr)
+            except serveronstick.exception.SoS_Error, e:
+                self.log_error ("IN: %s, Validate FAILED: %s" % (from_key, str(e)))
+                val_res = "ERR"
+
+            self.log_message("Decrypt: IN: %s, OUT: %s" %(from_key, val_res))
 
             self.send_response(200)
             self.send_header('Content-type', 'text/html')
             self.end_headers()
-            self.wfile.write("%s\n" % (val_res))
+            self.wfile.write(val_res)
+            self.wfile.write("\n")
         else:
             self.log_error ("Bad URL '%s' - I'm serving '%s' (responding 403)" % (self.path, args.serve_url))
             self.send_response(403, 'Forbidden')
