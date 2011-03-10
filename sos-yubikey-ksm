@@ -60,7 +60,7 @@ class SoS_KSMRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                 res = serveronstick.yubikey.validate_yubikey_with_blob(sos, from_key, blob, args.key_handle)
                 # XXX double-check public_id in res, in case BaseHTTPServer suddenly becomes multi-threaded
                 # XXX fix use vs session counter confusion
-                val_res = "OK counter=%04x low=%04x high=%02x use=%02x\n" % \
+                val_res = "OK counter=%04x low=%04x high=%02x use=%02x" % \
                     (res.use_ctr, res.ts_low, res.ts_high, res.session_ctr)
             except serveronstick.exception.SoS_Error, e:
                 self.log_error ("IN: %s, Validate FAILED: %s" % (from_key, str(e)))
