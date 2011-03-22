@@ -4,9 +4,14 @@ import unittest
 import serveronstick
 
 import test_basics
-import test_configure
+import test_otp_validate
 
-test_modules = [test_basics]
+test_modules = [test_basics,
+                test_otp_validate
+                ]
+
+# special, should not be addded to test_modules
+import test_configure
 
 def suite():
     """
