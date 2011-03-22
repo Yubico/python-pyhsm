@@ -1,29 +1,34 @@
+import os
 import sys
 import unittest
 import serveronstick
 
 import test_basics
+import test_configure
 
-class TestInit(unittest.TestCase):
-
-    hsm = None
-
-    def setUp(self):
-        self.hsm = serveronstick.base.SoS("/dev/ttyACM0")
-
-        # Check that this is a device we know how to talk to
-        assert(self.hsm.info().protocolVersion == 1)
+test_modules = [test_basics]
 
 def suite():
+    """
+    Create a test suite with all our tests.
+
+    If the OS environment variable 'YHSM_ZAP' is set and evaluates to true,
+    we will include the special test case class that erases the current
+    YubiHSM config and creates a new one with known keys to be used by the
+    other tests. NOTE that this is ONLY POSSIBLE if the YubiHSM is already
+    in DEBUG mode.
+    """
+
     global test_modules
 
-    l = [
-        unittest.TestLoader().loadTestsFromModule(test_basics)
-        ]
+    zap = []
+    if 'YHSM_ZAP' in os.environ:
+        if os.environ['YHSM_ZAP']:
+            zap = [unittest.TestLoader().loadTestsFromModule(test_configure)]
 
-    suite = unittest.TestSuite(l)
+    l = zap + [unittest.TestLoader().loadTestsFromModule(this) for this in test_modules]
 
-    return suite
+    return unittest.TestSuite(l)
 
 if __name__ == '__main__':
     unittest.main()

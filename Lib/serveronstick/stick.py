@@ -8,8 +8,11 @@ module for actually talking to the Server on Stick
 __all__ = [
     # constants
     # functions
+    'read',
+    'write',
+    'flush',
     # classes
-    'Stick'
+    'Stick',
 ]
 
 import serial
@@ -78,10 +81,31 @@ class SoS_Stick():
         Flush input buffers.
         """
         if self.debug:
-            sys.stderr.write("%s: FLUSH INPUT\n" %(
-                    self.__class__.__name__
+            sys.stderr.write("%s: FLUSH INPUT (%i bytes waiting)\n" %(
+                    self.__class__.__name__,
+                    self.ser.inWaiting()
                     ))
         self.ser.flushInput()
+
+    def drain(self):
+        """ Drain input. """
+        if self.debug:
+            sys.stderr.write("%s: DRAIN INPUT (%i bytes waiting)\n" %(
+                    self.__class__.__name__,
+                    self.ser.inWaiting()
+                    ))
+        old_timeout = self.ser.timeout
+        self.ser.timeout = 0.1
+        x = self.ser.read(1)
+        while len(x):
+            if self.debug:
+                sys.stderr.write("%s: DRAINED 0x%x (%c)\n" %(self.__class__.__name__, ord(x[0]), x[0]))
+            x = self.ser.read(1)
+        self.ser.timeout = old_timeout
+
+    def raw_device(self):
+        """ Get raw serial device. Only intended for test code/debugging! """
+        return self.ser;
 
     def __repr__(self):
         return '<%s instance at %s: %s - r:%i w:%i>' % (
