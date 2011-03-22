@@ -50,6 +50,10 @@ class SoS_Cmd_Secrets_Load(SoS_Cmd):
         self.public_id = public_id.ljust(defines.PUBLIC_ID_SIZE, chr(0x0))
         self.secrets = secrets
 
+        if len(self.public_id) != defines.PUBLIC_ID_SIZE:
+            raise exception.SoS_WrongInputSize(
+                'public_id', defines.PUBLIC_ID_SIZE, len(self.public_id))
+
         packed_secrets = secrets.pack()
         if len(packed_secrets) != defines.SOS_BLOCK_SIZE * 2:
             raise exception.SoS_WrongInputSize(
@@ -125,7 +129,7 @@ class SoS_Cmd_Blob_Generate(SoS_Cmd):
         #   SOS_BLOB blob;                      // Blob
         #   SOS_STATUS status;                  // Status
         # } SOS_BLOB_GENERATED_RESP;
-        public_id, rest = data[1:defines.PUBLIC_ID_SIZE], data[defines.PUBLIC_ID_SIZE + 1:]
+        public_id, rest = data[1:defines.PUBLIC_ID_SIZE + 1], data[defines.PUBLIC_ID_SIZE + 1:]
         key_handle = struct.unpack('<I', rest[:4])[0]
         blob = rest[4:-1]
         self.status = ord(rest[-1])
