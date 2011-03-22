@@ -20,6 +20,7 @@ import defines
 import exception
 
 import basic_cmd
+import debug_cmd
 import secrets_cmd
 import validate_cmd
 
@@ -122,3 +123,18 @@ class SoS():
             assert()
         return validate_cmd.SoS_Cmd_Blob_Validate_OTP( \
             self.stick, public_id, otp, key_handle, blob).execute()
+
+    #
+    # Debug/testing commands.
+    #
+    def monitor_exit(self):
+        """
+        Ask SoS to exit to configuration mode (requires 'debug' mode enabled).
+        """
+        return debug_cmd.SoS_Cmd_Monitor_Exit(self.stick).execute()
+
+    def get_raw_device(self):
+        """
+        Get the raw device. Only inteded for test code/debugging!
+        """
+        return self.stick.raw_device()

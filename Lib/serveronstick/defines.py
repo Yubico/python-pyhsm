@@ -28,7 +28,12 @@ __all__ = [
     'SOS_NULL',
     'SOS_ECHO',
     'SOS_SYSTEM_INFO_QUERY',
+    'SOS_SECRETS_GENERATE',
+    'SOS_SECRETS_LOAD',
+    'SOS_BLOB_GENERATE',
+    'SOS_OTP_BLOB_VALIDATE',
     'SOS_RANDOM_GENERATE',
+    'SOS_MONITOR_EXIT',
     ##
     'SoS_Status2String',
     # functions
@@ -67,6 +72,7 @@ SOS_BLOB_GENERATE	= 0x05
 SOS_OTP_BLOB_VALIDATE	= 0x09
 
 SOS_RANDOM_GENERATE	= 0x0b
+SOS_MONITOR_EXIT	= 0x7f
 
 SoS_Status2String = {0x80: 'SOS_STATUS_OK',
                      0x81: 'SOS_KEY_HANDLE_INVALID',

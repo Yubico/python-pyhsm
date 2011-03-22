@@ -15,6 +15,7 @@ __all__ = ["base"
            "yubikey"
            #
            "basic_cmd"
+           "debug_cmd"
            "secrets_cmd"
            "validate_cmd"
            ]
