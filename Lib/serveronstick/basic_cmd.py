@@ -82,7 +82,7 @@ class SoS_Cmd_Random(SoS_Cmd):
     Ask stick to generate a number of random bytes.
     """
     def __init__(self, stick, num_bytes):
-        packed = chr(bytes)
+        packed = chr(num_bytes)
         SoS_Cmd.__init__(self, stick, defines.SOS_RANDOM_GENERATE, packed)
         self.response_length = num_bytes + 2
 

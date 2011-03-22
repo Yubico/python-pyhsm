@@ -69,9 +69,7 @@ class SoS():
             raise exception.SoS_WrongInputType(
                 'num_bytes', type(1), type(num_bytes))
 
-        if type(bytes) is not int:
-            assert()
-        return basic_cmd.SoS_Cmd_Random(self.stick, bytes).execute()
+        return basic_cmd.SoS_Cmd_Random(self.stick, num_bytes).execute()
 
     #
     # Secrets/blob commands
