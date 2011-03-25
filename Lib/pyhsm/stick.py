@@ -1,5 +1,5 @@
 """
-module for actually talking to the Server on Stick
+module for actually talking to the YubiHSM
 """
 
 # Copyright (c) 2011, Yubico AB
@@ -19,15 +19,15 @@ import serial
 import sys
 import util
 
-class SoS_Stick():
+class YHSM_Stick():
     """
-    The current SoS is a USB device using serial communication.
+    The current YHSM is a USB device using serial communication.
 
     This class exposes the basic functions read, write and flush (input).
     """
     def __init__(self, device, timeout=1, debug=False):
         """
-        Open SoS device.
+        Open YHSM device.
         """
         self.debug = debug
         self.device = device
@@ -44,7 +44,7 @@ class SoS_Stick():
 
     def write(self, data):
         """
-        Write data to SoS device.
+        Write data to YHSM device.
         """
         self.num_write_bytes += len(data)
         if self.debug:
@@ -57,7 +57,7 @@ class SoS_Stick():
 
     def read(self, num_bytes):
         """
-        Read a number of bytes from SoS device.
+        Read a number of bytes from YubiHSM device.
         """
         if num_bytes < 1:
             return 0
@@ -118,7 +118,7 @@ class SoS_Stick():
 
     def __del__(self):
         """
-        Close device when SoS instance is destroyed.
+        Close device when YHSM instance is destroyed.
         """
         if self.debug:
             sys.stderr.write("%s: CLOSE %s\n" %(

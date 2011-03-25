@@ -1,7 +1,7 @@
 import os
 import sys
 import unittest
-import serveronstick
+import pyhsm
 
 import test_basics
 import test_otp_validate

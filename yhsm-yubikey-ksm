@@ -13,8 +13,8 @@ import argparse
 import syslog
 import re
 sys.path.append('Lib');
-import serveronstick
-import serveronstick.yubikey
+import pyhsm
+import pyhsm.yubikey
 import serial
 
 #default_device = "/dev/serial/by-id/usb-Yubico_Yubico_ServerOnStick_498F517E3932-if00"
@@ -28,7 +28,7 @@ sos = None
 args = None
 saved_key_handle = None
 
-class SoS_KSMRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
+class YHSM_KSMRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
     def do_GET(self):
         # Example session:
@@ -44,11 +44,11 @@ class SoS_KSMRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                 self.send_response(403, 'Invalid public_id')
                 return
 
-            public_id, otp = serveronstick.yubikey.split_id_otp(from_key)
+            public_id, otp = pyhsm.yubikey.split_id_otp(from_key)
 
             global saved_key_handle
             filename = blob_filename(args.blob_dir, saved_key_handle, public_id)
-            blob = serveronstick.secrets_cmd.SoS_GeneratedBlob(public_id, args.key_handle, '')
+            blob = pyhsm.secrets_cmd.YHSM_GeneratedBlob(public_id, args.key_handle, '')
             try:
                 blob.load(filename)
             except IOError:
@@ -57,12 +57,12 @@ class SoS_KSMRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                 return
 
             try:
-                res = serveronstick.yubikey.validate_yubikey_with_blob(sos, from_key, blob, args.key_handle)
+                res = pyhsm.yubikey.validate_yubikey_with_blob(sos, from_key, blob, args.key_handle)
                 # XXX double-check public_id in res, in case BaseHTTPServer suddenly becomes multi-threaded
                 # XXX fix use vs session counter confusion
                 val_res = "OK counter=%04x low=%04x high=%02x use=%02x" % \
                     (res.use_ctr, res.ts_low, res.ts_high, res.session_ctr)
-            except serveronstick.exception.SoS_Error, e:
+            except pyhsm.exception.YHSM_Error, e:
                 self.log_error ("IN: %s, Validate FAILED: %s" % (from_key, str(e)))
                 val_res = "ERR"
 
@@ -98,7 +98,7 @@ def blob_filename(blob_dir, key_handle, public_id):
     """
     Return the filename of the blob for this public_id.
     """
-    parts = [blob_dir, key_handle] + serveronstick.util.group(public_id, 2) + [public_id]
+    parts = [blob_dir, key_handle] + pyhsm.util.group(public_id, 2) + [public_id]
     return os.path.join(*parts)
 
 def parse_args():
@@ -109,14 +109,14 @@ def parse_args():
     global default_dir
     global default_serve_url
 
-    parser = argparse.ArgumentParser(description = "Generate secrets using Server on a Stick",
+    parser = argparse.ArgumentParser(description = "Generate secrets using YubiHSM",
                                      add_help=True
                                      )
     parser.add_argument('-D', '--device',
                         dest='device',
                         default=default_device,
                         required=False,
-                        help='Server-on-Stick device (default : "%s").' % default_device
+                        help='YubiHSM device (default : "%s").' % default_device
                         )
     parser.add_argument('-B', '--blob-dir',
                         dest='blob_dir',
@@ -161,7 +161,7 @@ def parse_args():
     parser.add_argument('--key-handle',
                         dest='key_handle',
                         required=True,
-                        help='Key handle to use to decrypt blobs on the SoS.'
+                        help='Key handle to use to decrypt blobs on the YHSM.'
                         )
 
     return parser.parse_args()
@@ -174,14 +174,14 @@ def args_fixup(args):
     global saved_key_handle
     saved_key_handle = args.key_handle
 
-    args.key_handle = serveronstick.util.key_handle_to_int(args.key_handle)
+    args.key_handle = pyhsm.util.key_handle_to_int(args.key_handle)
 
 
 def run(args):
     server_address = (args.listen_addr, args.listen_port)
-    httpd = BaseHTTPServer.HTTPServer(server_address, SoS_KSMRequestHandler)
+    httpd = BaseHTTPServer.HTTPServer(server_address, YHSM_KSMRequestHandler)
     global saved_key_handle
-    my_log_message(args, syslog.LOG_INFO, "Serving requests to 'http://%s:%s%s' with key handle %s/%s (SoS: '%s', blobs in '%s')" \
+    my_log_message(args, syslog.LOG_INFO, "Serving requests to 'http://%s:%s%s' with key handle %s/%s (YHSM: '%s', blobs in '%s')" \
                        % (args.listen_addr, args.listen_port, args.serve_url, saved_key_handle, args.key_handle, args.device, args.blob_dir))
     httpd.serve_forever()
 
@@ -193,7 +193,7 @@ def my_log_message(args, prio, msg):
 def main():
     my_name = os.path.basename(sys.argv[0])
     if not my_name:
-        my_name = "sos-yubikey-ksm"
+        my_name = "yhsm-yubikey-ksm"
     syslog.openlog(my_name, syslog.LOG_PID, syslog.LOG_LOCAL0)
 
     global args
@@ -202,9 +202,9 @@ def main():
 
     global sos
     try:
-        sos = serveronstick.SoS(device = args.device, debug = args.debug)
+        sos = pyhsm.YHSM(device = args.device, debug = args.debug)
     except serial.SerialException, e:
-        my_log_message(args, syslog.LOG_ERR, 'Failed opening SoS device "%s" : %s' %(args.device, e))
+        my_log_message(args, syslog.LOG_ERR, 'Failed opening YHSM device "%s" : %s' %(args.device, e))
         sys.exit(1)
 
     try:

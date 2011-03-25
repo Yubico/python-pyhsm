@@ -3,7 +3,7 @@ import sys
 import string
 import struct
 import unittest
-import serveronstick
+import pyhsm
 from Crypto.Cipher import AES
 
 import test_common
@@ -11,12 +11,12 @@ import test_common
 # Copyright (c) 2011, Yubico AB
 # All rights reserved.
 
-def validate_yubikey_with_blob(SoS, from_key, blob, key_handle):
+def validate_yubikey_with_blob(YHSM, from_key, blob, key_handle):
     """
     Try to validate an OTP from a YubiKey using the blob that can decrypt this YubiKey's
     internal secret, using the key_handle for the blob.
 
-    The parameter blob is either a string, or an instance of SoS_GeneratedBlob.
+    The parameter blob is either a string, or an instance of YHSM_GeneratedBlob.
     """
 
     try:
@@ -26,13 +26,13 @@ def validate_yubikey_with_blob(SoS, from_key, blob, key_handle):
         pass
 
     if type(from_key) is not str:
-        raise exception.SoS_WrongInputType(
+        raise exception.YHSM_WrongInputType(
             'from_key', type(''), type(from_key))
     if type(blob) is not str:
-        raise exception.SoS_WrongInputType(
+        raise exception.YHSM_WrongInputType(
             'blob', type(''), type(blob))
     if type(key_handle) is not int:
-        raise exception.SoS_WrongInputType(
+        raise exception.YHSM_WrongInputType(
             'key_handle', type(1), type(key_handle))
 
     if len(blob) == 48 * 2:
@@ -43,7 +43,7 @@ def validate_yubikey_with_blob(SoS, from_key, blob, key_handle):
     public_id = modhex_decode(public_id)
     otp = modhex_decode(otp)
 
-    return SoS.validate_blob_otp(public_id.decode('hex'), otp.decode('hex'), key_handle, blob)
+    return YHSM.validate_blob_otp(public_id.decode('hex'), otp.decode('hex'), key_handle, blob)
 
 
 def modhex_decode(data):
@@ -74,9 +74,9 @@ class YubiKeyEmu():
     """
 
     def __init__(self, user_id, session_counter, timestamp, session_use):
-        if len(user_id) != serveronstick.defines.UID_SIZE:
-            raise serveronstick.exception.SoS_WrongInputSize(
-                'user_id', serveronstick.defines.UID_SIZE, len(user_id))
+        if len(user_id) != pyhsm.defines.UID_SIZE:
+            raise pyhsm.exception.YHSM_WrongInputSize(
+                'user_id', pyhsm.defines.UID_SIZE, len(user_id))
 
         self.user_id = user_id
         self.session_counter = session_counter
@@ -139,7 +139,7 @@ def crc16(data):
 class TestYubikeyValidate(test_common.YHSM_TestCase):
 
     def setUp(self):
-        self.hsm = serveronstick.base.SoS(device = "/dev/ttyACM0", debug = False)
+        self.hsm = pyhsm.base.YHSM(device = "/dev/ttyACM0", debug = False)
 
         # Check that this is a device we know how to talk to
         assert(self.hsm.info().protocolVersion == 1)
@@ -149,7 +149,7 @@ class TestYubikeyValidate(test_common.YHSM_TestCase):
         self.yk_rnd = YubiKeyRnd(self.yk_uid)
         self.yk_public_id = '4d4d4d4d4d4d'.decode('hex')
 
-        secret = serveronstick.secrets_cmd.SoS_Secrets(self.yk_key, self.yk_uid)
+        secret = pyhsm.secrets_cmd.YHSM_Secrets(self.yk_key, self.yk_uid)
         self.hsm.load_secret(self.yk_public_id, secret)
 
         #self.kh_generate = 0x06		# key handle 0x9 is allowed to generate blobs

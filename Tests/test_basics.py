@@ -1,6 +1,6 @@
 import sys
 import unittest
-import serveronstick
+import pyhsm
 
 import test_common
 

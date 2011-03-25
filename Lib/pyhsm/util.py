@@ -39,7 +39,7 @@ def key_handle_to_int(this):
     Turn "123" into 123 and "KSM1" into 827151179
     (0x314d534b, 'K' = 0x4b, S = '0x53', M = 0x4d).
 
-    SoS is little endian, so this makes the bytes KSM1 appear
+    YHSM is little endian, so this makes the bytes KSM1 appear
     in the most human readable form in packet traces.
     """
     try:

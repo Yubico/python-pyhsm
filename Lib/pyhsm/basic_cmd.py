@@ -1,5 +1,5 @@
 """
-implementations of basic commands to execute on a Server on Stick
+implementations of basic commands to execute on a YubiHSM
 
 """
 # Copyright (c) 2011, Yubico AB
@@ -12,32 +12,32 @@ __all__ = [
     # constants
     # functions
     # classes
-    'SoS_Cmd_Echo',
-    'SoS_Cmd_System_Info',
-    'SoS_Cmd_Random',
+    'YHSM_Cmd_Echo',
+    'YHSM_Cmd_System_Info',
+    'YHSM_Cmd_Random',
 ]
 
-from cmd import SoS_Cmd
+from cmd import YHSM_Cmd
 
-class SoS_Cmd_Echo(SoS_Cmd):
+class YHSM_Cmd_Echo(YHSM_Cmd):
     """
     Send something to the stick, and expect to get it echoed back.
     """
     def __init__(self, stick, payload=''):
         packed = chr(len(payload)) + payload
-        SoS_Cmd.__init__(self, stick, defines.SOS_ECHO, packed)
+        YHSM_Cmd.__init__(self, stick, defines.YHSM_ECHO, packed)
         self.response_length = len(payload) + 2
 
     def parse_result(self, data):
         return data[2:]
 
 
-class SoS_Cmd_System_Info(SoS_Cmd):
+class YHSM_Cmd_System_Info(YHSM_Cmd):
     """
     Request system information from the stick.
     """
     def __init__(self, stick):
-        SoS_Cmd.__init__(self, stick, defines.SOS_SYSTEM_INFO_QUERY)
+        YHSM_Cmd.__init__(self, stick, defines.YHSM_SYSTEM_INFO_QUERY)
         self.version_major = 0
         self.version_minor = 0
         self.version_build = 0
@@ -68,7 +68,7 @@ class SoS_Cmd_System_Info(SoS_Cmd):
         #   uint8_t version_build;               // Build version #
         #   uint8_t protocolVersion;            // Protocol version #
         #   uint8_t systemUid[SYSTEM_ID_SIZE];  // System unique identifier
-        # } SOS_SYSTEM_INFO_RESP;
+        # } YHSM_SYSTEM_INFO_RESP;
         self.version_major, \
             self.version_minor, \
             self.version_build, \
@@ -77,12 +77,11 @@ class SoS_Cmd_System_Info(SoS_Cmd):
         return self
 
 
-class SoS_Cmd_Random(SoS_Cmd):
+class YHSM_Cmd_Random(YHSM_Cmd):
     """
     Ask stick to generate a number of random bytes.
     """
     def __init__(self, stick, num_bytes):
         packed = chr(num_bytes)
-        SoS_Cmd.__init__(self, stick, defines.SOS_RANDOM_GENERATE, packed)
+        YHSM_Cmd.__init__(self, stick, defines.YHSM_RANDOM_GENERATE, packed)
         self.response_length = num_bytes + 2
-

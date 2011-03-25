@@ -1,18 +1,19 @@
 #!/usr/bin/env python
 #
-# Tool to generate secret keys using Server on a Stick
+# Tool to import YubiKey secrets to YubiHSM
 #
 # Copyright (c) 2011, Yubico AB
 # All rights reserved.
 #
 
 import os
+import re
 import sys
 import struct
 import argparse
 sys.path.append('Lib');
-import serveronstick
-import serveronstick.yubikey
+import pyhsm
+import pyhsm.yubikey
 
 #default_device = "/dev/serial/by-id/usb-Yubico_Yubico_ServerOnStick_498F517E3932-if00"
 default_device = "/dev/ttyACM0"
@@ -23,14 +24,14 @@ def parse_args():
     """
     global default_device
 
-    parser = argparse.ArgumentParser(description = "Generate secrets using Server on a Stick",
+    parser = argparse.ArgumentParser(description = "Generate secrets using YubiHSM",
                                      add_help=True
                                      )
     parser.add_argument('-D', '--device',
                         dest='device',
                         default=default_device,
                         required=False,
-                        help='Server-on-Stick device (default : %s).' % default_device
+                        help='YubiHSM device (default : %s).' % default_device
                         )
     parser.add_argument('-O', '--output-dir',
                         dest='output_dir',
@@ -38,16 +39,15 @@ def parse_args():
                         required=False,
                         help='Output directory.'
                         )
-    parser.add_argument('-c', '--count',
-                        dest='count',
-                        type=int, default=1,
-                        required=False,
-                        help='Number of secrets to generate.'
-                        )
     parser.add_argument('-v', '--verbose',
                         dest='verbose',
                         action='store_true', default=False,
                         help='Enable verbose operation.'
+                        )
+    parser.add_argument('--debug',
+                        dest='debug',
+                        action='store_true', default=False,
+                        help='Enable debug operation.'
                         )
     parser.add_argument('--public-id-chars',
                         dest='public_id_chars',
@@ -61,11 +61,6 @@ def parse_args():
                         required=True,
                         help='Key handles to encrypt the generated secrets with.'
                         )
-    parser.add_argument('--start-public-id',
-                        dest='start_id',
-                        required=True,
-                        help='Key handles to encrypt the generated secrets with.'
-                        )
 
     return parser.parse_args()
 
@@ -75,14 +70,6 @@ def args_fixup(args):
         sys.exit(1)
 
     keyhandles_fixup(args)
-
-    try:
-        n = int(args.start_id)
-    except ValueError:
-        hexstr = serveronstick.yubikey.modhex_decode(args.start_id)
-        n = int(hexstr, 16)
-
-    args.start_id = n
 
 
 def keyhandles_fixup(args):
@@ -94,43 +81,48 @@ def keyhandles_fixup(args):
     new_handles = {}
     for val in args.key_handles:
         for this in val.split(','):
-            n = serveronstick.util.key_handle_to_int(this)
+            n = pyhsm.util.key_handle_to_int(this)
             new_handles[n] = this
 
     args.key_handles = new_handles
 
 
-def gen_keys(sos, args):
+def import_keys(sos, args):
     """
-    The main key generating loop.
+    The main stdin iteration loop.
     """
 
-    if args.verbose:
-        print "Generating %i keys :\n" % (args.count)
-    else:
-        print "Generating %i keys" % (args.count)
+    # ykksm 1
+    #123456,ftftftcccc,534543524554,fcacd309a20ce1809c2db257f0e8d6ea,000000000000,,,
 
-    for int_id in range(args.start_id, args.start_id + args.count):
-        public_id = "%x" % int_id
-        modhex_id = serveronstick.yubikey.modhex_encode(public_id)
-        padded_id = modhex_id.rjust(args.public_id_chars, 'c')
+    for line in sys.stdin:
+        l = line.split(',')
+        modhex_id = l[1]
+        uid = l[2].decode('hex')
+        key = l[3].decode('hex')
+
+        if modhex_id and uid and key:
+            public_id = pyhsm.yubikey.modhex_decode(modhex_id)
+            padded_id = modhex_id.rjust(args.public_id_chars, 'c')
 
         if args.verbose:
             print "  %s" % (padded_id)
 
-        sos.generate_secret(public_id)
-        for kh in args.key_handles.keys():
-            blob = sos.generate_blob(kh)
+        secret = pyhsm.secrets_cmd.YHSM_Secrets(key, uid)
+        #print "FREDRIK: LOAD SECRET PUBLIC_ID %s SECRET %s,%s" %(public_id, secret.uid.encode('hex'), secret.key.encode('hex'))
+        sos.load_secret(public_id.decode('hex'), secret)
 
+        for kh in args.key_handles.keys():
+            #print "FREDRIK: GENERATING SECRET FOR KEY HANDLE %x" %(kh)
+            blob = sos.generate_blob(kh)
+            #print "FREDRIK: KH %s BLOB %s" % (kh, blob.blob.encode('hex'))
             filename = output_filename(args.output_dir, args.key_handles[kh], padded_id)
 
             if args.verbose:
                 print "    %4s, %i bytes (%s) -> %s" % \
                     (args.key_handles[kh], len(blob.blob), shorten_blob(blob), filename)
 
-            f = open(filename, "w")
-            f.write(blob.blob)
-            f.close()
+            blob.save(filename)
 
         if args.verbose:
             print ""
@@ -142,12 +134,13 @@ def shorten_blob(blob):
     tail = blob.blob[-4:].encode('hex')
     return "%s...%s" % (head, tail)
 
+
 def output_filename(output_dir, key_handle, public_id):
     """
     Return an output filename for a generated blob. Creates a hashed directory structure
     using the last three bytes of the public id to get equal usage.
     """
-    parts = [output_dir, key_handle] + serveronstick.util.group(public_id, 2)
+    parts = [output_dir, key_handle] + pyhsm.util.group(public_id, 2)
     path = os.path.join(*parts)
 
     if not os.path.isdir(path):
@@ -161,16 +154,18 @@ def main():
 
     args_fixup(args)
 
+    if sys.stdin.readline() != "# ykksm 1\n":
+        sys.stderr.write("Did not get '# ykksm 1' header as first line of input.\n")
+        sys.exit(1)
+
     print "output dir		: %s" % (args.output_dir)
-    print "keys to generate	: %s" % (args.count)
     print "key handles		: %s" % (args.key_handles)
-    print "start public_id		: %s (0x%x)" % (args.start_id, args.start_id)
-    print "SoS device		: %s" % (args.device)
+    print "YHSM device		: %s" % (args.device)
     print ""
 
-    sos = serveronstick.SoS(device = args.device)
+    sos = pyhsm.YHSM(device = args.device, debug=args.debug)
 
-    gen_keys(sos, args)
+    import_keys(sos, args)
 
 
 if __name__ == '__main__':

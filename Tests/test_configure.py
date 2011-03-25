@@ -1,8 +1,8 @@
 import sys
 import time
 import unittest
-import serveronstick
-import serveronstick.util
+import pyhsm
+import pyhsm.util
 
 import test_common
 
@@ -82,7 +82,7 @@ class ConfigureYubiHSMforTest(test_common.YHSM_TestCase):
 
         # Set up some extra keys with the same key as the flag-keys, but other flags
 
-        # flags SOS_OTP_BLOB_VALIDATE (0x200) matching key 0x06 (with flags 0x20, SOS_BLOB_GENERATE)
+        # flags YHSM_OTP_BLOB_VALIDATE (0x200) matching key 0x06 (with flags 0x20, YHSM_BLOB_GENERATE)
         flags = 0x200
         key = "06" * 32
         self.add_key(flags, 0x1000, key)

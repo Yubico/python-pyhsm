@@ -1,5 +1,5 @@
 """
-common exceptions for the serveronstick package
+common exceptions for the pyhsm package
 """
 # Copyright (c) 2011, Yubico AB
 # All rights reserved.
@@ -10,15 +10,15 @@ __all__ = [
     # constants
     # functions
     # classes
-    'SoS_Error',
-    'SoS_WrongInputSize',
-    'SoS_WrongInputType',
-    'SoS_CommandFailed'
+    'YHSM_Error',
+    'YHSM_WrongInputSize',
+    'YHSM_WrongInputType',
+    'YHSM_CommandFailed'
 ]
 
-class SoS_Error(Exception):
+class YHSM_Error(Exception):
     """
-    Base class for SoS exceptions in this package.
+    Base class for YHSM exceptions in this package.
 
     Attributes:
         reason -- explanation of the error
@@ -35,32 +35,32 @@ class SoS_Error(Exception):
             self.reason
             )
 
-class SoS_WrongInputSize(SoS_Error):
+class YHSM_WrongInputSize(YHSM_Error):
     """
     Exception raised for errors in the size of an argument to some function.
     """
     def __init__(self, name, expected, size):
         reason = "Bad size of argument '%s', expected %i got %i" % (name, expected, size)
-        SoS_Error.__init__(self, reason)
+        YHSM_Error.__init__(self, reason)
 
-class SoS_WrongInputType(SoS_Error):
+class YHSM_WrongInputType(YHSM_Error):
     """
     Exception raised for errors in the type of an argument to some function.
     """
     def __init__(self, name, expected, name_type):
         reason = "Bad type of argument '%s', expected %s got %s" % (name, expected, name_type)
-        SoS_Error.__init__(self, reason)
+        YHSM_Error.__init__(self, reason)
 
-class SoS_CommandFailed(SoS_Error):
+class YHSM_CommandFailed(YHSM_Error):
     """
-    Exception raised when a command sent to the SoS returned an error.
+    Exception raised when a command sent to the YubiHSM returned an error.
     """
     def __init__(self, name, status):
         self.status = status
-        if status in defines.SoS_Status2String:
-            self.status_str = defines.SoS_Status2String[status]
+        if status in defines.YHSM_Status2String:
+            self.status_str = defines.YHSM_Status2String[status]
         else:
             self.status_str = "0x%x" % (status)
 
         reason = "Command %s failed: %s" % (name, self.status_str)
-        SoS_Error.__init__(self, reason)
+        YHSM_Error.__init__(self, reason)

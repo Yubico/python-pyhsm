@@ -6,16 +6,14 @@ from setuptools import setup, find_packages
 import sys
 sys.path.append('Tests');
 
-setup(name		= 'python-serveronstick',
+setup(name		= 'pyhsm',
       version		= '0.9.0pre1',
       description	= 'Python code for talking to a YubiHSM',
       author		= 'Fredrik Thulin',
       author_email	= 'fredrik@yubico.com',
       url		= 'http://www.yubico.com/',
       license		= 'BSD',
-      packages		= ['serveronstick'],
+      packages		= ['pyhsm'],
       package_dir	= {'': 'Lib'},
-      #tests_require	= "nose >=0.10.0b1",
-      #test_suite	= "nose.collector",
       test_suite	= "test_init.suite"
      )

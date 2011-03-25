@@ -8,7 +8,7 @@
 
 import sys
 sys.path.append('Lib');
-import serveronstick
+import pyhsm
 
 device = "/dev/ttyACM0"
 
@@ -22,10 +22,10 @@ if d_argv.has_key('-h'):
 
 res = 0
 try:
-    s = serveronstick.base.SoS(device=device, debug=debug)
+    s = pyhsm.base.YHSM(device=device, debug=debug)
 
     print "Version: %s" % s.info()
-except serveronstick.exception.SoS_Error, e:
+except pyhsm.exception.YHSM_Error, e:
     print "ERROR: %s" % e
     res = 1
 

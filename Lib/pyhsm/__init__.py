@@ -1,5 +1,5 @@
 """
-the server-on-stick package
+the pyhsm package
 """
 # Copyright (c) 2011, Yubico AB
 # All rights reserved.
@@ -20,4 +20,4 @@ __all__ = ["base"
            "validate_cmd"
            ]
 
-from base import SoS
+from base import YHSM

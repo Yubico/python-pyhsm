@@ -1,5 +1,5 @@
 """
-implementations of validation commands for Server on Stick
+implementations of validation commands for YubiHSM
 
 """
 # Copyright (c) 2011, Yubico AB
@@ -13,26 +13,26 @@ __all__ = [
     # constants
     # functions
     # classes
-    'SoS_Cmd_Blob_Validate',
+    'YHSM_Cmd_Blob_Validate',
 ]
 
-from cmd import SoS_Cmd
+from cmd import YHSM_Cmd
 
-class SoS_Cmd_Blob_Validate_OTP(SoS_Cmd):
+class YHSM_Cmd_Blob_Validate_OTP(YHSM_Cmd):
     """
     Request the stick to validate an OTP using an externally stored
     blob and a keyhandle to decrypt that blob.
     """
     def __init__(self, stick, public_id, otp, key_handle, blob):
         if len(public_id) > defines.PUBLIC_ID_SIZE:
-            raise exception.SoS_WrongInputSize(
+            raise exception.YHSM_WrongInputSize(
                 'public_id', defines.PUBLIC_ID_SIZE, len(public_id))
         if len(otp) != defines.OTP_SIZE:
-            raise exception.SoS_WrongInputSize(
+            raise exception.YHSM_WrongInputSize(
                 'otp', defines.OTP_SIZE, len(otp))
-        if len(blob) != defines.BLOB_KEY_SIZE + defines.SOS_BLOCK_SIZE:
-            raise exception.SoS_WrongInputSize(
-                'blob', defines.BLOB_KEY_SIZE + defines.SOS_BLOCK_SIZE, len(blob))
+        if len(blob) != defines.BLOB_KEY_SIZE + defines.YHSM_BLOCK_SIZE:
+            raise exception.YHSM_WrongInputSize(
+                'blob', defines.BLOB_KEY_SIZE + defines.YHSM_BLOCK_SIZE, len(blob))
 
         # store padded public_id for comparision in parse_result
         self.public_id = public_id.ljust(defines.PUBLIC_ID_SIZE, chr(0x0))
@@ -41,7 +41,7 @@ class SoS_Cmd_Blob_Validate_OTP(SoS_Cmd):
         self.response = None
         self.status = None
         packed = self.public_id + otp + struct.pack('<I', self.key_handle) + blob
-        SoS_Cmd.__init__(self, stick, defines.SOS_OTP_BLOB_VALIDATE, packed)
+        YHSM_Cmd.__init__(self, stick, defines.YHSM_OTP_BLOB_VALIDATE, packed)
         self.response_length = 14
 
     def __repr__(self):
@@ -66,11 +66,11 @@ class SoS_Cmd_Blob_Validate_OTP(SoS_Cmd):
         #   uint8_t session_ctr;                 // Session counter
         #   uint8_t tstph;                                      // Timestamp (high part)
         #   uint16_t tstpl;                                     // Timestamp (low part)
-        #   SOS_STATUS status;                  // Validation status
-        # } SOS_OTP_BLOB_VALIDATED_RESP;
+        #   YHSM_STATUS status;                  // Validation status
+        # } YHSM_OTP_BLOB_VALIDATED_RESP;
         this_public_id, rest = data[1:defines.PUBLIC_ID_SIZE + 1], data[defines.PUBLIC_ID_SIZE + 1:]
         if this_public_id != self.public_id:
-            raise exception.SoS_Error('Bad public_id in response (%s != %s)' %
+            raise exception.YHSM_Error('Bad public_id in response (%s != %s)' %
                                       (this_public_id.encode('hex'), self.public_id.encode('hex')))
 
         use_ctr, \
@@ -79,14 +79,14 @@ class SoS_Cmd_Blob_Validate_OTP(SoS_Cmd):
             ts_low, \
             self.status = struct.unpack('HBBHB', rest)
 
-        if self.status == defines.SOS_STATUS_OK:
-            self.response = SoS_ValidationResult(self.public_id, use_ctr, session_ctr, ts_high, ts_low)
+        if self.status == defines.YHSM_STATUS_OK:
+            self.response = YHSM_ValidationResult(self.public_id, use_ctr, session_ctr, ts_high, ts_low)
             return self.response
         else:
-            raise exception.SoS_CommandFailed('SOS_OTP_BLOB_VALIDATE', self.status)
+            raise exception.YHSM_CommandFailed('YHSM_OTP_BLOB_VALIDATE', self.status)
 
 
-class SoS_ValidationResult():
+class YHSM_ValidationResult():
     """
     The result of a Validate operation.
 
