@@ -80,12 +80,17 @@ class ConfigureYubiHSMforTest(test_common.YHSM_TestCase):
             key = ("%02x" % (num + 1)) * 32
             self.add_key(flags, num + 1, key)
 
-        # Set up some extra keys with the same key as the flag-keys, but other flags -
+        # Set up some extra keys with the same key as the flag-keys, but other flags
 
-        # flags SOS_OTP_BLOB_VALIDATE (0x200) matching key 0x09 (with flags 0x100, SOS_BLOB_STORE)
+        # flags SOS_OTP_BLOB_VALIDATE (0x200) matching key 0x06 (with flags 0x20, SOS_BLOB_GENERATE)
         flags = 0x200
-        key = "09" * 32
+        key = "06" * 32
         self.add_key(flags, 0x1000, key)
+
+        # Key with everything enabled at once
+        flags = 0xffffffff
+        key = "2000" * 16
+        self.add_key(flags, 0x2000, key)
 
     def add_key(self, flags, num, key):
         keyline = "%x,%s\r" % (num, key)

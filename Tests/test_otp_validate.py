@@ -7,7 +7,7 @@ import test_common
 class TestOtpValidate(test_common.YHSM_TestCase):
 
     def setUp(self):
-        self.hsm = serveronstick.base.SoS(device = "/dev/ttyACM0", debug = True)
+        self.hsm = serveronstick.base.SoS(device = "/dev/ttyACM0", debug = False)
 
         # Check that this is a device we know how to talk to
         assert(self.hsm.info().protocolVersion == 1)
