@@ -62,7 +62,10 @@ YHSM_ID_NOT_FOUND        = 0x86    # The supplied public ID was not found in the
 YHSM_DB_FULL             = 0x87    # The database storage is full
 YHSM_MEMORY_ERROR        = 0x88    # Memory read/write error
 YHSM_FUNCTION_DISABLED   = 0x89    # Funciton disabled via attribute(s)
+YHSM_KEY_STORAGE_LOCKED  = 0x8a    # Key storage locked
+YHSM_MISMATCH            = 0x8b    # Verification mismatch
 
+# Commands
 YHSM_NULL		= 0x00
 YHSM_ECHO		= 0x01
 YHSM_SYSTEM_INFO_QUERY	= 0x02
@@ -72,6 +75,10 @@ YHSM_BLOB_GENERATE	= 0x05
 YHSM_OTP_BLOB_VALIDATE	= 0x09
 
 YHSM_RANDOM_GENERATE	= 0x0b
+YHSM_ECB_BLOCK_ENCRYPT	= 0x0c
+YHSM_ECB_BLOCK_DECRYPT	= 0x0d
+YHSM_ECB_BLOCK_COMPARE	= 0x0e
+
 YHSM_MONITOR_EXIT	= 0x7f
 
 YHSM_Status2String = {0x80: 'YHSM_STATUS_OK',
@@ -84,4 +91,6 @@ YHSM_Status2String = {0x80: 'YHSM_STATUS_OK',
                      0x87: 'YHSM_DB_FULL',
                      0x88: 'YHSM_MEMORY_ERROR',
                      0x89: 'YHSM_FUNCTION_DISABLED',
+                     0x8a: 'YHSM_KEY_STORAGE_LOCKED',
+                     0x8b: 'YHSM_MISMATCH'
                      }

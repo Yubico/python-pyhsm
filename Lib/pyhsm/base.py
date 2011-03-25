@@ -19,6 +19,7 @@ import util
 import defines
 import exception
 
+import aes_ecb_cmd
 import basic_cmd
 import debug_cmd
 import secrets_cmd
@@ -144,3 +145,27 @@ class YHSM():
         Read until there is nothing more to be read. Only inteded for test code/debugging!
         """
         return self.stick.drain()
+
+    #
+    # AES ECB commands
+    #
+    def aes_ecb_encrypt(self, key_handle, plaintext):
+        """
+        AES ECB encrypt using a key handle.
+        """
+        return aes_ecb_cmd.YHSM_Cmd_AES_ECB_Encrypt( \
+            self.stick, key_handle, plaintext).execute()
+
+    def aes_ecb_decrypt(self, key_handle, ciphertext):
+        """
+        AES ECB decrypt using a key handle.
+        """
+        return aes_ecb_cmd.YHSM_Cmd_AES_ECB_Decrypt( \
+            self.stick, key_handle, ciphertext).execute()
+
+    def aes_ecb_compare(self, key_handle, ciphertext, plaintext):
+        """
+        AES ECB decrypt and then compare using a key handle.
+        """
+        return aes_ecb_cmd.YHSM_Cmd_AES_ECB_Compare( \
+            self.stick, key_handle, ciphertext, plaintext).execute()

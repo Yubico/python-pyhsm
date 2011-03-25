@@ -3,11 +3,13 @@ import sys
 import unittest
 import pyhsm
 
+import test_aes_ecb
 import test_basics
 import test_otp_validate
 import test_yubikey_validate
 
-test_modules = [test_basics,
+test_modules = [test_aes_ecb,
+                test_basics,
                 test_otp_validate,
                 test_yubikey_validate,
                 ]

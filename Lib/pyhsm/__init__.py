@@ -14,6 +14,7 @@ __all__ = ["base"
            "util"
            "yubikey"
            #
+           "aes_ecb_cmd"
            "basic_cmd"
            "debug_cmd"
            "secrets_cmd"

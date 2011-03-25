@@ -87,6 +87,12 @@ class ConfigureYubiHSMforTest(test_common.YHSM_TestCase):
         key = "06" * 32
         self.add_key(flags, 0x1000, key)
 
+        # Key with full AES ECB capabilities
+        # Enabled flags 00007000 = YHSM_ECB_BLOCK_ENCRYPT,YHSM_ECB_BLOCK_DECRYPT,YHSM_ECB_BLOCK_DECRYPT_CMP
+        flags = 0x7000
+        key = "1001" * 16
+        self.add_key(flags, 0x1001, key)
+
         # Key with everything enabled at once
         flags = 0xffffffff
         key = "2000" * 16
