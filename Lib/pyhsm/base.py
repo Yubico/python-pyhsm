@@ -22,6 +22,7 @@ import exception
 import aes_ecb_cmd
 import basic_cmd
 import debug_cmd
+import hmac_cmd
 import secrets_cmd
 import validate_cmd
 
@@ -169,3 +170,13 @@ class YHSM():
         """
         return aes_ecb_cmd.YHSM_Cmd_AES_ECB_Compare( \
             self.stick, key_handle, ciphertext, plaintext).execute()
+
+    #
+    # HMAC commands
+    #
+    def hmac_sha1(self, key_handle, data, final = True):
+        """
+        Have the YubiHSM generate a HMAC SHA1 of 'data' using a key handle.
+        """
+        return hmac_cmd.YHSM_Cmd_HMAC_SHA1_Write( \
+            self.stick, key_handle, data, final = final)

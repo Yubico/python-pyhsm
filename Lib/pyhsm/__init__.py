@@ -17,6 +17,7 @@ __all__ = ["base"
            "aes_ecb_cmd"
            "basic_cmd"
            "debug_cmd"
+           "hmac_cmd"
            "secrets_cmd"
            "validate_cmd"
            ]

@@ -33,6 +33,7 @@ __all__ = [
     'YHSM_BLOB_GENERATE',
     'YHSM_OTP_BLOB_VALIDATE',
     'YHSM_RANDOM_GENERATE',
+    'YHSM_HMAC_SHA1_WRITE',
     'YHSM_MONITOR_EXIT',
     ##
     'YHSM_Status2String',
@@ -65,6 +66,10 @@ YHSM_FUNCTION_DISABLED   = 0x89    # Funciton disabled via attribute(s)
 YHSM_KEY_STORAGE_LOCKED  = 0x8a    # Key storage locked
 YHSM_MISMATCH            = 0x8b    # Verification mismatch
 
+# HMAC flags
+YHSM_HMAC_RESET		= 0x01     # Flag to indicate reset at first packet
+YHSM_HMAC_FINAL		= 0x02     # Flag to indicate that the hash shall be calculated
+
 # Commands
 YHSM_NULL		= 0x00
 YHSM_ECHO		= 0x01
@@ -78,7 +83,7 @@ YHSM_RANDOM_GENERATE	= 0x0b
 YHSM_ECB_BLOCK_ENCRYPT	= 0x0c
 YHSM_ECB_BLOCK_DECRYPT	= 0x0d
 YHSM_ECB_BLOCK_COMPARE	= 0x0e
-
+YHSM_HMAC_SHA1_WRITE	= 0x0f
 YHSM_MONITOR_EXIT	= 0x7f
 
 YHSM_Status2String = {0x80: 'YHSM_STATUS_OK',

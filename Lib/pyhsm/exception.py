@@ -12,6 +12,7 @@ __all__ = [
     # classes
     'YHSM_Error',
     'YHSM_WrongInputSize',
+    'YHSM_WrongInputTooLong',
     'YHSM_WrongInputType',
     'YHSM_CommandFailed'
 ]
@@ -41,6 +42,14 @@ class YHSM_WrongInputSize(YHSM_Error):
     """
     def __init__(self, name, expected, size):
         reason = "Bad size of argument '%s', expected %i got %i" % (name, expected, size)
+        YHSM_Error.__init__(self, reason)
+
+class YHSM_InputTooLong(YHSM_Error):
+    """
+    Exception raised for too long input to some function.
+    """
+    def __init__(self, name, expected, size):
+        reason = "Argument '%s' too long, expected less than %i got %i" % (name, expected, size)
         YHSM_Error.__init__(self, reason)
 
 class YHSM_WrongInputType(YHSM_Error):
