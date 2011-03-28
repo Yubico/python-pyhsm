@@ -81,12 +81,12 @@ class YHSM_Cmd_Random(YHSM_Cmd):
     """
     def __init__(self, stick, num_bytes):
         packed = chr(num_bytes)
-        YHSM_Cmd.__init__(self, stick, defines.YHSM_RANDOM_GET, packed)
+        YHSM_Cmd.__init__(self, stick, defines.YHSM_RANDOM_GENERATE, packed)
 
     def parse_result(self, data):
         # typedef struct {
         #   uint8_t numBytes;                   // Number of bytes generated
         #   uint8_t rnd[YSM_MAX_PKT_SIZE - 1];  // Random data
-        # } YSM_RANDOM_GET_RESP;
+        # } YHSM_RANDOM_GENERATE_RESP;
         num_bytes = ord(data[0])
         return data[1:num_bytes]
