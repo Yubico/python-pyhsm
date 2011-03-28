@@ -76,13 +76,20 @@ class YHSM_Cmd_HMAC_SHA1_Write(YHSM_Cmd):
     def parse_result(self, data):
         # typedef struct {
         #   uint32_t keyHandle;                 // Key handle
-        #   uint8_t hash[20];                   // Hash output (if applicable)
-        #   YHSM_STATUS status;                  // Status
+        #   YHSM_STATUS status;                 // Status
+        #   uint8_t numBytes;                   // Number of bytes in hash output
+        #   uint8_t hash[SHA1_HASH_SIZE];       // Hash output (if applicable)
         # } YHSM_HMAC_SHA1_GENERATE_RESP;
         key_handle, \
-            sha1, \
-            self.status = struct.unpack('<I20sB', data)
+             self.status, \
+             num_bytes = struct.unpack_from('<IBB', data, 0)
         if self.status == defines.YHSM_STATUS_OK:
+            # struct.hash is not always of size SHA1_HASH_SIZE,
+            # it is really the size of numBytes
+            if num_bytes:
+                sha1 = data[6:6 + num_bytes]
+            else:
+                sha1 = '\x00' * defines.SHA1_HASH_SIZE
             self.response = YHSM_GeneratedHMACSHA1(key_handle, sha1, self.final)
             return self.response
         else:
