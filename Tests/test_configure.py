@@ -108,7 +108,7 @@ class ConfigureYubiHSMforTest(test_common.YHSM_TestCase):
         self.add_key(flags, 0x3031, key)
 
     def add_key(self, flags, num, key):
-        keyline = "%x,%s\r" % (num, key)
+        keyline = "%08x,%s\r" % (num, key)
         self.config_do("flags %04x" % (flags))
         escape_char = chr(27)
         self.config_do("keyload\r" + keyline + escape_char, add_cr = False)
