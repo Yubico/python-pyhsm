@@ -9,7 +9,7 @@ __all__ = [
     'PUBLIC_ID_SIZE',
     'OTP_SIZE',
     'YHSM_BLOCK_SIZE',
-    'BLOB_KEY_SIZE',
+    'YHSM_MAX_KEY_SIZE',
     'UID_SIZE',
     'KEY_SIZE',
     ## statuses
@@ -39,21 +39,27 @@ __all__ = [
     'YHSM_Status2String',
     # functions
     'cmd2str',
+    'status2str'
     # classes
 ]
 
-PUBLIC_ID_SIZE	= 6	# Size of public id for std OTP validation
-OTP_SIZE	= 16	# Size of OTP
-YHSM_BLOCK_SIZE	= 16	# Size of block operations
-BLOB_KEY_SIZE	= 32	# Size of blob key
-
+PUBLIC_ID_SIZE		= 6	# Size of public id for std OTP validation
+OTP_SIZE		= 16	# Size of OTP
+YHSM_BLOCK_SIZE		= 16	# Size of block operations
+YHSM_MAX_KEY_SIZE	= 32	# Max size of CCMkey
+YHSM_AEAD_MAC_SIZE	= 8	# Size of AEAD MAC field
+SHA1_HASH_SIZE		= 20	# 160-bit SHA1 hash size
+YHSM_DATA_BUF_SIZE	= 64	# Size of internal data buffer
+YHSM_AEAD_NONCE_SIZE	= 6	# Size of AEAD nonce (excluding size of key handle)
 # these two are in ykdef.h
 UID_SIZE	= 6
 KEY_SIZE	= 16
 
 YHSM_RESPONSE		= 0x80    # Response bit
 YHSM_MAX_PKT_SIZE	= 0x60    # Max size of a packet (excluding command byte)
+YUBIKEY_AEAD_SIZE	= (KEY_SIZE + UID_SIZE + YHSM_AEAD_MAC_SIZE)
 
+# Response codes
 YHSM_STATUS_OK           = 0x80    # Executed successfully
 YHSM_KEY_HANDLE_INVALID  = 0x81    # Key handle is invalid
 YHSM_AEAD_INVALID        = 0x82    # Supplied AEAD block is invalid
@@ -71,9 +77,12 @@ YSM_INVALID_PARAMETER    = 0x8c    # Invalid parameter
 # HMAC flags
 YHSM_HMAC_RESET		= 0x01     # Flag to indicate reset at first packet
 YHSM_HMAC_FINAL		= 0x02     # Flag to indicate that the hash shall be calculated
+YHSM_HMAC_TO_BUFFER	= 0x04     # Flag to transfer HMAC to buffer
 
 # Commands
 YHSM_NULL			= 0x00
+YHSM_BUFFER_AEAD_GENERATE	= 0x02
+YHSM_AEAD_GENERATE		= 0x05
 YHSM_AEAD_OTP_DECODE		= 0x06
 YHSM_ECB_BLOCK_ENCRYPT		= 0x0d
 YHSM_ECB_BLOCK_DECRYPT		= 0x0e
@@ -85,12 +94,13 @@ YHSM_ECHO			= 0x23
 YHSM_RANDOM_GENERATE		= 0x24
 YHSM_SYSTEM_INFO_QUERY		= 0x26
 YHSM_MONITOR_EXIT		= 0x7f
-YHSM_AEAD_GENERATE	= 0x05
 
 
 def cmd2str(cmd):
     """ Return command as string. """
     known = {0x00: 'YHSM_NULL',
+             0x02: 'YHSM_BUFFER_AEAD_GENERATE',
+             0x05: 'YHSM_AEAD_GENERATE',
              0x06: 'YHSM_AEAD_OTP_DECODE',
              0x0d: 'YHSM_ECB_BLOCK_ENCRYPT',
              0x0e: 'YHSM_ECB_BLOCK_DECRYPT',
@@ -121,3 +131,10 @@ YHSM_Status2String = {0x80: 'YHSM_STATUS_OK',
                      0x8b: 'YHSM_MISMATCH',
                       0x8c: 'YSM_INVALID_PARAMETER',
                      }
+
+def status2str(num):
+    """ Return YubiHSM response status code as string. """
+    global YHSM_Status2String
+    if num in YHSM_Status2String:
+        return YHSM_Status2String[num]
+    return "0x02%x" % (num)

@@ -49,6 +49,8 @@ import exception
 
 import aes_ecb_cmd
 import basic_cmd
+import buffer_cmd
+import db_cmd
 import debug_cmd
 import hmac_cmd
 import secrets_cmd
@@ -114,35 +116,30 @@ class YHSM():
     def generate_secret(self, public_id):
         """
         Ask YubiHSM to generate a secret for a public_id.
-
-        The result is stored internally in the YubiHSM in temporary memory -
-        this operation would be followed by one or more generate_blob()
-        commands to actually retreive the generated secret (in encrypted form).
         """
         if type(public_id) is not str:
             raise exception.YHSM_WrongInputType(
                 'public_id', type(''), type(public_id))
         return secrets_cmd.YHSM_Cmd_Secrets_Generate(self.stick, public_id).execute()
 
-    def load_secret(self, public_id, secrets):
+    def load_secret(self, secrets):
         """
-        Ask stick to load a pre-existing secret for a specific public_id.
+        Ask stick to load a pre-existing secret.
 
-        This is for importing keys into the HSM system.
+        The result is stored internally in the YubiHSM in temporary memory -
+        this operation would be followed by one or more generate_aead()
+        commands to actually retreive the generated secret (in encrypted form).
         """
-        if type(public_id) is not str:
-            raise exception.YHSM_WrongInputType(
-                'public_id', type(''), type(public_id))
-        return secrets_cmd.YHSM_Cmd_Secrets_Load(self.stick, public_id, secrets).execute()
+        return buffer_cmd.YHSM_Cmd_Buffer_Load(self.stick, secrets.pack()).execute()
 
-    def generate_blob(self, key_handle):
+    def generate_aead(self, nonce, key_handle):
         """
         Ask YubiHSM to return the previously generated secret
-        (see generate_secret()) encrypted with the specified key_handle.
+        (see load_secret()) encrypted with the specified key_handle.
         """
         if type(key_handle) is not int:
             assert()
-        return secrets_cmd.YHSM_Cmd_Blob_Generate(self.stick, key_handle).execute()
+        return secrets_cmd.YHSM_Cmd_AEAD_Buffer_Generate(self.stick, nonce, key_handle).execute()
 
     def validate_blob_otp(self, public_id, otp, key_handle, blob):
         """

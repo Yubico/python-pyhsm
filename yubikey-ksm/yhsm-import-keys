@@ -108,13 +108,13 @@ def import_keys(sos, args):
         if args.verbose:
             print "  %s" % (padded_id)
 
-        secret = pyhsm.secrets_cmd.YHSM_Secrets(key, uid)
+        secret = pyhsm.secrets_cmd.YHSM_YubiKeySecrets(key, uid)
         #print "FREDRIK: LOAD SECRET PUBLIC_ID %s SECRET %s,%s" %(public_id, secret.uid.encode('hex'), secret.key.encode('hex'))
         sos.load_secret(public_id.decode('hex'), secret)
 
         for kh in args.key_handles.keys():
             #print "FREDRIK: GENERATING SECRET FOR KEY HANDLE %x" %(kh)
-            blob = sos.generate_blob(kh)
+            blob = sos.generate_aead(kh)
             #print "FREDRIK: KH %s BLOB %s" % (kh, blob.blob.encode('hex'))
             filename = output_filename(args.output_dir, args.key_handles[kh], padded_id)
 

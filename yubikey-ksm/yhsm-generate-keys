@@ -120,7 +120,7 @@ def gen_keys(sos, args):
 
         sos.generate_secret(public_id)
         for kh in args.key_handles.keys():
-            blob = sos.generate_blob(kh)
+            blob = sos.generate_aead(kh)
 
             filename = output_filename(args.output_dir, args.key_handles[kh], padded_id)
 
