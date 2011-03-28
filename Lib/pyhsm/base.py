@@ -43,6 +43,7 @@ __all__ = [
 import cmd
 import stick
 import util
+import time
 import defines
 import exception
 
@@ -62,7 +63,8 @@ class YHSM():
         self.debug = debug
         self.stick = stick.YHSM_Stick(device, debug = self.debug, timeout = timeout)
         #cmd.reset(self.stick)
-        self.reset()
+        if not self.reset():
+            raise exception.YHSM_Error("Initialization of YubiHSM failed")
         return None
 
     def __repr__(self):
@@ -75,9 +77,14 @@ class YHSM():
     def reset(self):
         """ Perform stream resynchronization. Return True if successful. """
         cmd.reset(self.stick)
+        # Short sleep necessary with firmware 0.9.2. Will be removed.
+        time.sleep(0.005)
         # Now verify we are in sync
         data = 'ekoeko'
-        return self.echo(data) == data
+        echo = self.echo(data)
+        # XXX analyze 'echo' to see if we are in config mode, and produce a
+        # nice exception if we are.
+        return data == echo
 
     #
     # Basic commands
