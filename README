@@ -1,0 +1,12 @@
+This is the Python package to talk to YubiHSM's.
+
+YubiHSM's are Yubico's take on an easy and affordable HSM.
+
+See the files in examples/ to get an idea of how to use this code.
+
+Copyright (c) 2011 Yubico AB
+All rights reserved.
+
+See the file COPYING for complete license information.
+
+Fredrik Thulin <fredrik@yubico.com> 2011-03-28
