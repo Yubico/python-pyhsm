@@ -1,3 +1,6 @@
+# Copyright (c) 2011, Yubico AB
+# All rights reserved.
+
 import os
 import sys
 import unittest

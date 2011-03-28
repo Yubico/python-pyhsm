@@ -1,3 +1,6 @@
+# Copyright (c) 2011, Yubico AB
+# All rights reserved.
+
 import os
 import sys
 import string
@@ -7,9 +10,6 @@ import pyhsm
 from Crypto.Cipher import AES
 
 import test_common
-
-# Copyright (c) 2011, Yubico AB
-# All rights reserved.
 
 def validate_yubikey_with_blob(YHSM, from_key, blob, key_handle):
     """
@@ -139,10 +139,7 @@ def crc16(data):
 class TestYubikeyValidate(test_common.YHSM_TestCase):
 
     def setUp(self):
-        self.hsm = pyhsm.base.YHSM(device = "/dev/ttyACM0", debug = False)
-
-        # Check that this is a device we know how to talk to
-        assert(self.hsm.info().protocolVersion == 1)
+        test_common.YHSM_TestCase.setUp(self)
 
         self.yk_key = 'F' * 16	# 128 bit AES key
         self.yk_uid = '\x4d\x01\x4d\x02\x4d\x4d'

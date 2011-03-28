@@ -1,3 +1,6 @@
+# Copyright (c) 2011, Yubico AB
+# All rights reserved.
+
 import sys
 import unittest
 import pyhsm
@@ -7,15 +10,11 @@ import test_common
 class TestOtpValidate(test_common.YHSM_TestCase):
 
     def setUp(self):
+        test_common.YHSM_TestCase.setUp(self)
         # Enabled flags 00007000 = YHSM_ECB_BLOCK_ENCRYPT,YHSM_ECB_BLOCK_DECRYPT,YHSM_ECB_BLOCK_DECRYPT_CMP
         self.kh_encrypt = 0x1001
         self.kh_decrypt = 0x1001
         self.kh_compare = 0x1001
-
-        self.hsm = pyhsm.base.YHSM(device = "/dev/ttyACM0", debug = False)
-
-        # Check that this is a device we know how to talk to
-        assert(self.hsm.info().protocolVersion == 1)
 
     def test_encrypt_decrypt(self):
         """ Test to AES ECB decrypt something encrypted. """

@@ -1,3 +1,6 @@
+# Copyright (c) 2011, Yubico AB
+# All rights reserved.
+
 import sys
 import unittest
 import pyhsm
@@ -7,14 +10,10 @@ import test_common
 class TestHMACSHA1(test_common.YHSM_TestCase):
 
     def setUp(self):
+        test_common.YHSM_TestCase.setUp(self)
         # Enabled flags 00008000 = SOS_HMAC_SHA1_WRITE
         # 00003031 - stored ok
         self.kh = 0x3031
-
-        self.hsm = pyhsm.base.YHSM(device = "/dev/ttyACM0", debug = False)
-
-        # Check that this is a device we know how to talk to
-        assert(self.hsm.info().protocolVersion == 1)
 
     def test_nist_test_vector(self):
         """ Test HMAC SHA1 with NIST PUB 198 A.2 test vector. """

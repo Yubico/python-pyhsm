@@ -1,3 +1,6 @@
+# Copyright (c) 2011, Yubico AB
+# All rights reserved.
+
 import sys
 import unittest
 import pyhsm
@@ -5,12 +8,6 @@ import pyhsm
 import test_common
 
 class TestOtpValidate(test_common.YHSM_TestCase):
-
-    def setUp(self):
-        self.hsm = pyhsm.base.YHSM(device = "/dev/ttyACM0", debug = False)
-
-        # Check that this is a device we know how to talk to
-        assert(self.hsm.info().protocolVersion == 1)
 
     def test_load_secret_wrong_key(self):
         """ Test load_secret with key that should not be allowed to. """
