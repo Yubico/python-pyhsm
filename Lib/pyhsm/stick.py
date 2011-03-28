@@ -42,29 +42,33 @@ class YHSM_Stick():
                     ))
         return None
 
-    def write(self, data):
+    def write(self, data, debug_info=None):
         """
         Write data to YHSM device.
         """
         self.num_write_bytes += len(data)
         if self.debug:
-            sys.stderr.write("%s: WRITE %i:\n%s\n" %(
+            if not debug_info:
+                debug_info = str(len(data))
+            sys.stderr.write("%s: WRITE %s:\n%s\n" %(
                     self.__class__.__name__,
-                    len(data),
+                    debug_info,
                     util.hexdump(data)
                     ))
         return self.ser.write(data)
 
-    def read(self, num_bytes):
+    def read(self, num_bytes, debug_info=None):
         """
         Read a number of bytes from YubiHSM device.
         """
         if num_bytes < 1:
             return 0
         if self.debug:
-            sys.stderr.write("%s: READING %i\n" %(
+            if not debug_info:
+                debug_info = str(num_bytes)
+            sys.stderr.write("%s: READING %s\n" %(
                     self.__class__.__name__,
-                    num_bytes
+                    debug_info
                     ))
         res = self.ser.read(num_bytes)
         if self.debug:
