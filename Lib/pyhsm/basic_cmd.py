@@ -24,11 +24,18 @@ class YHSM_Cmd_Echo(YHSM_Cmd):
     Send something to the stick, and expect to get it echoed back.
     """
     def __init__(self, stick, payload=''):
+        if len(payload) > defines.YHSM_MAX_PKT_SIZE - 1:
+            raise exception.YHSM_InputTooLong(
+                'payload', defines.YHSM_MAX_PKT_SIZE - 1, len(data))
         packed = chr(len(payload)) + payload
         YHSM_Cmd.__init__(self, stick, defines.YHSM_ECHO, packed)
 
     def parse_result(self, data):
-        return data[2:]
+        # typedef struct {
+        # uint8_t numBytes;                   // Number of bytes in data field
+        # uint8_t data[YSM_MAX_PKT_SIZE - 1]; // Data
+        # } YSM_ECHO_RESP;
+        return data[1:]
 
 
 class YHSM_Cmd_System_Info(YHSM_Cmd):
