@@ -102,8 +102,8 @@ class ConfigureYubiHSMforTest(test_common.YHSM_TestCase):
         self.add_key(flags, 0x2000, key)
 
         # Key with NIST test vector for HMAC SHA1
-        # Enabled flags 00008000 = SOS_HMAC_SHA1_WRITE
-        flags = 0x8000
+        # Enabled flags 00010000 = YSM_HMAC_SHA1_GENERATE
+        flags = 0x10000
         key = "303132333435363738393a3b3c3d3e3f40414243".ljust(64, '0')
         self.add_key(flags, 0x3031, key)
 

@@ -45,8 +45,7 @@ class YHSM_Cmd_HMAC_SHA1_Write(YHSM_Cmd):
         self.key_handle = key_handle
         self.flags = flags
         packed = _raw_pack(self.key_handle, self.flags, data)
-        YHSM_Cmd.__init__(self, stick, defines.YHSM_HMAC_SHA1_WRITE, packed)
-        self.response_length = 26
+        YHSM_Cmd.__init__(self, stick, defines.YHSM_HMAC_SHA1_GENERATE, packed)
 
     def next(self, data, final = False):
         """
@@ -79,15 +78,15 @@ class YHSM_Cmd_HMAC_SHA1_Write(YHSM_Cmd):
         #   uint32_t keyHandle;                 // Key handle
         #   uint8_t hash[20];                   // Hash output (if applicable)
         #   YHSM_STATUS status;                  // Status
-        # } YHSM_HMAC_SHA1_WRITE_RESP;
+        # } YHSM_HMAC_SHA1_GENERATE_RESP;
         key_handle, \
             sha1, \
-            self.status = struct.unpack('<xI20sB', data)
+            self.status = struct.unpack('<I20sB', data)
         if self.status == defines.YHSM_STATUS_OK:
             self.response = YHSM_GeneratedHMACSHA1(key_handle, sha1, self.final)
             return self.response
         else:
-            raise exception.YHSM_CommandFailed('YHSM_HMAC_SHA1_WRITE', self.status)
+            raise exception.YHSM_CommandFailed('YHSM_HMAC_SHA1_GENERATE', self.status)
 
 def _raw_pack(key_handle, flags, data):
     # #define YHSM_HMAC_RESET          0x01    // Flag to indicate reset at first packet
@@ -97,11 +96,11 @@ def _raw_pack(key_handle, flags, data):
     #   uint8_t flags;                      // Flags
     #   uint8_t numBytes;                   // Number of bytes in data packet
     #   uint8_t data[YHSM_MAX_PKT_SIZE - 6]; // Data to be written
-    # } YHSM_HMAC_SHA1_WRITE_REQ;
+    # } YHSM_HMAC_SHA1_GENERATE_REQ;
     return struct.pack('<IBB', key_handle, flags, len(data)) + data
 
 class YHSM_GeneratedHMACSHA1():
-    """ Small class to represent a YHSM_HMAC_SHA1_WRITE_RESP. """
+    """ Small class to represent a YHSM_HMAC_SHA1_GENERATE_RESP. """
     def __init__(self, key_handle, sha1, final):
         self.key_handle = key_handle
         self.hash_result = sha1

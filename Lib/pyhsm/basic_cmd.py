@@ -26,7 +26,6 @@ class YHSM_Cmd_Echo(YHSM_Cmd):
     def __init__(self, stick, payload=''):
         packed = chr(len(payload)) + payload
         YHSM_Cmd.__init__(self, stick, defines.YHSM_ECHO, packed)
-        self.response_length = len(payload) + 2
 
     def parse_result(self, data):
         return data[2:]
@@ -43,7 +42,6 @@ class YHSM_Cmd_System_Info(YHSM_Cmd):
         self.version_build = 0
         self.protocolVersion = 0
         self.systemUid = None
-        self.response_length = 17
 
     def __repr__(self):
         if self.executed:
@@ -73,7 +71,7 @@ class YHSM_Cmd_System_Info(YHSM_Cmd):
             self.version_minor, \
             self.version_build, \
             self.protocolVersion, \
-            self.systemUid = struct.unpack('xBBBB12s', data)
+            self.systemUid = struct.unpack('BBBB12s', data)
         return self
 
 
@@ -83,5 +81,12 @@ class YHSM_Cmd_Random(YHSM_Cmd):
     """
     def __init__(self, stick, num_bytes):
         packed = chr(num_bytes)
-        YHSM_Cmd.__init__(self, stick, defines.YHSM_RANDOM_GENERATE, packed)
-        self.response_length = num_bytes + 2
+        YHSM_Cmd.__init__(self, stick, defines.YHSM_RANDOM_GET, packed)
+
+    def parse_result(self, data):
+        # typedef struct {
+        #   uint8_t numBytes;                   // Number of bytes generated
+        #   uint8_t rnd[YSM_MAX_PKT_SIZE - 1];  // Random data
+        # } YSM_RANDOM_GET_RESP;
+        num_bytes = ord(data[0])
+        return data[1:num_bytes]

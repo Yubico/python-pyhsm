@@ -52,7 +52,7 @@ class YHSM_Cmd_AES_ECB_Encrypt(YHSM_Cmd):
         # } YHSM_ECB_BLOCK_ENCRYPT_RESP;
         key_handle, \
             self.ciphertext, \
-            self.status = struct.unpack('<xI16sB', data)
+            self.status = struct.unpack('<I16sB', data)
         if self.status == defines.YHSM_STATUS_OK:
             return self.ciphertext
         else:
@@ -93,7 +93,7 @@ class YHSM_Cmd_AES_ECB_Decrypt(YHSM_Cmd):
         # } YHSM_ECB_BLOCK_DECRYPT_RESP;
         key_handle, \
             plaintext, \
-            self.status = struct.unpack('<xI16sB', data)
+            self.status = struct.unpack('<I16sB', data)
         if self.status == defines.YHSM_STATUS_OK:
             return plaintext
         else:
@@ -120,11 +120,11 @@ class YHSM_Cmd_AES_ECB_Compare(YHSM_Cmd):
         #   uint32_t keyHandle;                  // Key handle
         #   uint8_t ciphertext[YHSM_BLOCK_SIZE]; // Ciphertext block
         #   uint8_t plaintext[YHSM_BLOCK_SIZE];  // Plaintext block
-        # } YHSM_ECB_BLOCK_COMPARE_REQ;
+        # } YHSM_ECB_BLOCK_DECRYPT_CMP_REQ;
         payload = struct.pack('<I', key_handle) + \
             ciphertext.ljust(defines.YHSM_BLOCK_SIZE, chr(0x0)) + \
             plaintext.ljust(defines.YHSM_BLOCK_SIZE, chr(0x0))
-        YHSM_Cmd.__init__(self, stick, defines.YHSM_ECB_BLOCK_COMPARE, payload)
+        YHSM_Cmd.__init__(self, stick, defines.YHSM_ECB_BLOCK_DECRYPT_CMP, payload)
         self.response_length = 6
 
     def __repr__(self):
@@ -141,10 +141,10 @@ class YHSM_Cmd_AES_ECB_Compare(YHSM_Cmd):
         #   YHSM_STATUS status;                  // Decryption + verification status
         # } YHSM_ECB_BLOCK_VERIFY_RESP;
         key_handle, \
-            self.status = struct.unpack('<xIB', data)
+            self.status = struct.unpack('<IB', data)
         if self.status == defines.YHSM_STATUS_OK:
             return True
         if self.status == defines.YHSM_MISMATCH:
             return False
         else:
-            raise exception.YHSM_CommandFailed('YHSM_ECB_BLOCK_COMPARE', self.status)
+            raise exception.YHSM_CommandFailed('YHSM_ECB_BLOCK_DECRYPT_CMP', self.status)

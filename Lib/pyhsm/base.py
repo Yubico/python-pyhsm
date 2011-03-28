@@ -160,7 +160,7 @@ class YHSM():
         """
         Ask YubiHSM to exit to configuration mode (requires 'debug' mode enabled).
         """
-        return debug_cmd.YHSM_Cmd_Monitor_Exit(self.stick).execute()
+        return debug_cmd.YHSM_Cmd_Monitor_Exit(self.stick).execute(read_response=False)
 
     def get_raw_device(self):
         """

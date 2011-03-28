@@ -11,7 +11,7 @@ class TestHMACSHA1(test_common.YHSM_TestCase):
 
     def setUp(self):
         test_common.YHSM_TestCase.setUp(self)
-        # Enabled flags 00008000 = SOS_HMAC_SHA1_WRITE
+        # Enabled flags 00010000 = YSM_HMAC_SHA1_GENERATE
         # 00003031 - stored ok
         self.kh = 0x3031
 
@@ -73,3 +73,11 @@ class TestHMACSHA1(test_common.YHSM_TestCase):
         # continue HMAC
         res = this.next(data[3:], final = True).execute()
         self.assertEquals(res.hash_result.encode('hex'), '0922d3405faa3d194f82a45830737d5cc6c75d24')
+
+    def test_hmac_wrong_key_handle(self):
+        """ Test HMAC SHA1 operation with wrong key handle. """
+        try:
+            res = self.hsm.hmac_sha1(0x01, 'foo').execute()
+            self.fail("Expected YHSM_FUNCTION_DISABLED, got %s" % (res))
+        except pyhsm.exception.YHSM_CommandFailed, e:
+            self.assertEquals(e.status_str, 'YHSM_FUNCTION_DISABLED')
