@@ -4,7 +4,7 @@ the pyhsm package
 # Copyright (c) 2011, Yubico AB
 # All rights reserved.
 
-__version__ = '0.9.0pre1'
+__version__ = '0.9.0'
 
 __all__ = ["base"
            "cmd"
