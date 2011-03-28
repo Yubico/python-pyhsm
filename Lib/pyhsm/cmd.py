@@ -36,7 +36,10 @@ class YHSM_Cmd():
         #   uint8_t cmd;                        // YSM_xxx command
         #   uint8_t payload[YSM_MAX_PKT_SIZE];  // Payload
         # } YSM_PKT;
-        cmd_buf = struct.pack('BB', len(self.payload) + 1, self.command)
+        if self.command != defines.YHSM_NULL:
+            cmd_buf = struct.pack('BB', len(self.payload) + 1, self.command)
+        else:
+            cmd_buf = chr(self.command)
         cmd_buf += self.payload
         debug_info = None
         if self.stick.debug:
