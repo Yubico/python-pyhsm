@@ -35,7 +35,7 @@ class TestOtpValidate(test_common.YHSM_TestCase):
         ciphertext = self.hsm.aes_ecb_encrypt(self.kh_encrypt, plaintext)
 
         self.assertTrue(self.hsm.aes_ecb_compare(self.kh_compare, ciphertext, plaintext))
-        self.assertFalse(self.hsm.aes_ecb_compare(self.kh_compare, ciphertext, plaintext + 'x'))
+        self.assertFalse(self.hsm.aes_ecb_compare(self.kh_compare, ciphertext, plaintext[:-1] + 'x'))
 
     def test_compare_bad(self):
         """ Test AES decrypt compare with incorrect plaintext. """
@@ -43,4 +43,4 @@ class TestOtpValidate(test_common.YHSM_TestCase):
 
         ciphertext = self.hsm.aes_ecb_encrypt(self.kh_encrypt, plaintext)
 
-        self.assertFalse(self.hsm.aes_ecb_compare(self.kh_compare, ciphertext, plaintext + 'x'))
+        self.assertFalse(self.hsm.aes_ecb_compare(self.kh_compare, ciphertext, plaintext[:-1] + 'x'))
