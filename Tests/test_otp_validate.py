@@ -17,10 +17,10 @@ class TestOtpValidate(test_common.YHSM_TestCase):
         key = "A" * 16
         uid = '\x4d\x4d\x4d\x4d\x4d\x4d'
         public_id = 'f0f1f2f3f4f5'.decode('hex')
-        # Enabled flags 00000100 = YHSM_BLOB_STORE
+        # Enabled flags 00000100 = YHSM_AEAD_STORE
         # HSM> < keyload - Load key data now using flags 00000100. Press ESC to quit
         # 00000009 - stored ok
-        key_handle = 9	# Enabled flags 00000020 = YHSM_BLOB_GENERATE
+        key_handle = 9	# Enabled flags 00000020 = YHSM_AEAD_GENERATE
 
         secret = pyhsm.secrets_cmd.YHSM_YubiKeySecrets(key, uid)
         self.hsm.load_secret(secret)
@@ -44,16 +44,20 @@ class TestOtpValidate(test_common.YHSM_TestCase):
         secret = pyhsm.secrets_cmd.YHSM_YubiKeySecrets(key, uid)
         self.hsm.load_secret(secret)
 
-        blob = self.hsm.generate_aead(public_id, key_handle)
+        aead = self.hsm.generate_aead(public_id, key_handle)
 
-        #self.assertIsInstance(blob, pyhsm.secrets_cmd.YHSM_GeneratedBlob)
-        self.assertTrue(isinstance(blob, pyhsm.secrets_cmd.YHSM_GeneratedBlob))
+        #self.assertIsInstance(aead, pyhsm.secrets_cmd.YHSM_GeneratedAEAD)
+        self.assertTrue(isinstance(aead, pyhsm.secrets_cmd.YHSM_GeneratedAEAD))
 
-        self.assertEqual(blob.public_id, public_id)
-        self.assertEqual(blob.key_handle, key_handle)
-        #self.assertEqual(blob.blob.encode('hex'),
+        self.assertEqual(aead.public_id, public_id)
+        self.assertEqual(aead.key_handle, key_handle)
+        #self.assertEqual(aead.data.encode('hex'),
         #                 '45bbdf26fc1a5560b6ff119dfdf743dbd1a65e3a00eab569'
         #                 'fe27b5c3705ea4e8e2db0a88c21124e15321976154e4703f'
         #                 )
 
-        # XXX decode the AEAD and see if it works
+    def test_yubikey_secrets(self):
+        """ Test the class representing the YUBIKEY_SECRETS struct. """
+        aes_128_key = 'a' * 16,
+        first = pyhsm.secrets_cmd.YHSM_YubiKeySecrets(aes_128_key, 'b')
+        self.assertEqual(len(first.pack()), pyhsm.defines.KEY_SIZE + pyhsm.defines.UID_SIZE)

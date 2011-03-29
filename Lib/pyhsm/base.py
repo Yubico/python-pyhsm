@@ -47,6 +47,7 @@ import time
 import defines
 import exception
 
+import aead_cmd
 import aes_ecb_cmd
 import basic_cmd
 import buffer_cmd
@@ -120,7 +121,7 @@ class YHSM():
         if type(public_id) is not str:
             raise exception.YHSM_WrongInputType(
                 'public_id', type(''), type(public_id))
-        return secrets_cmd.YHSM_Cmd_Secrets_Generate(self.stick, public_id).execute()
+        return buffer_cmd.YHSM_Cmd_Secrets_Generate(self.stick, public_id).execute()
 
     def load_secret(self, secrets):
         """
@@ -139,12 +140,20 @@ class YHSM():
         """
         if type(key_handle) is not int:
             assert()
-        return secrets_cmd.YHSM_Cmd_AEAD_Buffer_Generate(self.stick, nonce, key_handle).execute()
+        return aead_cmd.YHSM_Cmd_AEAD_Buffer_Generate(self.stick, nonce, key_handle).execute()
 
-    def validate_blob_otp(self, public_id, otp, key_handle, blob):
+    def validate_aead(self, nonce, key_handle, aead, cleartext=''):
         """
-        Ask YubiHSM to validate an OTP using a blob and a key_handle to
-        decrypt the blob.
+        Validate an AEAD using the YubiHSM. If cleartext is non-empty, the decrypted
+        AEAD will be compared (inside the YubiHSM) to the cleartext. Otherwise, the YubiHSM
+        will only check if the AEAD is intact.
+        """
+        return aead_cmd.YHSM_Cmd_AEAD_Decrypt_Cmp(self.stick, nonce, key_handle, aead, cleartext).execute()
+
+    def validate_aead_otp(self, public_id, otp, key_handle, aead):
+        """
+        Ask YubiHSM to validate a YubiKey OTP using an AEAD and a key_handle to
+        decrypt the AEAD.
         """
         if type(public_id) is not str:
             assert()
@@ -152,10 +161,10 @@ class YHSM():
             assert()
         if type(key_handle) is not int:
             assert()
-        if type(blob) is not str:
+        if type(aead) is not str:
             assert()
-        return validate_cmd.YHSM_Cmd_Blob_Validate_OTP( \
-            self.stick, public_id, otp, key_handle, blob).execute()
+        return validate_cmd.YHSM_Cmd_AEAD_Validate_OTP( \
+            self.stick, public_id, otp, key_handle, aead).execute()
 
     #
     # Debug/testing commands.

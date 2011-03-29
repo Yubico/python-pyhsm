@@ -14,39 +14,36 @@ __all__ = [
     'YHSM'
 ]
 
-def validate_yubikey_with_blob(YHSM, from_key, blob, key_handle):
+def validate_yubikey_with_aead(YHSM, from_key, aead, key_handle):
     """
-    Try to validate an OTP from a YubiKey using the blob that can decrypt this YubiKey's
-    internal secret, using the key_handle for the blob.
+    Try to validate an OTP from a YubiKey using the aead that can decrypt this YubiKey's
+    internal secret, using the key_handle for the aead.
 
-    The parameter blob is either a string, or an instance of YHSM_GeneratedBlob.
+    The parameter aead is either a string, or an instance of YHSM_GeneratedAEAD.
     """
 
-    try:
-        # check if blob is an instance of something with a 'blob' attribute
-        blob = blob.blob
-    except AttributeError:
-        pass
+    if isinstance(aead, pyhsm.secrets_cmd.YHSM_GeneratedAEAD):
+        aead = aead.data
 
     if type(from_key) is not str:
         raise exception.YHSM_WrongInputType(
             'from_key', type(''), type(from_key))
-    if type(blob) is not str:
+    if type(aead) is not str:
         raise exception.YHSM_WrongInputType(
-            'blob', type(''), type(blob))
+            'aead', type(''), type(aead))
     if type(key_handle) is not int:
         raise exception.YHSM_WrongInputType(
             'key_handle', type(1), type(key_handle))
 
-    if len(blob) == 48 * 2:
-        blob = blob.decode('hex')
+    if len(aead) == 30 * 2:
+        aead = aead.decode('hex')
 
     public_id, otp = split_id_otp(from_key)
 
     public_id = modhex_decode(public_id)
     otp = modhex_decode(otp)
 
-    return YHSM.validate_blob_otp(public_id.decode('hex'), otp.decode('hex'), key_handle, blob)
+    return YHSM.validate_aead_otp(public_id.decode('hex'), otp.decode('hex'), key_handle, aead)
 
 def modhex_decode(data):
     """ Convert a modhex string to ordinary hex. """

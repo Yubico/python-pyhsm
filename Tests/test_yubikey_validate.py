@@ -11,39 +11,40 @@ from Crypto.Cipher import AES
 
 import test_common
 
-def validate_yubikey_with_blob(YHSM, from_key, blob, key_handle):
+def validate_yubikey_with_aead(YHSM, from_key, aead, key_handle):
     """
-    Try to validate an OTP from a YubiKey using the blob that can decrypt this YubiKey's
-    internal secret, using the key_handle for the blob.
+    Try to validate an OTP from a YubiKey using the aead that can decrypt this YubiKey's
+    internal secret, using the key_handle for the aead.
 
-    The parameter blob is either a string, or an instance of YHSM_GeneratedBlob.
+    The parameter aead is either a string, or an instance of YHSM_GeneratedAEAD.
     """
 
     try:
-        # check if blob is an instance of something with a 'blob' attribute
-        blob = blob.blob
+        # check if aead is an instance of something with a 'data' attribute
+        # (like a YHSM_GeneratedAEAD)
+        aead = aead.data
     except AttributeError:
         pass
 
     if type(from_key) is not str:
-        raise exception.YHSM_WrongInputType(
+        raise pyhsm.exception.YHSM_WrongInputType(
             'from_key', type(''), type(from_key))
-    if type(blob) is not str:
-        raise exception.YHSM_WrongInputType(
-            'blob', type(''), type(blob))
+    if type(aead) is not str:
+        raise pyhsm.exception.YHSM_WrongInputType(
+            'aead', type(''), type(aead))
     if type(key_handle) is not int:
-        raise exception.YHSM_WrongInputType(
+        raise pyhsm.exception.YHSM_WrongInputType(
             'key_handle', type(1), type(key_handle))
 
-    if len(blob) == 48 * 2:
-        blob = blob.decode('hex')
+    if len(aead) == 48 * 2:
+        aead = aead.decode('hex')
 
     public_id, otp = split_id_otp(from_key)
 
     public_id = modhex_decode(public_id)
     otp = modhex_decode(otp)
 
-    return YHSM.validate_blob_otp(public_id.decode('hex'), otp.decode('hex'), key_handle, blob)
+    return YHSM.validate_aead_otp(public_id.decode('hex'), otp.decode('hex'), key_handle, aead)
 
 
 def modhex_decode(data):
@@ -139,25 +140,36 @@ def crc16(data):
 class TestYubikeyValidate(test_common.YHSM_TestCase):
 
     def setUp(self):
-        test_common.YHSM_TestCase.setUp(self)
+        test_common.YHSM_TestCase.setUp(self, debug = True)
 
         self.yk_key = 'F' * 16	# 128 bit AES key
         self.yk_uid = '\x4d\x01\x4d\x02\x4d\x4d'
         self.yk_rnd = YubiKeyRnd(self.yk_uid)
         self.yk_public_id = '4d4d4d4d4d4d'.decode('hex')
 
-        secret = pyhsm.secrets_cmd.YHSM_Secrets(self.yk_key, self.yk_uid)
-        self.hsm.load_secret(self.yk_public_id, secret)
+        secret = pyhsm.secrets_cmd.YHSM_YubiKeySecrets(self.yk_key, self.yk_uid)
+        self.hsm.load_secret(secret)
 
-        #self.kh_generate = 0x06		# key handle 0x9 is allowed to generate blobs
-        #self.kh_validate = 0x1000	# key handle 0x1000 is allowed to validate blobs and have the same key as 0x9
+        #self.kh_generate = 0x06		# key handle 0x9 is allowed to generate aeads
+        #self.kh_validate = 0x1000	# key handle 0x1000 is allowed to validate aeads and have the same key as 0x9
 
-        # current YubiHSM includes key handle id in AES-CCM of blobs, so we must use same
+        # YubiHSM includes key handle id in AES-CCM of aeads, so we must use same
         # key to generate and validate. Key 0x2000 has all flags.
         self.kh_generate = 0x2000
         self.kh_validate = 0x2000
 
-        self.blob = self.hsm.generate_blob(self.kh_generate)
+        self.aead = self.hsm.generate_aead(self.yk_public_id, self.kh_generate)
+
+    def test_validate_aead(self):
+        """ Test that the AEAD generated is valid. """
+        self.assertTrue(self.hsm.validate_aead(self.yk_public_id, self.kh_validate, self.aead))
+
+    def test_validate_aead_cmp(self):
+        """ Test that the AEAD generated contains our secrets. """
+        secret = pyhsm.secrets_cmd.YHSM_YubiKeySecrets(self.yk_key, self.yk_uid)
+        cleartext = secret.pack()
+        #self.assertTrue(self.hsm.validate_aead(self.yk_public_id, self.kh_validate, self.aead, cleartext))
+        self.assertFalse(self.hsm.validate_aead(self.yk_public_id, self.kh_validate, self.aead, 'BBBBBB'))
 
     def test_validate_yubikey(self):
         """ Test validate YubiKey OTP. """
@@ -168,7 +180,7 @@ class TestYubikeyValidate(test_common.YHSM_TestCase):
         mh_ciphertext = modhex_encode(ciphertext.encode('hex'))
         from_key = modhex_encode(self.yk_public_id.encode('hex')) + mh_ciphertext
 
-        self.assertTrue(validate_yubikey_with_blob(self.hsm, from_key, self.blob, self.kh_validate))
+        self.assertTrue(validate_yubikey_with_aead(self.hsm, from_key, self.aead.blob, self.kh_validate))
 
     def test_modhex_encode_decode(self):
         """ Test modhex encoding/decoding. """

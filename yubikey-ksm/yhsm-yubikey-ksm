@@ -48,7 +48,7 @@ class YHSM_KSMRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
             global saved_key_handle
             filename = blob_filename(args.blob_dir, saved_key_handle, public_id)
-            blob = pyhsm.secrets_cmd.YHSM_GeneratedBlob(public_id, args.key_handle, '')
+            blob = pyhsm.secrets_cmd.YHSM_GeneratedAEAD(public_id, args.key_handle, '')
             try:
                 blob.load(filename)
             except IOError:

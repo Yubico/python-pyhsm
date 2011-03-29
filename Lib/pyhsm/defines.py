@@ -15,7 +15,7 @@ __all__ = [
     ## statuses
     'YHSM_STATUS_OK',
     'YHSM_KEY_HANDLE_INVALID',
-    'YHSM_BLOB_INVALID',
+    'YHSM_AEAD_INVALID',
     'YHSM_OTP_INVALID',
     'YHSM_OTP_REPLAY',
     'YHSM_ID_DUPLICATE',
@@ -82,6 +82,7 @@ YHSM_HMAC_TO_BUFFER	= 0x04     # Flag to transfer HMAC to buffer
 # Commands
 YHSM_NULL			= 0x00
 YHSM_BUFFER_AEAD_GENERATE	= 0x02
+YHSM_AEAD_DECRYPT_CMP		= 0x04
 YHSM_AEAD_GENERATE		= 0x05
 YHSM_AEAD_OTP_DECODE		= 0x06
 YHSM_ECB_BLOCK_ENCRYPT		= 0x0d
@@ -100,6 +101,7 @@ def cmd2str(cmd):
     """ Return command as string. """
     known = {0x00: 'YHSM_NULL',
              0x02: 'YHSM_BUFFER_AEAD_GENERATE',
+             0x04: 'YHSM_AEAD_DECRYPT_CMP',
              0x05: 'YHSM_AEAD_GENERATE',
              0x06: 'YHSM_AEAD_OTP_DECODE',
              0x0d: 'YHSM_ECB_BLOCK_ENCRYPT',
@@ -119,7 +121,7 @@ def cmd2str(cmd):
 
 YHSM_Status2String = {0x80: 'YHSM_STATUS_OK',
                      0x81: 'YHSM_KEY_HANDLE_INVALID',
-                     0x82: 'YHSM_BLOB_INVALID',
+                     0x82: 'YHSM_AEAD_INVALID',
                      0x83: 'YHSM_OTP_INVALID',
                      0x84: 'YHSM_OTP_REPLAY',
                      0x85: 'YHSM_ID_DUPLICATE',

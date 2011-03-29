@@ -1,6 +1,5 @@
 """
 implementations of validation commands for YubiHSM
-
 """
 # Copyright (c) 2011, Yubico AB
 # All rights reserved.
@@ -13,36 +12,46 @@ __all__ = [
     # constants
     # functions
     # classes
-    'YHSM_Cmd_Blob_Validate',
+    'YHSM_Cmd_AEAD_Validate_OTP',
 ]
 
 from cmd import YHSM_Cmd
 
-class YHSM_Cmd_Blob_Validate_OTP(YHSM_Cmd):
+class YHSM_Cmd_AEAD_Validate_OTP(YHSM_Cmd):
     """
     Request the stick to validate an OTP using an externally stored
-    blob and a keyhandle to decrypt that blob.
+    AEAD and a keyhandle to decrypt that AEAD.
     """
-    def __init__(self, stick, public_id, otp, key_handle, blob):
+    def __init__(self, stick, public_id, otp, key_handle, aead):
         if len(public_id) > defines.PUBLIC_ID_SIZE:
             raise exception.YHSM_WrongInputSize(
                 'public_id', defines.PUBLIC_ID_SIZE, len(public_id))
         if len(otp) != defines.OTP_SIZE:
             raise exception.YHSM_WrongInputSize(
                 'otp', defines.OTP_SIZE, len(otp))
-        if len(blob) != defines.BLOB_KEY_SIZE + defines.YHSM_BLOCK_SIZE:
+        if len(aead) != defines.YUBIKEY_AEAD_SIZE:
             raise exception.YHSM_WrongInputSize(
-                'blob', defines.BLOB_KEY_SIZE + defines.YHSM_BLOCK_SIZE, len(blob))
-
+                'aead', defines.YUBIKEY_AEAD_SIZE, len(aead))
         # store padded public_id for comparision in parse_result
         self.public_id = public_id.ljust(defines.PUBLIC_ID_SIZE, chr(0x0))
         self.otp = otp
         self.key_handle = key_handle
         self.response = None
         self.status = None
-        packed = self.public_id + otp + struct.pack('<I', self.key_handle) + blob
-        YHSM_Cmd.__init__(self, stick, defines.YHSM_OTP_BLOB_VALIDATE, packed)
-        self.response_length = 14
+        # typedef struct {
+        #   uint8_t publicId[YSM_AEAD_NONCE_SIZE]; // Public id (nonce)
+        #   uint32_t keyHandle;                 // Key handle
+        #   uint8_t otp[OTP_SIZE];              // OTP
+        #   uint8_t aead[YUBIKEY_AEAD_SIZE];    // AEAD block
+        # } YSM_AEAD_OTP_DECODE_REQ;
+        packed = struct.pack("< %is I %is %is" % (defines.YHSM_AEAD_NONCE_SIZE, \
+                                                      defines.OTP_SIZE, \
+                                                      defines.YUBIKEY_AEAD_SIZE), \
+                                 self.public_id, \
+                                 self.key_handle, \
+                                 self.otp, \
+                                 aead)
+        YHSM_Cmd.__init__(self, stick, defines.YHSM_AEAD_OTP_DECODE, packed)
 
     def __repr__(self):
         if self.executed:
@@ -62,28 +71,30 @@ class YHSM_Cmd_Blob_Validate_OTP(YHSM_Cmd):
     def parse_result(self, data):
         # typedef struct {
         #   uint8_t public_id[PUBLIC_ID_SIZE];   // Public id
+        #   uint32_t keyHandle;                  // Key handle
         #   uint16_t use_ctr;                    // Use counter
         #   uint8_t session_ctr;                 // Session counter
-        #   uint8_t tstph;                                      // Timestamp (high part)
-        #   uint16_t tstpl;                                     // Timestamp (low part)
+        #   uint8_t tstph;                       // Timestamp (high part)
+        #   uint16_t tstpl;                      // Timestamp (low part)
         #   YHSM_STATUS status;                  // Validation status
-        # } YHSM_OTP_BLOB_VALIDATED_RESP;
-        this_public_id, rest = data[1:defines.PUBLIC_ID_SIZE + 1], data[defines.PUBLIC_ID_SIZE + 1:]
-        if this_public_id != self.public_id:
-            raise exception.YHSM_Error('Bad public_id in response (%s != %s)' %
-                                      (this_public_id.encode('hex'), self.public_id.encode('hex')))
-
-        use_ctr, \
+        # } YHSM_AEAD_OTP_DECODED_RESP;
+        this_public_id, \
+            key_handle, \
+            use_ctr, \
             session_ctr, \
             ts_high, \
             ts_low, \
-            self.status = struct.unpack('HBBHB', rest)
+            self.status = struct.unpack("< %is I H B B H B" % (defines.PUBLIC_ID_SIZE), data)
+
+        if this_public_id != self.public_id:
+            raise exception.YHSM_Error('Bad public_id in response (%s != %s)' %
+                                      (this_public_id.encode('hex'), self.public_id.encode('hex')))
 
         if self.status == defines.YHSM_STATUS_OK:
             self.response = YHSM_ValidationResult(self.public_id, use_ctr, session_ctr, ts_high, ts_low)
             return self.response
         else:
-            raise exception.YHSM_CommandFailed('YHSM_OTP_BLOB_VALIDATE', self.status)
+            raise exception.YHSM_CommandFailed(defines.cmd2str(self.command), self.status)
 
 
 class YHSM_ValidationResult():
