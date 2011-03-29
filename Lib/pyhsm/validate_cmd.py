@@ -44,14 +44,14 @@ class YHSM_Cmd_AEAD_Validate_OTP(YHSM_Cmd):
         #   uint8_t otp[OTP_SIZE];              // OTP
         #   uint8_t aead[YUBIKEY_AEAD_SIZE];    // AEAD block
         # } YSM_AEAD_OTP_DECODE_REQ;
-        packed = struct.pack("< %is I %is %is" % (defines.YHSM_AEAD_NONCE_SIZE, \
+        packed = struct.pack("< %is I %is %is" % (defines.YSM_AEAD_NONCE_SIZE, \
                                                       defines.OTP_SIZE, \
                                                       defines.YUBIKEY_AEAD_SIZE), \
                                  self.public_id, \
                                  self.key_handle, \
                                  self.otp, \
                                  aead)
-        YHSM_Cmd.__init__(self, stick, defines.YHSM_AEAD_OTP_DECODE, packed)
+        YHSM_Cmd.__init__(self, stick, defines.YSM_AEAD_OTP_DECODE, packed)
 
     def __repr__(self):
         if self.executed:
@@ -90,7 +90,7 @@ class YHSM_Cmd_AEAD_Validate_OTP(YHSM_Cmd):
             raise exception.YHSM_Error('Bad public_id in response (%s != %s)' %
                                       (this_public_id.encode('hex'), self.public_id.encode('hex')))
 
-        if self.status == defines.YHSM_STATUS_OK:
+        if self.status == defines.YSM_STATUS_OK:
             self.response = YHSM_ValidationResult(self.public_id, use_ctr, session_ctr, ts_high, ts_low)
             return self.response
         else:

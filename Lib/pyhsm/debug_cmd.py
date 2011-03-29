@@ -30,7 +30,7 @@ class YHSM_Cmd_Monitor_Exit(YHSM_Cmd):
         #} YHSM_MONITOR_EXIT_REQ;
 
         packed = struct.pack('<II', 0xbaadbeef, 0xffffffff - 0xbaadbeef)
-        YHSM_Cmd.__init__(self, stick, defines.YHSM_MONITOR_EXIT, packed)
+        YHSM_Cmd.__init__(self, stick, defines.YSM_MONITOR_EXIT, packed)
         self.response_length = 0
 
     def parse_result(self, data):

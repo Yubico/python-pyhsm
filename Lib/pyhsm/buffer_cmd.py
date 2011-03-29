@@ -23,9 +23,9 @@ class YHSM_Cmd_Buffer_Load(YHSM_Cmd):
     Ask YubiHSM to load some data into it's internal buffer.
     """
     def __init__(self, stick, data, offset = 0):
-        if len(data) > defines.YHSM_DATA_BUF_SIZE:
+        if len(data) > defines.YSM_DATA_BUF_SIZE:
             raise exception.YHSM_InputTooLong(
-                'data', defines.YHSM_DATA_BUF_SIZE, len(data))
+                'data', defines.YSM_DATA_BUF_SIZE, len(data))
         self.data_len = len(data)
         self.offset = offset
         # typedef struct {
@@ -35,7 +35,7 @@ class YHSM_Cmd_Buffer_Load(YHSM_Cmd):
         # } YSM_BUFFER_LOAD_REQ;
         fmt = "B B %is" % self.data_len
         packed = struct.pack(fmt, self.offset, self.data_len, data)
-        YHSM_Cmd.__init__(self, stick, defines.YHSM_BUFFER_LOAD, packed)
+        YHSM_Cmd.__init__(self, stick, defines.YSM_BUFFER_LOAD, packed)
 
     def parse_result(self, data):
         """ Return True if the public_id in the response matches the one in the request. """
@@ -61,7 +61,7 @@ class YHSM_Cmd_Secrets_Generate(YHSM_Cmd):
     def __init__(self, stick, public_id):
         # store padded public_id for comparision in parse_result
         self.public_id = public_id.ljust(defines.PUBLIC_ID_SIZE, chr(0x0))
-        YHSM_Cmd.__init__(self, stick, defines.YHSM_BUFFER_RANDOM_LOAD, self.public_id)
+        YHSM_Cmd.__init__(self, stick, defines.YSM_BUFFER_RANDOM_LOAD, self.public_id)
 
     def parse_result(self, data):
         """ Return True if the public_id in the response matches the one in the request. """

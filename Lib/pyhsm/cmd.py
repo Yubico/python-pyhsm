@@ -36,7 +36,7 @@ class YHSM_Cmd():
         #   uint8_t cmd;                        // YSM_xxx command
         #   uint8_t payload[YSM_MAX_PKT_SIZE];  // Payload
         # } YSM_PKT;
-        if self.command != defines.YHSM_NULL:
+        if self.command != defines.YSM_NULL:
             cmd_buf = struct.pack('BB', len(self.payload) + 1, self.command)
         else:
             cmd_buf = chr(self.command)
@@ -58,14 +58,14 @@ class YHSM_Cmd():
         response_len, response_status = struct.unpack('BB', res)
         response_len -= 1 # the status byte has been read already
         debug_info = None
-        if response_status & defines.YHSM_RESPONSE:
+        if response_status & defines.YSM_RESPONSE:
             debug_info = "%s response (%i bytes)" \
-                % (defines.cmd2str(response_status - defines.YHSM_RESPONSE), \
+                % (defines.cmd2str(response_status - defines.YSM_RESPONSE), \
                        response_len)
         # read response payload
         res = self.stick.read(response_len, debug_info)
         if res:
-            if response_status == self.command | defines.YHSM_RESPONSE:
+            if response_status == self.command | defines.YSM_RESPONSE:
                 self.executed = True
                 self.response_status = response_status
                 return self.parse_result(res)
@@ -87,7 +87,7 @@ def reset(stick):
     """
     Send a bunch of zero-bytes to the YubiHSM, and flush the input buffer.
     """
-    nulls = (defines.YHSM_MAX_PKT_SIZE - 1) * '\x00'
-    res = YHSM_Cmd(stick, defines.YHSM_NULL, payload = nulls).execute(read_response = False)
+    nulls = (defines.YSM_MAX_PKT_SIZE - 1) * '\x00'
+    res = YHSM_Cmd(stick, defines.YSM_NULL, payload = nulls).execute(read_response = False)
     stick.flush()
     return res == 0

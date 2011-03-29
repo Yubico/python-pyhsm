@@ -18,7 +18,7 @@ class TestOtpValidate(test_common.YHSM_TestCase):
 
     def test_encrypt_decrypt(self):
         """ Test to AES ECB decrypt something encrypted. """
-        plaintext = 'Fjaellen 2011'.ljust(pyhsm.defines.YHSM_BLOCK_SIZE)	# pad for compare after decrypt
+        plaintext = 'Fjaellen 2011'.ljust(pyhsm.defines.YSM_BLOCK_SIZE)	# pad for compare after decrypt
 
         ciphertext = self.hsm.aes_ecb_encrypt(self.kh_encrypt, plaintext)
 
@@ -30,7 +30,7 @@ class TestOtpValidate(test_common.YHSM_TestCase):
 
     def test_compare(self):
         """ Test to AES ECB decrypt and then compare something. """
-        plaintext = 'Maverick'.ljust(pyhsm.defines.YHSM_BLOCK_SIZE)
+        plaintext = 'Maverick'.ljust(pyhsm.defines.YSM_BLOCK_SIZE)
 
         ciphertext = self.hsm.aes_ecb_encrypt(self.kh_encrypt, plaintext)
 
@@ -39,7 +39,7 @@ class TestOtpValidate(test_common.YHSM_TestCase):
 
     def test_compare_bad(self):
         """ Test AES decrypt compare with incorrect plaintext. """
-        plaintext = 'Maverick'.ljust(pyhsm.defines.YHSM_BLOCK_SIZE)
+        plaintext = 'Maverick'.ljust(pyhsm.defines.YSM_BLOCK_SIZE)
 
         ciphertext = self.hsm.aes_ecb_encrypt(self.kh_encrypt, plaintext)
 

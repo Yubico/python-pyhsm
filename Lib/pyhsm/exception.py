@@ -66,10 +66,6 @@ class YHSM_CommandFailed(YHSM_Error):
     """
     def __init__(self, name, status):
         self.status = status
-        if status in defines.YHSM_Status2String:
-            self.status_str = defines.YHSM_Status2String[status]
-        else:
-            self.status_str = "0x%x" % (status)
-
+        self.status_str = defines.status2str(status)
         reason = "Command %s failed: %s" % (name, self.status_str)
         YHSM_Error.__init__(self, reason)

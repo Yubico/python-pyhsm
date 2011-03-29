@@ -32,8 +32,8 @@ class YHSM_Cmd_AES_ECB_Encrypt(YHSM_Cmd):
         #   uint8_t plaintext[YHSM_BLOCK_SIZE];  // Plaintext block
         # } YHSM_ECB_BLOCK_ENCRYPT_REQ;
         payload = struct.pack('<I', key_handle) + \
-            plaintext.ljust(defines.YHSM_BLOCK_SIZE, chr(0x0))
-        YHSM_Cmd.__init__(self, stick, defines.YHSM_ECB_BLOCK_ENCRYPT, payload)
+            plaintext.ljust(defines.YSM_BLOCK_SIZE, chr(0x0))
+        YHSM_Cmd.__init__(self, stick, defines.YSM_ECB_BLOCK_ENCRYPT, payload)
         self.response_length = 22
 
     def __repr__(self):
@@ -53,7 +53,7 @@ class YHSM_Cmd_AES_ECB_Encrypt(YHSM_Cmd):
         key_handle, \
             self.ciphertext, \
             self.status = struct.unpack('<I16sB', data)
-        if self.status == defines.YHSM_STATUS_OK:
+        if self.status == defines.YSM_STATUS_OK:
             return self.ciphertext
         else:
             raise exception.YHSM_CommandFailed('YHSM_ECB_BLOCK_ENCRYPT', self.status)
@@ -74,7 +74,7 @@ class YHSM_Cmd_AES_ECB_Decrypt(YHSM_Cmd):
         #   uint8_t ciphertext[YHSM_BLOCK_SIZE]; // Ciphertext block
         # } YHSM_ECB_BLOCK_DECRYPT_REQ;
         payload = struct.pack('<I16s', key_handle, ciphertext)
-        YHSM_Cmd.__init__(self, stick, defines.YHSM_ECB_BLOCK_DECRYPT, payload)
+        YHSM_Cmd.__init__(self, stick, defines.YSM_ECB_BLOCK_DECRYPT, payload)
         self.response_length = 22
 
     def __repr__(self):
@@ -94,7 +94,7 @@ class YHSM_Cmd_AES_ECB_Decrypt(YHSM_Cmd):
         key_handle, \
             plaintext, \
             self.status = struct.unpack('<I16sB', data)
-        if self.status == defines.YHSM_STATUS_OK:
+        if self.status == defines.YSM_STATUS_OK:
             return plaintext
         else:
             raise exception.YHSM_CommandFailed('YHSM_ECB_BLOCK_DECRYPT', self.status)
@@ -122,9 +122,9 @@ class YHSM_Cmd_AES_ECB_Compare(YHSM_Cmd):
         #   uint8_t plaintext[YHSM_BLOCK_SIZE];  // Plaintext block
         # } YHSM_ECB_BLOCK_DECRYPT_CMP_REQ;
         payload = struct.pack('<I', key_handle) + \
-            ciphertext.ljust(defines.YHSM_BLOCK_SIZE, chr(0x0)) + \
-            plaintext.ljust(defines.YHSM_BLOCK_SIZE, chr(0x0))
-        YHSM_Cmd.__init__(self, stick, defines.YHSM_ECB_BLOCK_DECRYPT_CMP, payload)
+            ciphertext.ljust(defines.YSM_BLOCK_SIZE, chr(0x0)) + \
+            plaintext.ljust(defines.YSM_BLOCK_SIZE, chr(0x0))
+        YHSM_Cmd.__init__(self, stick, defines.YSM_ECB_BLOCK_DECRYPT_CMP, payload)
         self.response_length = 6
 
     def __repr__(self):
@@ -142,9 +142,9 @@ class YHSM_Cmd_AES_ECB_Compare(YHSM_Cmd):
         # } YHSM_ECB_BLOCK_VERIFY_RESP;
         key_handle, \
             self.status = struct.unpack('<IB', data)
-        if self.status == defines.YHSM_STATUS_OK:
+        if self.status == defines.YSM_STATUS_OK:
             return True
-        if self.status == defines.YHSM_MISMATCH:
+        if self.status == defines.YSM_MISMATCH:
             return False
         else:
             raise exception.YHSM_CommandFailed('YHSM_ECB_BLOCK_DECRYPT_CMP', self.status)

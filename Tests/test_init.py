@@ -18,6 +18,8 @@ test_modules = [test_aes_ecb,
                 test_otp_validate,
                 test_yubikey_validate,
                 ]
+test_modules = [test_yubikey_validate]
+
 # special, should not be addded to test_modules
 import test_configure
 

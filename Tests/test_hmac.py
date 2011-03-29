@@ -58,7 +58,7 @@ class TestHMACSHA1(test_common.YHSM_TestCase):
     def test_hmac_interrupted2(self):
         """ Test AES-interrupted HMAC. """
         data = 'Sample #2'
-        plaintext = 'Maverick'.ljust(pyhsm.defines.YHSM_BLOCK_SIZE)
+        plaintext = 'Maverick'.ljust(pyhsm.defines.YSM_BLOCK_SIZE)
         kh_encrypt = 0x1001
         kh_decrypt = 0x1001
 

@@ -24,11 +24,11 @@ class YHSM_Cmd_Echo(YHSM_Cmd):
     Send something to the stick, and expect to get it echoed back.
     """
     def __init__(self, stick, payload=''):
-        if len(payload) > defines.YHSM_MAX_PKT_SIZE - 1:
+        if len(payload) > defines.YSM_MAX_PKT_SIZE - 1:
             raise exception.YHSM_InputTooLong(
-                'payload', defines.YHSM_MAX_PKT_SIZE - 1, len(data))
+                'payload', defines.YSM_MAX_PKT_SIZE - 1, len(data))
         packed = chr(len(payload)) + payload
-        YHSM_Cmd.__init__(self, stick, defines.YHSM_ECHO, packed)
+        YHSM_Cmd.__init__(self, stick, defines.YSM_ECHO, packed)
 
     def parse_result(self, data):
         # typedef struct {
@@ -43,7 +43,7 @@ class YHSM_Cmd_System_Info(YHSM_Cmd):
     Request system information from the stick.
     """
     def __init__(self, stick):
-        YHSM_Cmd.__init__(self, stick, defines.YHSM_SYSTEM_INFO_QUERY)
+        YHSM_Cmd.__init__(self, stick, defines.YSM_SYSTEM_INFO_QUERY)
         self.version_major = 0
         self.version_minor = 0
         self.version_build = 0
@@ -88,7 +88,7 @@ class YHSM_Cmd_Random(YHSM_Cmd):
     """
     def __init__(self, stick, num_bytes):
         packed = chr(num_bytes)
-        YHSM_Cmd.__init__(self, stick, defines.YHSM_RANDOM_GENERATE, packed)
+        YHSM_Cmd.__init__(self, stick, defines.YSM_RANDOM_GENERATE, packed)
 
     def parse_result(self, data):
         # typedef struct {

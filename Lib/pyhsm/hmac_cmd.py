@@ -32,27 +32,27 @@ class YHSM_Cmd_HMAC_SHA1_Write(YHSM_Cmd):
         if type(data) is not str:
             raise exception.YHSM_WrongInputType(
                 'data', type(''), type(data))
-        if len(data) > defines.YHSM_MAX_PKT_SIZE - 6:
+        if len(data) > defines.YSM_MAX_PKT_SIZE - 6:
             raise exception.YHSM_InputTooLong(
-                'data', defines.YHSM_MAX_PKT_SIZE - 6, len(data))
+                'data', defines.YSM_MAX_PKT_SIZE - 6, len(data))
 
         if flags == None:
-            flags = defines.YHSM_HMAC_RESET
+            flags = defines.YSM_HMAC_RESET
             if final:
-                flags |= defines.YHSM_HMAC_FINAL
+                flags |= defines.YSM_HMAC_FINAL
 
         self.final = final
         self.key_handle = key_handle
         self.flags = flags
         packed = _raw_pack(self.key_handle, self.flags, data)
-        YHSM_Cmd.__init__(self, stick, defines.YHSM_HMAC_SHA1_GENERATE, packed)
+        YHSM_Cmd.__init__(self, stick, defines.YSM_HMAC_SHA1_GENERATE, packed)
 
     def next(self, data, final = False):
         """
         Add more input to the HMAC SHA1.
         """
         if final:
-            self.flags = defines.YHSM_HMAC_FINAL
+            self.flags = defines.YSM_HMAC_FINAL
         else:
             self.flags = 0x0
         self.payload = _raw_pack(self.key_handle, self.flags, data)
@@ -83,7 +83,7 @@ class YHSM_Cmd_HMAC_SHA1_Write(YHSM_Cmd):
         key_handle, \
              self.status, \
              num_bytes = struct.unpack_from('<IBB', data, 0)
-        if self.status == defines.YHSM_STATUS_OK:
+        if self.status == defines.YSM_STATUS_OK:
             # struct.hash is not always of size SHA1_HASH_SIZE,
             # it is really the size of numBytes
             if num_bytes:
