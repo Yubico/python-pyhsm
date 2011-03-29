@@ -24,7 +24,7 @@ default_serve_url = "/wsapi/decrypt?otp="
 
 valid_input_from_key = re.compile('^[cbdefghijklnrtuv]{32,48}$')
 
-sos = None
+hsm = None
 args = None
 saved_key_handle = None
 
@@ -47,17 +47,17 @@ class YHSM_KSMRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             public_id, otp = pyhsm.yubikey.split_id_otp(from_key)
 
             global saved_key_handle
-            filename = blob_filename(args.blob_dir, saved_key_handle, public_id)
-            blob = pyhsm.secrets_cmd.YHSM_GeneratedAEAD(public_id, args.key_handle, '')
+            filename = aead_filename(args.aead_dir, saved_key_handle, public_id)
+            aead = pyhsm.secrets_cmd.YHSM_GeneratedAEAD(public_id, args.key_handle, '')
             try:
-                blob.load(filename)
+                aead.load(filename)
             except IOError:
                 self.log_error("IN: %s, File %s not found, or not readable" % (from_key, filename))
                 self.send_response(404, 'Unknown public_id')
                 return
 
             try:
-                res = pyhsm.yubikey.validate_yubikey_with_blob(sos, from_key, blob, args.key_handle)
+                res = pyhsm.yubikey.validate_yubikey_with_aead(hsm, from_key, aead, args.key_handle)
                 # XXX double-check public_id in res, in case BaseHTTPServer suddenly becomes multi-threaded
                 # XXX fix use vs session counter confusion
                 val_res = "OK counter=%04x low=%04x high=%02x use=%02x" % \
@@ -66,7 +66,7 @@ class YHSM_KSMRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                 self.log_error ("IN: %s, Validate FAILED: %s" % (from_key, str(e)))
                 val_res = "ERR"
 
-            self.log_message("SUCCESS OTP %s PT sos %s", from_key, val_res)
+            self.log_message("SUCCESS OTP %s PT hsm %s", from_key, val_res)
 
             self.send_response(200)
             self.send_header('Content-type', 'text/html')
@@ -94,11 +94,11 @@ class YHSM_KSMRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         """ For logging client host without resolving. """
         return self.client_address[0]
 
-def blob_filename(blob_dir, key_handle, public_id):
+def aead_filename(aead_dir, key_handle, public_id):
     """
-    Return the filename of the blob for this public_id.
+    Return the filename of the AEAD for this public_id.
     """
-    parts = [blob_dir, key_handle] + pyhsm.util.group(public_id, 2) + [public_id]
+    parts = [aead_dir, key_handle] + pyhsm.util.group(public_id, 2) + [public_id]
     return os.path.join(*parts)
 
 def parse_args():
@@ -118,11 +118,11 @@ def parse_args():
                         required=False,
                         help='YubiHSM device (default : "%s").' % default_device
                         )
-    parser.add_argument('-B', '--blob-dir',
-                        dest='blob_dir',
+    parser.add_argument('-B', '--aead-dir',
+                        dest='aead_dir',
                         default=default_dir,
                         required=False,
-                        help='Blob directory - base directory of your blobs (default : "%s").' % default_dir
+                        help='Aead directory - base directory of your aeads (default : "%s").' % default_dir
                         )
     parser.add_argument('-U', '--serve-url',
                         dest='serve_url',
@@ -161,14 +161,14 @@ def parse_args():
     parser.add_argument('--key-handle',
                         dest='key_handle',
                         required=True,
-                        help='Key handle to use to decrypt blobs on the YHSM.'
+                        help='Key handle to use to decrypt aeads on the YHSM.'
                         )
 
     return parser.parse_args()
 
 def args_fixup(args):
-    if not os.path.isdir(args.blob_dir):
-        my_log_message(args, syslog.LOG_ERR, "Blob directory '%s' does not exist." % (args.blob_dir))
+    if not os.path.isdir(args.aead_dir):
+        my_log_message(args, syslog.LOG_ERR, "Aead directory '%s' does not exist." % (args.aead_dir))
         sys.exit(1)
 
     global saved_key_handle
@@ -181,8 +181,8 @@ def run(args):
     server_address = (args.listen_addr, args.listen_port)
     httpd = BaseHTTPServer.HTTPServer(server_address, YHSM_KSMRequestHandler)
     global saved_key_handle
-    my_log_message(args, syslog.LOG_INFO, "Serving requests to 'http://%s:%s%s' with key handle %s/%s (YHSM: '%s', blobs in '%s')" \
-                       % (args.listen_addr, args.listen_port, args.serve_url, saved_key_handle, args.key_handle, args.device, args.blob_dir))
+    my_log_message(args, syslog.LOG_INFO, "Serving requests to 'http://%s:%s%s' with key handle %s/%s (YHSM: '%s', AEADs in '%s')" \
+                       % (args.listen_addr, args.listen_port, args.serve_url, saved_key_handle, args.key_handle, args.device, args.aead_dir))
     httpd.serve_forever()
 
 def my_log_message(args, prio, msg):
@@ -200,9 +200,9 @@ def main():
     args = parse_args()
     args_fixup(args)
 
-    global sos
+    global hsm
     try:
-        sos = pyhsm.YHSM(device = args.device, debug = args.debug)
+        hsm = pyhsm.YHSM(device = args.device, debug = args.debug)
     except serial.SerialException, e:
         my_log_message(args, syslog.LOG_ERR, 'Failed opening YHSM device "%s" : %s' %(args.device, e))
         sys.exit(1)

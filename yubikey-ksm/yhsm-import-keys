@@ -76,7 +76,7 @@ def keyhandles_fixup(args):
     """
     Walk through the supplied key handles and normalize them, while keeping
     the input format too (as value in a dictionary). The input format is
-    used in blob filename paths.
+    used in AEAD filename paths.
     """
     new_handles = {}
     for val in args.key_handles:
@@ -87,7 +87,7 @@ def keyhandles_fixup(args):
     args.key_handles = new_handles
 
 
-def import_keys(sos, args):
+def import_keys(hsm, args):
     """
     The main stdin iteration loop.
     """
@@ -108,36 +108,33 @@ def import_keys(sos, args):
         if args.verbose:
             print "  %s" % (padded_id)
 
-        secret = pyhsm.secrets_cmd.YHSM_YubiKeySecrets(key, uid)
-        #print "FREDRIK: LOAD SECRET PUBLIC_ID %s SECRET %s,%s" %(public_id, secret.uid.encode('hex'), secret.key.encode('hex'))
-        sos.load_secret(public_id.decode('hex'), secret)
+        secret = pyhsm.secrets_cmd.YHSM_YubiKeySecret(key, uid)
+        hsm.load_secret(secret)
 
         for kh in args.key_handles.keys():
-            #print "FREDRIK: GENERATING SECRET FOR KEY HANDLE %x" %(kh)
-            blob = sos.generate_aead(kh)
-            #print "FREDRIK: KH %s BLOB %s" % (kh, blob.blob.encode('hex'))
+            aead = hsm.generate_aead(public_id, kh)
             filename = output_filename(args.output_dir, args.key_handles[kh], padded_id)
 
             if args.verbose:
                 print "    %4s, %i bytes (%s) -> %s" % \
-                    (args.key_handles[kh], len(blob.blob), shorten_blob(blob), filename)
+                    (args.key_handles[kh], len(aead.data), shorten_aead(aead), filename)
 
-            blob.save(filename)
+            aead.save(filename)
 
         if args.verbose:
             print ""
 
     print "\nDone\n"
 
-def shorten_blob(blob):
-    head = blob.blob[:4].encode('hex')
-    tail = blob.blob[-4:].encode('hex')
+def shorten_aead(aead):
+    head = aead.data[:4].encode('hex')
+    tail = aead.data[-4:].encode('hex')
     return "%s...%s" % (head, tail)
 
 
 def output_filename(output_dir, key_handle, public_id):
     """
-    Return an output filename for a generated blob. Creates a hashed directory structure
+    Return an output filename for a generated AEAD. Creates a hashed directory structure
     using the last three bytes of the public id to get equal usage.
     """
     parts = [output_dir, key_handle] + pyhsm.util.group(public_id, 2)
@@ -163,9 +160,9 @@ def main():
     print "YHSM device		: %s" % (args.device)
     print ""
 
-    sos = pyhsm.YHSM(device = args.device, debug=args.debug)
+    hsm = pyhsm.YHSM(device = args.device, debug=args.debug)
 
-    import_keys(sos, args)
+    import_keys(hsm, args)
 
 
 if __name__ == '__main__':

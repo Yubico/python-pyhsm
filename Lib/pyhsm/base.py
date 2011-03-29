@@ -114,18 +114,21 @@ class YHSM():
     #
     # Secrets/blob commands
     #
-    def generate_secret(self, public_id):
+    def generate_secret(self, num_bytes = defines.KEY_SIZE + defines.UID_SIZE, offset = 0):
         """
-        Ask YubiHSM to generate a secret for a public_id.
+        Ask YubiHSM to generate a YubiKey secret.
         """
-        if type(public_id) is not str:
+        if type(num_bytes) is not int:
             raise exception.YHSM_WrongInputType(
-                'public_id', type(''), type(public_id))
-        return buffer_cmd.YHSM_Cmd_Secrets_Generate(self.stick, public_id).execute()
+                'num_bytes', type(1), type(num_bytes))
+        if type(offset) is not int:
+            raise exception.YHSM_WrongInputType(
+                'offset', type(1), type(offset))
+        return buffer_cmd.YHSM_Cmd_Secrets_Generate(self.stick, num_bytes, offset).execute()
 
     def load_secret(self, secrets):
         """
-        Ask stick to load a pre-existing secret.
+        Ask stick to load a pre-existing YubiKey secret.
 
         The result is stored internally in the YubiHSM in temporary memory -
         this operation would be followed by one or more generate_aead()
@@ -133,13 +136,22 @@ class YHSM():
         """
         return buffer_cmd.YHSM_Cmd_Buffer_Load(self.stick, secrets.pack()).execute()
 
+    def generate_aead_simple(self, nonce, key_handle, data):
+        """
+        Generate AEAD block from data for a specific key in a single step
+        (without using the YubiHSM internal buffer).
+
+        `data' is either a string, or a YHSM_YubiKeySecret.
+        """
+        return aead_cmd.YHSM_Cmd_AEAD_Generate(self.stick, nonce, key_handle, data).execute()
+
     def generate_aead(self, nonce, key_handle):
         """
         Ask YubiHSM to return the previously generated secret
         (see load_secret()) encrypted with the specified key_handle.
+
+        For a YubiKey secret, the nonce should be the public_id.
         """
-        if type(key_handle) is not int:
-            assert()
         return aead_cmd.YHSM_Cmd_AEAD_Buffer_Generate(self.stick, nonce, key_handle).execute()
 
     def validate_aead(self, nonce, key_handle, aead, cleartext=''):

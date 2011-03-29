@@ -78,6 +78,6 @@ class TestHMACSHA1(test_common.YHSM_TestCase):
         """ Test HMAC SHA1 operation with wrong key handle. """
         try:
             res = self.hsm.hmac_sha1(0x01, 'foo').execute()
-            self.fail("Expected YHSM_FUNCTION_DISABLED, got %s" % (res))
+            self.fail("Expected YSM_FUNCTION_DISABLED, got %s" % (res))
         except pyhsm.exception.YHSM_CommandFailed, e:
-            self.assertEquals(e.status_str, 'YHSM_FUNCTION_DISABLED')
+            self.assertEquals(e.status, pyhsm.defines.YSM_FUNCTION_DISABLED)

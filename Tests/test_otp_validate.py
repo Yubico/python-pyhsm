@@ -22,14 +22,14 @@ class TestOtpValidate(test_common.YHSM_TestCase):
         # 00000009 - stored ok
         key_handle = 9	# Enabled flags 00000020 = YHSM_AEAD_GENERATE
 
-        secret = pyhsm.secrets_cmd.YHSM_YubiKeySecrets(key, uid)
+        secret = pyhsm.secrets_cmd.YHSM_YubiKeySecret(key, uid)
         self.hsm.load_secret(secret)
 
         try:
-            self.hsm.generate_aead(public_id, key_handle)
-            self.fail("key handle should not be valid for generate_aead")
+            res = self.hsm.generate_aead(public_id, key_handle)
+            self.fail("Expected YSM_FUNCTION_DISABLED, got %s" % (res))
         except pyhsm.exception.YHSM_CommandFailed, e:
-            self.assertEquals(e.status_str, 'YHSM_FUNCTION_DISABLED')
+            self.assertEquals(e.status, pyhsm.defines.YSM_FUNCTION_DISABLED)
 
     def test_load_secret(self):
         """ Test load_secret. """
@@ -41,15 +41,14 @@ class TestOtpValidate(test_common.YHSM_TestCase):
         # 00000003 - stored ok
         key_handle = 3
 
-        secret = pyhsm.secrets_cmd.YHSM_YubiKeySecrets(key, uid)
+        secret = pyhsm.secrets_cmd.YHSM_YubiKeySecret(key, uid)
         self.hsm.load_secret(secret)
 
         aead = self.hsm.generate_aead(public_id, key_handle)
 
-        #self.assertIsInstance(aead, pyhsm.secrets_cmd.YHSM_GeneratedAEAD)
-        self.assertTrue(isinstance(aead, pyhsm.secrets_cmd.YHSM_GeneratedAEAD))
+        self.assertTrue(isinstance(aead, pyhsm.aead_cmd.YHSM_GeneratedAEAD))
 
-        self.assertEqual(aead.public_id, public_id)
+        self.assertEqual(aead.nonce, public_id)
         self.assertEqual(aead.key_handle, key_handle)
         #self.assertEqual(aead.data.encode('hex'),
         #                 '45bbdf26fc1a5560b6ff119dfdf743dbd1a65e3a00eab569'
@@ -58,6 +57,6 @@ class TestOtpValidate(test_common.YHSM_TestCase):
 
     def test_yubikey_secrets(self):
         """ Test the class representing the YUBIKEY_SECRETS struct. """
-        aes_128_key = 'a' * 16,
-        first = pyhsm.secrets_cmd.YHSM_YubiKeySecrets(aes_128_key, 'b')
+        aes_128_key = 'a' * 16
+        first = pyhsm.secrets_cmd.YHSM_YubiKeySecret(aes_128_key, 'b')
         self.assertEqual(len(first.pack()), pyhsm.defines.KEY_SIZE + pyhsm.defines.UID_SIZE)

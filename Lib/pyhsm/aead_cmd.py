@@ -19,6 +19,7 @@ __all__ = [
 
 from cmd import YHSM_Cmd
 import exception
+import secrets_cmd
 
 class YHSM_AEAD_Cmd(YHSM_Cmd):
     """
@@ -65,6 +66,37 @@ class YHSM_AEAD_Cmd(YHSM_Cmd):
             return self.response
         else:
             raise exception.YHSM_CommandFailed(defines.cmd2str(self.command), self.status)
+
+class YHSM_Cmd_AEAD_Generate(YHSM_AEAD_Cmd):
+    """
+    Generate AEAD block from data for a specific key.
+
+    `data' is either a string, or a YHSM_YubiKeySecret.
+    """
+    def __init__(self, stick, nonce, key_handle, data):
+        if type(nonce) is not str:
+            raise exception.YHSM_WrongInputType( \
+                'nonce', type(''), type(nonce))
+        if type(key_handle) is not int:
+            raise exception.YHSM_WrongInputType( \
+                'key_handle', type(1), type(key_handle))
+        if isinstance(data, secrets_cmd.YHSM_YubiKeySecret):
+            data = data.pack()
+        if type(data) is not str:
+            raise exception.YHSM_WrongInputType( \
+                'data', type(''), type(data))
+        self.data = data
+        self.nonce = nonce
+        self.key_handle = key_handle
+        # typedef struct {
+        #   uint8_t nonce[YSM_AEAD_NONCE_SIZE]; // Nonce (publicId for Yubikey AEADs)
+        #   uint32_t keyHandle;                 // Key handle
+        #   uint8_t numBytes;                   // Number of data bytes
+        #   uint8_t data[YSM_DATA_BUF_SIZE];    // Data
+        # } YSM_AEAD_GENERATE_REQ;
+        fmt = "< %is I B %is" % (defines.YSM_AEAD_NONCE_SIZE, len(self.data))
+        packed = struct.pack(fmt, nonce, key_handle, len(self.data), self.data)
+        YHSM_Cmd.__init__(self, stick, defines.YSM_AEAD_GENERATE, packed)
 
 class YHSM_Cmd_AEAD_Buffer_Generate(YHSM_AEAD_Cmd):
     """
@@ -143,17 +175,16 @@ class YHSM_Cmd_AEAD_Decrypt_Cmp(YHSM_Cmd):
 
 class YHSM_GeneratedAEAD():
     """ Small class to represent a YHSM_AEAD_GENERATE_RESP. """
-    def __init__(self, public_id, key_handle, aead):
-        self.public_id = public_id
+    def __init__(self, nonce, key_handle, aead):
+        self.nonce = nonce
         self.key_handle = key_handle
-        self.blob = aead  # backwards compatibility
         self.data = aead
 
     def __repr__(self):
-        return '<%s instance at %s: public_id=%s, key_handle=0x%x, data=%i bytes>' % (
+        return '<%s instance at %s: nonce=%s, key_handle=0x%x, data=%i bytes>' % (
             self.__class__.__name__,
             hex(id(self)),
-            self.public_id.encode('hex'),
+            self.nonce.encode('hex'),
             self.key_handle,
             len(self.data)
             )
@@ -168,5 +199,4 @@ class YHSM_GeneratedAEAD():
         """ Load AEAD from a file. """
         f = open(filename, "r")
         self.data = f.read(defines.YSM_MAX_KEY_SIZE + defines.YSM_BLOCK_SIZE)
-        self.blob = self.data  # backwards compatibility
         f.close()

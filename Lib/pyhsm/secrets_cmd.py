@@ -1,5 +1,5 @@
 """
-implementations of secrets/blobs commands for YubiHSM
+implementation of YUBIKEY_SECRETS
 """
 
 # Copyright (c) 2011, Yubico AB
@@ -12,13 +12,13 @@ __all__ = [
     # constants
     # functions
     # classes
-    'YHSM_YubiKeySecrets',
+    'YHSM_YubiKeySecret',
 ]
 
 from cmd import YHSM_Cmd
 import exception
 
-class YHSM_YubiKeySecrets():
+class YHSM_YubiKeySecret():
     """ Small class to represent a YUBIKEY_SECRETS struct. """
     def __init__(self, key, uid):
         if len(key) != defines.KEY_SIZE:

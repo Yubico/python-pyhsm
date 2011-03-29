@@ -101,9 +101,10 @@ YSM_HMAC_TO_BUFFER	= 0x04     # Flag to transfer HMAC to buffer
 
 # Commands
 YSM_NULL			= 0x00
+YSM_AEAD_GENERATE		= 0x01
 YSM_BUFFER_AEAD_GENERATE	= 0x02
 YSM_AEAD_DECRYPT_CMP		= 0x04
-YSM_AEAD_GENERATE		= 0x05
+YSM_YUBIKEY_AEAD_STORE		= 0x05
 YSM_AEAD_OTP_DECODE		= 0x06
 YSM_ECB_BLOCK_ENCRYPT		= 0x0d
 YSM_ECB_BLOCK_DECRYPT		= 0x0e
@@ -119,9 +120,10 @@ YSM_MONITOR_EXIT		= 0x7f
 def cmd2str(cmd):
     """ Return command as string. """
     known = {0x00: 'YSM_NULL',
+             0x01: 'YSM_AEAD_GENERATE',
              0x02: 'YSM_BUFFER_AEAD_GENERATE',
              0x04: 'YSM_AEAD_DECRYPT_CMP',
-             0x05: 'YSM_AEAD_GENERATE',
+             0x05: 'YSM_YUBIKEY_AEAD_STORE',
              0x06: 'YSM_AEAD_OTP_DECODE',
              0x0d: 'YSM_ECB_BLOCK_ENCRYPT',
              0x0e: 'YSM_ECB_BLOCK_DECRYPT',
