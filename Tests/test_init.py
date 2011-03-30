@@ -9,6 +9,7 @@ import pyhsm
 import test_aead
 import test_aes_ecb
 import test_basics
+import test_db
 import test_hmac
 import test_otp_validate
 import test_yubikey_validate
@@ -16,10 +17,13 @@ import test_yubikey_validate
 test_modules = [test_aead,
                 test_aes_ecb,
                 test_basics,
+                test_db,
                 test_hmac,
                 test_otp_validate,
                 test_yubikey_validate,
                 ]
+#test_modules = [test_db]
+#test_modules = [test_aead]
 
 # special, should not be addded to test_modules
 import test_configure

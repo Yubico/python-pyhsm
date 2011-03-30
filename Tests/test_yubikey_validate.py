@@ -114,6 +114,22 @@ class YubiKeyEmu():
 
         return res + struct.pack('<H', crc)
 
+    def get_otp(self, key):
+        """
+        Return an modhex encoded OTP given our current state.
+        """
+        packed = self.pack()
+        obj = AES.new(key, AES.MODE_ECB)
+        ciphertext = obj.encrypt(packed)
+        return ciphertext
+
+    def from_key(self, public_id, key):
+        """
+        Return what the YubiKey would have returned when the button was pressed.
+        """
+        otp = self.get_otp(key)
+        from_key = modhex_encode(public_id.encode('hex')) + otp
+        return from_key
 
 class YubiKeyRnd(YubiKeyEmu):
     """ YubiKeyEmu with everything but user_id randomized. """
@@ -140,7 +156,7 @@ def crc16(data):
 class TestYubikeyValidate(test_common.YHSM_TestCase):
 
     def setUp(self):
-        test_common.YHSM_TestCase.setUp(self, debug = True)
+        test_common.YHSM_TestCase.setUp(self)
 
         self.yk_key = 'F' * 16	# 128 bit AES key
         self.yk_uid = '\x4d\x01\x4d\x02\x4d\x4d'
@@ -173,13 +189,7 @@ class TestYubikeyValidate(test_common.YHSM_TestCase):
 
     def test_validate_yubikey(self):
         """ Test validate YubiKey OTP. """
-
-        # encrypt our fake yubikey
-        obj = AES.new(self.yk_key, AES.MODE_ECB)
-        ciphertext = obj.encrypt(self.yk_rnd.pack())
-        mh_ciphertext = modhex_encode(ciphertext.encode('hex'))
-        from_key = modhex_encode(self.yk_public_id.encode('hex')) + mh_ciphertext
-
+        from_key = self.yk_rnd.from_key(self.yk_public_id, self.yk_key)
         self.assertTrue(validate_yubikey_with_aead(self.hsm, from_key, self.aead.data, self.kh_validate))
 
     def test_modhex_encode_decode(self):

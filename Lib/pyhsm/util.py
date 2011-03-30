@@ -6,6 +6,7 @@ collection of utility functions
 # All rights reserved.
 
 import struct
+import exception
 
 __all__ = [
     # constants
@@ -44,7 +45,11 @@ def key_handle_to_int(this):
     """
     try:
         n = int(this)
+        return n
     except ValueError:
+        if this[:2] == "0x":
+            return int(this, 16)
         if (len(this) == 4):
             n = struct.unpack('<I', this)[0]
-    return n
+            return n
+    raise exception.YHSM_Error("Could not parse key_handle '%s'" % (this))

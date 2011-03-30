@@ -19,8 +19,7 @@ from cmd import YHSM_Cmd
 
 class YHSM_Cmd_AEAD_Validate_OTP(YHSM_Cmd):
     """
-    Request the stick to validate an OTP using an externally stored
-    AEAD and a keyhandle to decrypt that AEAD.
+    Request the YubiHSM to validate an OTP using an externally stored AEAD.
     """
     def __init__(self, stick, public_id, otp, key_handle, aead):
         if len(public_id) > defines.PUBLIC_ID_SIZE:

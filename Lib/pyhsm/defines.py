@@ -46,16 +46,20 @@ PUBLIC_ID_SIZE		= 6	# Size of public id for std OTP validation
 OTP_SIZE		= 16	# Size of OTP
 YSM_BLOCK_SIZE		= 16	# Size of block operations
 YSM_MAX_KEY_SIZE	= 32	# Max size of CCMkey
-YSM_AEAD_MAC_SIZE	= 8	# Size of AEAD MAC field
-SHA1_HASH_SIZE		= 20	# 160-bit SHA1 hash size
 YSM_DATA_BUF_SIZE	= 64	# Size of internal data buffer
 YSM_AEAD_NONCE_SIZE	= 6	# Size of AEAD nonce (excluding size of key handle)
+YSM_AEAD_MAC_SIZE	= 8	# Size of AEAD MAC field
+YSM_CCM_CTR_SIZE	= 2	# Sizeof of AES CCM counter field
+YSM_AEAD_MAX_SIZE	= (YSM_DATA_BUF_SIZE + YSM_AEAD_MAC_SIZE) # Max size of an AEAD block
+SHA1_HASH_SIZE		= 20	# 160-bit SHA1 hash size
+CTR_DRBG_SEED_SIZE	= 32	# Size of CTR-DRBG entropy
+YSM_MAX_PKT_SIZE	= 0x60    # Max size of a packet (excluding command byte)
+
 # these two are in ykdef.h
 UID_SIZE	= 6
 KEY_SIZE	= 16
 
 YSM_RESPONSE		= 0x80    # Response bit
-YSM_MAX_PKT_SIZE	= 0x60    # Max size of a packet (excluding command byte)
 YUBIKEY_AEAD_SIZE	= (KEY_SIZE + UID_SIZE + YSM_AEAD_MAC_SIZE)
 
 # Response codes
@@ -103,9 +107,11 @@ YSM_HMAC_TO_BUFFER	= 0x04     # Flag to transfer HMAC to buffer
 YSM_NULL			= 0x00
 YSM_AEAD_GENERATE		= 0x01
 YSM_BUFFER_AEAD_GENERATE	= 0x02
+YSM_RANDOM_AEAD_GENERATE	= 0x03
 YSM_AEAD_DECRYPT_CMP		= 0x04
 YSM_YUBIKEY_AEAD_STORE		= 0x05
 YSM_AEAD_OTP_DECODE		= 0x06
+YSM_DB_OTP_VALIDATE		= 0x07
 YSM_ECB_BLOCK_ENCRYPT		= 0x0d
 YSM_ECB_BLOCK_DECRYPT		= 0x0e
 YSM_ECB_BLOCK_DECRYPT_CMP	= 0x0f
@@ -122,9 +128,11 @@ def cmd2str(cmd):
     known = {0x00: 'YSM_NULL',
              0x01: 'YSM_AEAD_GENERATE',
              0x02: 'YSM_BUFFER_AEAD_GENERATE',
+             0x03: 'YSM_RANDOM_AEAD_GENERATE',
              0x04: 'YSM_AEAD_DECRYPT_CMP',
              0x05: 'YSM_YUBIKEY_AEAD_STORE',
              0x06: 'YSM_AEAD_OTP_DECODE',
+             0x07: 'YSM_DB_OTP_VALIDATE',
              0x0d: 'YSM_ECB_BLOCK_ENCRYPT',
              0x0e: 'YSM_ECB_BLOCK_DECRYPT',
              0x0f: 'YSM_ECB_BLOCK_DECRYPT_CMP',

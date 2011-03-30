@@ -12,6 +12,7 @@ __all__ = [
     # constants
     # functions
     # classes
+    'YHSM_Cmd_AEAD_Random_Generate'
     'YHSM_Cmd_AEAD_Buffer_Generate',
     'YHSM_Cmd_AEAD_Decrypt_Cmp',
     'YHSM_GeneratedAEAD'
@@ -98,14 +99,43 @@ class YHSM_Cmd_AEAD_Generate(YHSM_AEAD_Cmd):
         packed = struct.pack(fmt, nonce, key_handle, len(self.data), self.data)
         YHSM_Cmd.__init__(self, stick, defines.YSM_AEAD_GENERATE, packed)
 
+class YHSM_Cmd_AEAD_Random_Generate(YHSM_AEAD_Cmd):
+    """
+    Generate a random AEAD block using the YubiHSM internal TRNG.
+
+    To generate a secret for a YubiKey, use public_id as nonce.
+    """
+    def __init__(self, stick, nonce, key_handle, num_bytes):
+        if type(nonce) is not str:
+            raise exception.YHSM_WrongInputType( \
+                'nonce', type(''), type(nonce))
+        if type(key_handle) is not int:
+            raise exception.YHSM_WrongInputType( \
+                'key_handle', type(1), type(key_handle))
+        if type(num_bytes) is not int:
+            raise exception.YHSM_WrongInputType( \
+                'num_bytes', type(1), type(num_bytes))
+        self.nonce = nonce
+        self.key_handle = key_handle
+        self.num_bytes = num_bytes
+        # typedef struct {
+        #   uint8_t nonce[YSM_AEAD_NONCE_SIZE]; // Nonce (publicId for Yubikey AEADs)
+        #   uint32_t keyHandle;                 // Key handle
+        #   uint8_t numBytes;                   // Number of bytes to randomize
+        # } YSM_RANDOM_AEAD_GENERATE_REQ;
+        fmt = "< %is I B" % (defines.YSM_AEAD_NONCE_SIZE)
+        packed = struct.pack(fmt, nonce, key_handle, num_bytes)
+        YHSM_Cmd.__init__(self, stick, defines.YSM_RANDOM_AEAD_GENERATE, packed)
+
 class YHSM_Cmd_AEAD_Buffer_Generate(YHSM_AEAD_Cmd):
     """
     Generate AEAD block of data buffer for a specific key.
 
-    After a key has been loaded into the data buffer, this command can be used
-    a number of times to get AEADs of the data buffer for different key handles.
+    After a key has been loaded into the internal data buffer, this command can be
+    used a number of times to get AEADs of the data buffer for different key handles.
 
-    For example, to encrypt a YubiKey secrets to one or more Yubico KSM's.
+    For example, to encrypt a YubiKey secrets to one or more Yubico KSM's that
+    all have a YubiHSM attached to them.
     """
     def __init__(self, stick, nonce, key_handle):
         self.nonce = nonce
@@ -120,7 +150,9 @@ class YHSM_Cmd_AEAD_Buffer_Generate(YHSM_AEAD_Cmd):
 
 class YHSM_Cmd_AEAD_Decrypt_Cmp(YHSM_Cmd):
     """
-    Validate an AEAD using the YubiHSM.
+    Validate an AEAD using the YubiHSM, optionally matching it against
+    some known plain text. Matching is done inside the YubiHSM so the
+    decrypted AEAD never leaves the YubiHSM.
 
     Empty cleartext just validates the AEAD.
     """
@@ -128,7 +160,14 @@ class YHSM_Cmd_AEAD_Decrypt_Cmp(YHSM_Cmd):
         if type(cleartext) is not str:
             raise exception.YHSM_WrongInputType(
                 'cleartext', type(''), type(cleartext))
-        data = aead.data + cleartext
+        expected_ct_len = len(aead.data) - defines.YSM_AEAD_MAC_SIZE
+        if len(cleartext) > expected_ct_len:
+            raise exception.YHSM_Error("Cleartext too long for supplied AEAD (%i > %i)" \
+                                           % (len(cleartext), expected_ct_len))
+        if len(cleartext) < expected_ct_len:
+            # must pad with zeros
+            cleartext = cleartext.ljust(expected_ct_len, chr(0x0))
+        data = cleartext + aead.data
         if len(data) > defines.YSM_MAX_PKT_SIZE - 10:
             raise exception.YHSM_InputTooLong(
                 'packed_aead+cleartext', defines.YSM_MAX_PKT_SIZE - 10, len(data))

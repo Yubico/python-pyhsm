@@ -10,7 +10,7 @@ import test_common
 class TestOtpValidate(test_common.YHSM_TestCase):
 
     def setUp(self):
-        test_common.YHSM_TestCase.setUp(self, debug=True)
+        test_common.YHSM_TestCase.setUp(self)
 
     def test_load_secret_wrong_key(self):
         """ Test load_secret with key that should not be allowed to. """

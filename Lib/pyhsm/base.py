@@ -112,7 +112,7 @@ class YHSM():
         return basic_cmd.YHSM_Cmd_Random(self.stick, num_bytes).execute()
 
     #
-    # Secrets/blob commands
+    # AEAD related commands
     #
     def generate_secret(self, num_bytes = defines.KEY_SIZE + defines.UID_SIZE, offset = 0):
         """
@@ -128,7 +128,7 @@ class YHSM():
 
     def load_secret(self, secrets):
         """
-        Ask stick to load a pre-existing YubiKey secret.
+        Ask YubiHSM to load a pre-existing YubiKey secret.
 
         The result is stored internally in the YubiHSM in temporary memory -
         this operation would be followed by one or more generate_aead()
@@ -144,6 +144,14 @@ class YHSM():
         `data' is either a string, or a YHSM_YubiKeySecret.
         """
         return aead_cmd.YHSM_Cmd_AEAD_Generate(self.stick, nonce, key_handle, data).execute()
+
+    def generate_aead_random(self, nonce, key_handle, num_bytes):
+        """
+        Generate a random AEAD block using the YubiHSM internal TRNG.
+
+        To generate a secret for a YubiKey, use public_id as nonce.
+        """
+        return aead_cmd.YHSM_Cmd_AEAD_Random_Generate(self.stick, nonce, key_handle, num_bytes).execute()
 
     def generate_aead(self, nonce, key_handle):
         """
@@ -229,6 +237,29 @@ class YHSM():
     def hmac_sha1(self, key_handle, data, final = True):
         """
         Have the YubiHSM generate a HMAC SHA1 of 'data' using a key handle.
+
+        XXX make this execute() for consistency
         """
         return hmac_cmd.YHSM_Cmd_HMAC_SHA1_Write( \
             self.stick, key_handle, data, final = final)
+
+
+    #
+    # Internal YubiKey database related commands
+    #
+    def db_store_yubikey(self, public_id, key_handle, aead):
+        """
+        Ask YubiHSM to store data about a YubiKey in the internal database (not buffer).
+
+        The input is an AEAD, perhaps previously created using generate_aead().
+        """
+        return db_cmd.YHSM_Cmd_DB_YubiKey_Store( \
+            self.stick, public_id, key_handle, aead).execute()
+
+    def db_validate_yubikey_otp(self, public_id, otp):
+        """
+        Request the YubiHSM to validate an OTP for a YubiKey stored
+        in the internal database.
+        """
+        return db_cmd.YHSM_Cmd_DB_Validate_OTP( \
+            self.stick, public_id, otp).execute()
