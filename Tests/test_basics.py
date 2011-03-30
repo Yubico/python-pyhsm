@@ -18,6 +18,7 @@ class TestBasics(test_common.YHSM_TestCase):
         r1 = self.hsm.random(10)
         r2 = self.hsm.random(10)
         self.assertNotEqual(r1, r2)
+        self.assertEqual(len(r1), 10)
 
     def test_util_key_handle_to_int(self):
         """ Test util.key_handle_to_int. """

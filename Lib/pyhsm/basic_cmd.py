@@ -87,7 +87,8 @@ class YHSM_Cmd_Random(YHSM_Cmd):
     Ask stick to generate a number of random bytes.
     """
     def __init__(self, stick, num_bytes):
-        packed = chr(num_bytes)
+        self.num_bytes = num_bytes
+        packed = chr(self.num_bytes)
         YHSM_Cmd.__init__(self, stick, defines.YSM_RANDOM_GENERATE, packed)
 
     def parse_result(self, data):
@@ -96,4 +97,7 @@ class YHSM_Cmd_Random(YHSM_Cmd):
         #   uint8_t rnd[YSM_MAX_PKT_SIZE - 1];  // Random data
         # } YHSM_RANDOM_GENERATE_RESP;
         num_bytes = ord(data[0])
-        return data[1:num_bytes]
+        if num_bytes != self.num_bytes:
+            raise exception.YHSM_Error("Incorrect number of bytes in response (got %s, expected %s)" \
+                                           % (num_bytes, self.num_bytes))
+        return data[1:1 + num_bytes]
