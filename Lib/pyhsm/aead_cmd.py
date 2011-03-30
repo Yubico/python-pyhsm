@@ -78,6 +78,9 @@ class YHSM_Cmd_AEAD_Generate(YHSM_AEAD_Cmd):
         if type(nonce) is not str:
             raise exception.YHSM_WrongInputType( \
                 'nonce', type(''), type(nonce))
+        if len(nonce) > defines.YSM_AEAD_NONCE_SIZE:
+            raise exception.YHSM_InputTooLong(
+                'nonce', defines.YSM_AEAD_NONCE_SIZE, len(nonce))
         if type(key_handle) is not int:
             raise exception.YHSM_WrongInputType( \
                 'key_handle', type(1), type(key_handle))
@@ -109,6 +112,9 @@ class YHSM_Cmd_AEAD_Random_Generate(YHSM_AEAD_Cmd):
         if type(nonce) is not str:
             raise exception.YHSM_WrongInputType( \
                 'nonce', type(''), type(nonce))
+        if len(nonce) > defines.YSM_AEAD_NONCE_SIZE:
+            raise exception.YHSM_InputTooLong(
+                'nonce', defines.YSM_AEAD_NONCE_SIZE, len(nonce))
         if type(key_handle) is not int:
             raise exception.YHSM_WrongInputType( \
                 'key_handle', type(1), type(key_handle))
@@ -138,6 +144,15 @@ class YHSM_Cmd_AEAD_Buffer_Generate(YHSM_AEAD_Cmd):
     all have a YubiHSM attached to them.
     """
     def __init__(self, stick, nonce, key_handle):
+        if type(nonce) is not str:
+            raise exception.YHSM_WrongInputType( \
+                'nonce', type(''), type(nonce))
+        if len(nonce) > defines.YSM_AEAD_NONCE_SIZE:
+            raise exception.YHSM_InputTooLong(
+                'nonce', defines.YSM_AEAD_NONCE_SIZE, len(nonce))
+        if type(key_handle) is not int:
+            raise exception.YHSM_WrongInputType( \
+                'key_handle', type(1), type(key_handle))
         self.nonce = nonce
         self.key_handle = key_handle
         # typedef struct {
@@ -174,6 +189,9 @@ class YHSM_Cmd_AEAD_Decrypt_Cmp(YHSM_Cmd):
         if type(nonce) is not str:
             raise exception.YHSM_WrongInputType(
                 'nonce', type(''), type(nonce))
+        if len(nonce) > defines.YSM_AEAD_NONCE_SIZE:
+            raise exception.YHSM_InputTooLong(
+                'nonce', defines.YSM_AEAD_NONCE_SIZE, len(nonce))
         if type(key_handle) is not int:
             raise exception.YHSM_WrongInputType(
                 'key_handle', type(1), type(key_handle))
