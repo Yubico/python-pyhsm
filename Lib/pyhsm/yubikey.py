@@ -11,11 +11,25 @@ import aead_cmd
 __all__ = [
     # constants
     # functions
+    'validate_otp',
     'validate_yubikey_with_aead',
     'modhex_encode',
     'modhex_decode',
     # classes
  ]
+
+def validate_otp(hsm, from_key):
+    """
+    Try to validate an OTP from a YubiKey using the internal database
+    on the YubiHSM.
+
+    `from_key' is the modhex encoded string emitted when you press the
+    button on your YubiKey.
+    """
+    public_id, otp = split_id_otp(from_key)
+    return hsm.db_validate_yubikey_otp(modhex_decode(public_id).decode('hex'),
+                                       modhex_decode(otp).decode('hex')
+                                       )
 
 def validate_yubikey_with_aead(hsm, from_key, aead, key_handle):
     """
