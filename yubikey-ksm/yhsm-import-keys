@@ -1,6 +1,16 @@
 #!/usr/bin/env python
 #
-# Tool to import YubiKey secrets to YubiHSM
+# Tool to import YubiKey secrets to YubiHSM.
+#
+# The default mode is to turn each YubiKey secret into an AEAD
+# (Authenticated Encryption with Associated Data) block that is stored
+# in a file on the host computer (one file per YubiKey). This enables
+# validation of virtually unlimited numbers of YubiKey's OTPs.
+#
+# If --internal-db is used, the YubiKey secret will be stored inside
+# the YubiHSM, and complete validation (including counter management)
+# will be done inside the YubiHSM. The internal database is currently
+# limited to 1000 entrys.
 #
 # Copyright (c) 2011, Yubico AB
 # All rights reserved.
@@ -61,11 +71,21 @@ def parse_args():
                         required=True,
                         help='Key handles to encrypt the generated secrets with.'
                         )
+    parser.add_argument('--internal-db',
+                        dest='internal_db',
+                        action='store_true', default=False,
+                        help='Store key in YubiHSM internal database.'
+                        )
 
-    return parser.parse_args()
+    args = parser.parse_args()
+    if args.internal_db:
+        if len(args.key_handles) != 1:
+            sys.stderr.write("--internal-db requires exactly one key handle.")
+            sys.exit(1)
+    return args
 
 def args_fixup(args):
-    if not os.path.isdir(args.output_dir):
+    if not args.internal_db and not os.path.isdir(args.output_dir):
         sys.stderr.write("Output directory '%s' does not exist.\n" % (args.output_dir))
         sys.exit(1)
 
@@ -112,7 +132,11 @@ def import_keys(hsm, args):
         hsm.load_secret(secret)
 
         for kh in args.key_handles.keys():
-            aead = hsm.generate_aead(public_id, kh)
+            aead = hsm.generate_aead(public_id.decode('hex'), kh)
+            if args.internal_db:
+                store_in_internal_db(args, hsm, modhex_id, public_id, kh, aead)
+                continue
+
             filename = output_filename(args.output_dir, args.key_handles[kh], padded_id)
 
             if args.verbose:
@@ -126,11 +150,26 @@ def import_keys(hsm, args):
 
     print "\nDone\n"
 
+def store_in_internal_db(args, hsm, modhex_id, public_id, kh, aead):
+    """ Store record (AEAD) in YubiHSM internal DB """
+    if args.verbose:
+        print "    %i bytes (%s) -> internal db..." % \
+            (len(aead.data), shorten_aead(aead)),
+    try:
+        hsm.db_store_yubikey(public_id.decode('hex'), kh, aead)
+        if args.verbose:
+            print "OK"
+    except pyhsm.exception.YHSM_CommandFailed, e:
+        if args.verbose:
+            print "%s" % (pyhsm.defines.status2str(e.status))
+        else:
+            print "Storing ID %s FAILED: %s" % (modhex_id, pyhsm.defines.status2str(e.status))
+
 def shorten_aead(aead):
+    """ Produce pretty-printable version of long AEAD. """
     head = aead.data[:4].encode('hex')
     tail = aead.data[-4:].encode('hex')
     return "%s...%s" % (head, tail)
-
 
 def output_filename(output_dir, key_handle, public_id):
     """
@@ -144,7 +183,6 @@ def output_filename(output_dir, key_handle, public_id):
         os.makedirs(path)
 
     return os.path.join(path, public_id)
-
 
 def main():
     args = parse_args()
