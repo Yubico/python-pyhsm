@@ -49,7 +49,7 @@ class YHSM_InputTooLong(YHSM_Error):
     Exception raised for too long input to some function.
     """
     def __init__(self, name, expected, size):
-        reason = "Argument '%s' too long, expected less than %i got %i" % (name, expected, size)
+        reason = "Argument '%s' too long, expected max %i got %i" % (name, expected, size)
         YHSM_Error.__init__(self, reason)
 
 class YHSM_WrongInputType(YHSM_Error):
