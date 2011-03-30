@@ -33,7 +33,7 @@ if d_argv.has_key('-h'):
 
 res = 0
 try:
-    s = pyhsm.base.YHSM(device=device, debug = True)
+    s = pyhsm.base.YHSM(device=device, debug = debug)
 
     if raw:
         # No initialization
