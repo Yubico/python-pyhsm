@@ -10,7 +10,7 @@
 # If --internal-db is used, the YubiKey secret will be stored inside
 # the YubiHSM, and complete validation (including counter management)
 # will be done inside the YubiHSM. The internal database is currently
-# limited to 1000 entrys.
+# limited to 1024 entrys.
 #
 # Copyright (c) 2011, Yubico AB
 # All rights reserved.
