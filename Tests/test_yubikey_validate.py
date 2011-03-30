@@ -8,66 +8,9 @@ import struct
 import unittest
 import pyhsm
 from Crypto.Cipher import AES
+from pyhsm.yubikey import modhex_encode, modhex_decode
 
 import test_common
-
-def validate_yubikey_with_aead(YHSM, from_key, aead, key_handle):
-    """
-    Try to validate an OTP from a YubiKey using the aead that can decrypt this YubiKey's
-    internal secret, using the key_handle for the aead.
-
-    The parameter aead is either a string, or an instance of YHSM_GeneratedAEAD.
-    """
-
-    try:
-        # check if aead is an instance of something with a 'data' attribute
-        # (like a YHSM_GeneratedAEAD)
-        aead = aead.data
-    except AttributeError:
-        pass
-
-    if type(from_key) is not str:
-        raise pyhsm.exception.YHSM_WrongInputType(
-            'from_key', type(''), type(from_key))
-    if type(aead) is not str:
-        raise pyhsm.exception.YHSM_WrongInputType(
-            'aead', type(''), type(aead))
-    if type(key_handle) is not int:
-        raise pyhsm.exception.YHSM_WrongInputType(
-            'key_handle', type(1), type(key_handle))
-
-    if len(aead) == 48 * 2:
-        aead = aead.decode('hex')
-
-    public_id, otp = split_id_otp(from_key)
-
-    public_id = modhex_decode(public_id)
-    otp = modhex_decode(otp)
-
-    return YHSM.validate_aead_otp(public_id.decode('hex'), otp.decode('hex'), key_handle, aead)
-
-
-def modhex_decode(data):
-    """ Convert a modhex string to ordinary hex. """
-    t_map = string.maketrans("cbdefghijklnrtuv", "0123456789abcdef")
-    return data.translate(t_map)
-
-def modhex_encode(data):
-    """ Convert an ordinary hex string to modhex. """
-    t_map = string.maketrans("0123456789abcdef", "cbdefghijklnrtuv")
-    return data.translate(t_map)
-
-def split_id_otp(from_key):
-    """ Separate public id from OTP given a YubiKey OTP as input. """
-    if len(from_key) > 32:
-        public_id, otp = from_key[:-32], from_key[-32:]
-    elif len(from_key) == 32:
-        public_id = ''
-        otp = from_key
-    else:
-        assert()
-    return public_id, otp
-
 
 class YubiKeyEmu():
     """
@@ -128,7 +71,7 @@ class YubiKeyEmu():
         Return what the YubiKey would have returned when the button was pressed.
         """
         otp = self.get_otp(key)
-        from_key = modhex_encode(public_id.encode('hex')) + otp
+        from_key = modhex_encode(public_id.encode('hex')) + modhex_encode(otp.encode('hex'))
         return from_key
 
 class YubiKeyRnd(YubiKeyEmu):
@@ -184,13 +127,14 @@ class TestYubikeyValidate(test_common.YHSM_TestCase):
         """ Test that the AEAD generated contains our secrets. """
         secret = pyhsm.secrets_cmd.YHSM_YubiKeySecret(self.yk_key, self.yk_uid)
         cleartext = secret.pack()
-        #self.assertTrue(self.hsm.validate_aead(self.yk_public_id, self.kh_validate, self.aead, cleartext))
+        self.assertTrue(self.hsm.validate_aead(self.yk_public_id, self.kh_validate, self.aead, cleartext))
         self.assertFalse(self.hsm.validate_aead(self.yk_public_id, self.kh_validate, self.aead, 'BBBBBB'))
 
     def test_validate_yubikey(self):
         """ Test validate YubiKey OTP. """
         from_key = self.yk_rnd.from_key(self.yk_public_id, self.yk_key)
-        self.assertTrue(validate_yubikey_with_aead(self.hsm, from_key, self.aead.data, self.kh_validate))
+        self.assertTrue(pyhsm.yubikey.validate_yubikey_with_aead( \
+                self.hsm, from_key, self.aead.data, self.kh_validate))
 
     def test_modhex_encode_decode(self):
         """ Test modhex encoding/decoding. """

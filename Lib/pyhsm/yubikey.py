@@ -6,23 +6,26 @@ helper functions to work with Yubikeys and YubiHSM
 
 import string
 import exception
+import aead_cmd
 
 __all__ = [
     # constants
     # functions
+    'validate_yubikey_with_aead',
+    'modhex_encode',
+    'modhex_decode',
     # classes
-    'YHSM'
-]
+ ]
 
-def validate_yubikey_with_aead(YHSM, from_key, aead, key_handle):
+def validate_yubikey_with_aead(hsm, from_key, aead, key_handle):
     """
-    Try to validate an OTP from a YubiKey using the aead that can decrypt this YubiKey's
-    internal secret, using the key_handle for the aead.
+    Try to validate an OTP from a YubiKey using the AEAD that can decrypt this YubiKey's
+    internal secret, using the key_handle for the AEAD.
 
-    The parameter aead is either a string, or an instance of YHSM_GeneratedAEAD.
+    The parameter `aead' is either a string, or an instance of YHSM_GeneratedAEAD.
     """
 
-    if isinstance(aead, pyhsm.secrets_cmd.YHSM_GeneratedAEAD):
+    if isinstance(aead, aead_cmd.YHSM_GeneratedAEAD):
         aead = aead.data
 
     if type(from_key) is not str:
@@ -43,7 +46,7 @@ def validate_yubikey_with_aead(YHSM, from_key, aead, key_handle):
     public_id = modhex_decode(public_id)
     otp = modhex_decode(otp)
 
-    return YHSM.validate_aead_otp(public_id.decode('hex'), otp.decode('hex'), key_handle, aead)
+    return hsm.validate_aead_otp(public_id.decode('hex'), otp.decode('hex'), key_handle, aead)
 
 def modhex_decode(data):
     """ Convert a modhex string to ordinary hex. """
@@ -63,5 +66,6 @@ def split_id_otp(from_key):
         public_id = ''
         otp = from_key
     else:
-        assert()
+        raise exception.YHSM_Error("Bad from_key length %i < 32 : %s" \
+                                       % (len(from_key), from_key))
     return public_id, otp
