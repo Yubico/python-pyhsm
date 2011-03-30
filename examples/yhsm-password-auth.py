@@ -155,7 +155,7 @@ def main():
 
         if args.verbose:
             print "Success! Remember the nonce and use this AEAD to validate the password later :\n"
-            print "AEAD: %s NONCE: '%s'" % (aead.encode('hex'), args.nonce)
+        print "AEAD: %s NONCE: '%s'" % (aead.encode('hex'), args.nonce)
     else:
         #
         # VALIDATE password
