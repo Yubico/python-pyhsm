@@ -10,7 +10,7 @@ import test_common
 class TestBasics(test_common.YHSM_TestCase):
 
     def setUp(self):
-        test_common.YHSM_TestCase.setUp(self, debug=True)
+        test_common.YHSM_TestCase.setUp(self)
 
     def test_echo(self):
         """ Test echo command. """
@@ -53,3 +53,30 @@ class TestBasics(test_common.YHSM_TestCase):
         r1 = self.hsm.random(10)
         r2 = self.hsm.random(10)
         self.assertNotEqual(r1, r2)
+
+    def test_load_temp_key(self):
+        """ Test load_temp_key. """
+        key = "A" * 16
+        uid = '\x4d\x01\x4d\x02'
+        nonce = 'f1f2f3f4f5f6'.decode('hex')
+        # key 0x2000 has all flags set
+        key_handle = 0x2000
+
+        my_key = 'C' * pyhsm.defines.YSM_MAX_KEY_SIZE
+        self.hsm.load_secret(my_key)
+
+        aead = self.hsm.generate_aead(nonce, key_handle)
+
+        self.assertTrue(isinstance(aead, pyhsm.aead_cmd.YHSM_GeneratedAEAD))
+
+        # Load the AEAD into the phantom key handle 0xffffffff.
+        self.assertTrue(self.hsm.load_temp_key(nonce, key_handle, aead))
+
+        # Encrypt something with the phantom key
+        plaintext = 'Testing'.ljust(pyhsm.defines.YSM_BLOCK_SIZE)	# pad for compare after decrypt
+        ciphertext = self.hsm.aes_ecb_encrypt(pyhsm.defines.TEMP_KEY_HANDLE, plaintext)
+        self.assertNotEqual(plaintext, ciphertext)
+
+        # Now decrypt it again and verify result
+        decrypted = self.hsm.aes_ecb_decrypt(pyhsm.defines.TEMP_KEY_HANDLE, ciphertext)
+        self.assertEqual(plaintext, decrypted)

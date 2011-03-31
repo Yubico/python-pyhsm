@@ -55,6 +55,8 @@ SHA1_HASH_SIZE		= 20	# 160-bit SHA1 hash size
 CTR_DRBG_SEED_SIZE	= 32	# Size of CTR-DRBG entropy
 YSM_MAX_PKT_SIZE	= 0x60    # Max size of a packet (excluding command byte)
 
+TEMP_KEY_HANDLE		= 0xffffffff # Phantom temporary key handle
+
 # these two are in ykdef.h
 UID_SIZE	= 6
 KEY_SIZE	= 16
@@ -116,6 +118,7 @@ YSM_ECB_BLOCK_ENCRYPT		= 0x0d
 YSM_ECB_BLOCK_DECRYPT		= 0x0e
 YSM_ECB_BLOCK_DECRYPT_CMP	= 0x0f
 YSM_HMAC_SHA1_GENERATE		= 0x10
+YSM_TEMP_KEY_LOAD		= 0x11
 YSM_BUFFER_LOAD			= 0x20
 YSM_BUFFER_RANDOM_LOAD		= 0x21
 YSM_NONCE_GET			= 0x22
@@ -139,6 +142,7 @@ def cmd2str(cmd):
              0x0e: 'YSM_ECB_BLOCK_DECRYPT',
              0x0f: 'YSM_ECB_BLOCK_DECRYPT_CMP',
              0x10: 'YSM_HMAC_SHA1_GENERATE',
+             0x11: 'YSM_TEMP_KEY_LOAD',
              0x20: 'YSM_BUFFER_LOAD',
              0x21: 'YSM_BUFFER_RANDOM_LOAD',
              0x22: 'YSM_NONCE_GET',

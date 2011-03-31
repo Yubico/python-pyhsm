@@ -6,8 +6,6 @@ implementations of basic commands to execute on a YubiHSM
 # All rights reserved.
 
 import struct
-import defines
-import exception
 
 __all__ = [
     # constants
@@ -18,6 +16,9 @@ __all__ = [
     'YHSM_Cmd_Random',
 ]
 
+import defines
+import exception
+import aead_cmd
 from cmd import YHSM_Cmd
 
 class YHSM_Cmd_Echo(YHSM_Cmd):
@@ -129,6 +130,64 @@ class YHSM_Cmd_Random_Reseed(YHSM_Cmd):
         # } YSM_RANDOM_RESEED_RESP;
         fmt = "B"
         self.status, = struct.unpack(fmt, data)
+        if self.status == defines.YSM_STATUS_OK:
+            return True
+        else:
+            raise exception.YHSM_CommandFailed(defines.cmd2str(self.command), self.status)
+
+
+class YHSM_Cmd_Temp_Key_Load(YHSM_Cmd):
+    """
+    Load an AEAD into the phantom key handle 0xffffffff.
+
+    The `aead' is either a YHSM_GeneratedAEAD, or a string.
+    """
+    def __init__(self, stick, nonce, key_handle, aead):
+        if type(nonce) is not str:
+            raise exception.YHSM_WrongInputType( \
+                'nonce', type(''), type(nonce))
+        if len(nonce) > defines.YSM_AEAD_NONCE_SIZE:
+            raise exception.YHSM_InputTooLong(
+                'nonce', defines.YSM_AEAD_NONCE_SIZE, len(nonce))
+
+        if type(key_handle) is not int:
+            raise exception.YHSM_WrongInputType( \
+                'key_handle', type(1), type(key_handle))
+
+        if isinstance(aead, aead_cmd.YHSM_GeneratedAEAD):
+            aead = aead.data
+
+        max_aead_len = defines.YSM_MAX_KEY_SIZE + defines.YSM_AEAD_MAC_SIZE
+        if len(aead) > max_aead_len:
+            raise exception.YHSM_InputTooLong(
+                'nonce', max_aead_len, len(nonce))
+
+        self.nonce = nonce
+        self.key_handle = key_handle
+        # typedef struct {
+        #   uint8_t nonce[YSM_AEAD_NONCE_SIZE]; // Nonce
+        #   uint32_t keyHandle;                 // Key handle to unlock AEAD
+        #   uint8_t numBytes;                   // Number of bytes (explicit key size 16, 20, 24 or 32 bytes + hash)
+        #   uint8_t aead[YSM_MAX_KEY_SIZE + YSM_AEAD_MAC_SIZE]; // AEAD block
+        # } YSM_TEMP_KEY_LOAD_REQ;
+        fmt = "< %is I B %is" % (defines.YSM_AEAD_NONCE_SIZE, max_aead_len)
+        packed = struct.pack(fmt, self.nonce, self.key_handle, len(aead), aead)
+        YHSM_Cmd.__init__(self, stick, defines.YSM_TEMP_KEY_LOAD, packed)
+
+    def parse_result(self, data):
+        # typedef struct {
+        #   uint8_t nonce[YSM_AEAD_NONCE_SIZE]; // Nonce
+        #   uint32_t keyHandle;                 // Key handle
+        #   YSM_STATUS status;                  // Status
+        # } YSM_TEMP_KEY_LOAD_RESP;
+        fmt = "< %is I B" % (defines.YSM_AEAD_NONCE_SIZE)
+        nonce, key_handle, self.status = struct.unpack(fmt, data)
+        if nonce != self.nonce:
+            raise(exception.YHSM_Error("Unknown nonce in response (got '%s', expected '%s')", \
+                                           nonce.encode('hex'), self.nonce.encode('hex')))
+        if key_handle != self.key_handle:
+            raise(exception.YHSM_Error("Unknown key_handle in response (got '0x%x', expected '0x%x')", \
+                                           key_handle, self.key_handle))
         if self.status == defines.YSM_STATUS_OK:
             return True
         else:
