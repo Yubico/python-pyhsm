@@ -80,3 +80,12 @@ class TestHMACSHA1(test_common.YHSM_TestCase):
             self.fail("Expected YSM_FUNCTION_DISABLED, got %s" % (res))
         except pyhsm.exception.YHSM_CommandFailed, e:
             self.assertEquals(e.status, pyhsm.defines.YSM_FUNCTION_DISABLED)
+
+    def test_who_can_hash(self):
+        """ Test what key handles can create HMAC SHA1 hashes. """
+        # Enabled flags 00010000 = YSM_HMAC_SHA1_GENERATE
+        # 00000011 - stored ok
+        data = 'Sample #2'
+
+        this = lambda kh: self.hsm.hmac_sha1(kh, data).execute()
+        self.who_can(this, expected = [0x11])
