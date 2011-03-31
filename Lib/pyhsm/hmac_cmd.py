@@ -26,7 +26,7 @@ class YHSM_Cmd_HMAC_SHA1_Write(YHSM_Cmd):
     """
 
     status = None
-    response = None
+    result = None
 
     def __init__(self, stick, key_handle, data, flags = None, final = True):
         if flags != None and type(flags) is not int:
@@ -62,6 +62,14 @@ class YHSM_Cmd_HMAC_SHA1_Write(YHSM_Cmd):
         self.final = final
         return self
 
+    def get_hash(self):
+        """
+        Get the HMAC-SHA1 that has been calculated this far.
+        """
+        if not self.executed:
+            raise pyhsm.exception.YHSM_Error("HMAC-SHA1 hash not available, before execute().")
+        return self.result.hash_result
+
     def __repr__(self):
         if self.executed:
             return '<%s instance at %s: key_handle=0x%x, flags=0x%x>' % (
@@ -86,6 +94,11 @@ class YHSM_Cmd_HMAC_SHA1_Write(YHSM_Cmd):
         key_handle, \
              self.status, \
              num_bytes = struct.unpack_from('<IBB', data, 0)
+
+        if key_handle != self.key_handle:
+            raise(pyhsm.exception.YHSM_Error("Bad key_handle in response (got '0x%x', expected '0x%x')", \
+                                                 key_handle, self.key_handle))
+
         if self.status == pyhsm.defines.YSM_STATUS_OK:
             # struct.hash is not always of size SHA1_HASH_SIZE,
             # it is really the size of numBytes
@@ -93,8 +106,8 @@ class YHSM_Cmd_HMAC_SHA1_Write(YHSM_Cmd):
                 sha1 = data[6:6 + num_bytes]
             else:
                 sha1 = '\x00' * pyhsm.defines.SHA1_HASH_SIZE
-            self.response = YHSM_GeneratedHMACSHA1(key_handle, sha1, self.final)
-            return self.response
+            self.result = YHSM_GeneratedHMACSHA1(key_handle, sha1, self.final)
+            return self
         else:
             raise pyhsm.exception.YHSM_CommandFailed('YHSM_HMAC_SHA1_GENERATE', self.status)
 

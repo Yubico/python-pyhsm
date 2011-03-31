@@ -269,11 +269,9 @@ class YHSM():
     def hmac_sha1(self, key_handle, data, final = True):
         """
         Have the YubiHSM generate a HMAC SHA1 of 'data' using a key handle.
-
-        XXX make this execute() for consistency
         """
         return pyhsm.hmac_cmd.YHSM_Cmd_HMAC_SHA1_Write( \
-            self.stick, key_handle, data, final = final)
+            self.stick, key_handle, data, final = final).execute()
 
 
     #
