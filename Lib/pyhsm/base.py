@@ -198,11 +198,10 @@ class YHSM():
         """
         return aead_cmd.YHSM_Cmd_AEAD_Buffer_Generate(self.stick, nonce, key_handle).execute()
 
-    def validate_aead(self, nonce, key_handle, aead, cleartext=''):
+    def validate_aead(self, nonce, key_handle, aead, cleartext):
         """
-        Validate an AEAD using the YubiHSM. If cleartext is non-empty, the decrypted
-        AEAD will be compared (inside the YubiHSM) to the cleartext. Otherwise, the YubiHSM
-        will only check if the AEAD is intact.
+        Validate an AEAD using the YubiHSM. The cleartext should be of the same length as
+        the AEAD minus the size of the MAC (8 bytes).
         """
         return aead_cmd.YHSM_Cmd_AEAD_Decrypt_Cmp(self.stick, nonce, key_handle, aead, cleartext).execute()
 

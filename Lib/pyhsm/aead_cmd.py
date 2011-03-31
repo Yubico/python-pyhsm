@@ -27,6 +27,10 @@ class YHSM_AEAD_Cmd(YHSM_Cmd):
     Class for common non-trivial parse_result for commands returning a
     YSM_AEAD_GENERATE_RESP.
     """
+    # make pylint happy
+    nonce = ''
+    key_handle = 0
+    status = 0
     def __repr__(self):
         if self.executed:
             return '<%s instance at %s: nonce=%s, key_handle=0x%x, status=%s>' % (
@@ -165,27 +169,31 @@ class YHSM_Cmd_AEAD_Buffer_Generate(YHSM_AEAD_Cmd):
 
 class YHSM_Cmd_AEAD_Decrypt_Cmp(YHSM_Cmd):
     """
-    Validate an AEAD using the YubiHSM, optionally matching it against
-    some known plain text. Matching is done inside the YubiHSM so the
-    decrypted AEAD never leaves the YubiHSM.
-
-    Empty cleartext just validates the AEAD.
+    Validate an AEAD using the YubiHSM, matching it against some known plain text.
+    Matching is done inside the YubiHSM so the decrypted AEAD is never exposed.
     """
-    def __init__(self, stick, nonce, key_handle, aead, cleartext=''):
+    def __init__(self, stick, nonce, key_handle, aead, cleartext):
+        if not isinstance(aead, YHSM_GeneratedAEAD):
+            raise exception.YHSM_Error("Input 'aead' is not an YHSM_GeneratedAEAD : %s" \
+                                           % (aead))
         if type(cleartext) is not str:
             raise exception.YHSM_WrongInputType(
                 'cleartext', type(''), type(cleartext))
         expected_ct_len = len(aead.data) - defines.YSM_AEAD_MAC_SIZE
-        if len(cleartext) > expected_ct_len:
-            raise exception.YHSM_Error("Cleartext too long for supplied AEAD (%i > %i)" \
-                                           % (len(cleartext), expected_ct_len))
-        if len(cleartext) < expected_ct_len:
-            # must pad with zeros
-            cleartext = cleartext.ljust(expected_ct_len, chr(0x0))
-        data = cleartext + aead.data
-        if len(data) > defines.YSM_MAX_PKT_SIZE - 10:
-            raise exception.YHSM_InputTooLong(
-                'packed_aead+cleartext', defines.YSM_MAX_PKT_SIZE - 10, len(data))
+        if len(cleartext) != expected_ct_len:
+            raise exception.YHSM_WrongInputSize('cleartext', expected_ct_len, len(cleartext))
+        if cleartext:
+            if len(cleartext) < expected_ct_len:
+                # must pad with zeros
+                cleartext = cleartext.ljust(expected_ct_len, chr(0x0))
+            data = cleartext + aead.data
+            if len(data) > defines.YSM_MAX_PKT_SIZE - 10:
+                raise exception.YHSM_InputTooLong(
+                    'packed_aead+cleartext', defines.YSM_MAX_PKT_SIZE - 10, len(data))
+        else:
+            # Without cleartext, we only ask the YubiHSM to validate the MAC of the AEAD
+            # (the MAC is the last YSM_AEAD_MAC_SIZE bytes of aead.data)
+            data = aead.data[0 - defines.YSM_AEAD_MAC_SIZE:]
         if type(nonce) is not str:
             raise exception.YHSM_WrongInputType(
                 'nonce', type(''), type(nonce))

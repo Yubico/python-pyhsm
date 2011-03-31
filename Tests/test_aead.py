@@ -40,9 +40,6 @@ class TestAEAD(test_common.YHSM_TestCase):
         self.assertTrue(self.hsm.validate_aead(self.nonce, key_handle, \
                                                    aead, cleartext = self.secret.pack()))
 
-        # test that the YubiHSM validates the generated AEAD without cleartext
-        self.assertTrue(self.hsm.validate_aead(self.nonce, key_handle, aead))
-
     def test_generate_aead_simple2(self):
         """ Test generate_aead_simple wrong key handle. """
         key_handle = 1
@@ -64,8 +61,7 @@ class TestAEAD(test_common.YHSM_TestCase):
                               pyhsm.defines.KEY_SIZE + pyhsm.defines.UID_SIZE, \
                               pyhsm.defines.YSM_AEAD_MAX_SIZE - pyhsm.defines.YSM_AEAD_MAC_SIZE):
             aead = self.hsm.generate_aead_random(self.nonce, key_handle, num_bytes)
-            # test that the YubiHSM validates the generated AEAD without cleartext
-            self.assertTrue(self.hsm.validate_aead(self.nonce, key_handle, aead))
+            self.assertEqual(num_bytes + pyhsm.defines.YSM_AEAD_MAC_SIZE, len(aead.data))
 
         # test num_bytes we expect to fail
         for num_bytes in (0, \

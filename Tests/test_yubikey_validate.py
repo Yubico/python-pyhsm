@@ -119,16 +119,13 @@ class TestYubikeyValidate(test_common.YHSM_TestCase):
 
         self.aead = self.hsm.generate_aead(self.yk_public_id, self.kh_generate)
 
-    def test_validate_aead(self):
-        """ Test that the AEAD generated is valid. """
-        self.assertTrue(self.hsm.validate_aead(self.yk_public_id, self.kh_validate, self.aead))
-
     def test_validate_aead_cmp(self):
         """ Test that the AEAD generated contains our secrets. """
         secret = pyhsm.secrets_cmd.YHSM_YubiKeySecret(self.yk_key, self.yk_uid)
         cleartext = secret.pack()
         self.assertTrue(self.hsm.validate_aead(self.yk_public_id, self.kh_validate, self.aead, cleartext))
-        self.assertFalse(self.hsm.validate_aead(self.yk_public_id, self.kh_validate, self.aead, 'BBBBBB'))
+        wrong_cleartext = 'X' + cleartext[1:]
+        self.assertFalse(self.hsm.validate_aead(self.yk_public_id, self.kh_validate, self.aead, wrong_cleartext))
 
     def test_validate_yubikey(self):
         """ Test validate YubiKey OTP. """
