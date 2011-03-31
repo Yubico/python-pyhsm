@@ -139,6 +139,14 @@ class YHSM():
 
         return basic_cmd.YHSM_Cmd_Nonce_Get(self.stick, increment).execute()
 
+    def load_temp_key(self, nonce, key_handle, aead):
+        """
+        Load an AEAD into the phantom key handle 0xffffffff.
+
+        The `aead' is either a YHSM_GeneratedAEAD, or a string.
+        """
+        return basic_cmd.YHSM_Cmd_Temp_Key_Load(self.stick, nonce, key_handle, aead).execute()
+
     #
     # AEAD related commands
     #
@@ -154,7 +162,7 @@ class YHSM():
                 'offset', type(1), type(offset))
         return buffer_cmd.YHSM_Cmd_Secrets_Generate(self.stick, num_bytes, offset).execute()
 
-    def load_secret(self, secrets):
+    def load_secret(self, secret):
         """
         Ask YubiHSM to load a pre-existing YubiKey secret.
 
@@ -162,7 +170,9 @@ class YHSM():
         this operation would be followed by one or more generate_aead()
         commands to actually retreive the generated secret (in encrypted form).
         """
-        return buffer_cmd.YHSM_Cmd_Buffer_Load(self.stick, secrets.pack()).execute()
+        if isinstance(secret, secrets_cmd.YHSM_YubiKeySecret):
+            secret = secret.pack()
+        return buffer_cmd.YHSM_Cmd_Buffer_Load(self.stick, secret).execute()
 
     def generate_aead_simple(self, nonce, key_handle, data):
         """
