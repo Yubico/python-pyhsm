@@ -35,8 +35,7 @@ class TestInternalDB(test_common.YHSM_TestCase):
         except pyhsm.exception.YHSM_CommandFailed, e:
             self.assertEqual(e.status, pyhsm.defines.YSM_ID_DUPLICATE)
 
-    def test_db_validate_yubikey_otp(self):
-        """ Test bad OTP validation for key in internal database. """
+        # Now, try an invalid validation against that record
         try:
             res = self.hsm.db_validate_yubikey_otp(self.public_id, "x" * 16)
             self.fail("Expected YSM_OTP_INVALID, got %s" % (res))
@@ -65,20 +64,32 @@ class TestInternalDB(test_common.YHSM_TestCase):
             self.assertEqual(e.status, pyhsm.defines.YSM_ID_DUPLICATE)
 
         # OK, now we know there is an entry for this_public_id in the database -
-        session_ctr = 1	# the 16 bit power-up counter of the YubiKey
-        use_ctr = 1
-        while session_ctr < 0xffff:
-            timestamp = 0xffff # dunno
-            YK = YubiKeyEmu(self.uid, session_ctr, timestamp, use_ctr)
+        use_ctr = 0	# the 16 bit power-up counter of the YubiKey
+        session_ctr = 0
+        timestamp = 0xffff # dunno
+        while use_ctr < 0xffff:
+            YK = YubiKeyEmu(self.uid, use_ctr, timestamp, session_ctr)
             otp = YK.get_otp(self.key)
             try:
                 res = self.hsm.db_validate_yubikey_otp(this_public_id, otp)
                 self.assertTrue(isinstance(res, pyhsm.validate_cmd.YHSM_ValidationResult))
                 self.assertEqual(res.public_id, this_public_id)
-                self.assertEqual(res.session_ctr, session_ctr)
+                self.assertEqual(res.use_ctr, use_ctr)
+                # OK - if we got here we've got a successful response for this OTP
+                break
             except pyhsm.exception.YHSM_CommandFailed, e:
                 if e.status != pyhsm.defines.YSM_OTP_REPLAY:
                     raise
-            # don't bother with use_ctr - test run 5 would mean we first have to
-            # exhaust 4 * 256 use_ctr increases before the YubiHSM would pass our OTP
-            session_ctr += 1
+            # don't bother with the session_ctr - test run 5 would mean we first have to
+            # exhaust 4 * 256 session_ctr increases before the YubiHSM would pass our OTP
+            use_ctr += 1
+
+        # Now, check the same OTP again and make sure we get a REPLAY response
+        YK = YubiKeyEmu(self.uid, use_ctr, timestamp, session_ctr)
+        otp = YK.get_otp(self.key)
+        try:
+            res = self.hsm.db_validate_yubikey_otp(this_public_id, otp)
+            self.fail("Expected YSM_OTP_REPLAY, got %s" % (res))
+        except pyhsm.exception.YHSM_CommandFailed, e:
+            if e.status != pyhsm.defines.YSM_OTP_REPLAY:
+                raise

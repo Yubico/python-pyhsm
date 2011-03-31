@@ -77,13 +77,14 @@ class YHSM_Cmd_AEAD_Validate_OTP(YHSM_Cmd):
         #   uint16_t tstpl;                      // Timestamp (low part)
         #   YHSM_STATUS status;                  // Validation status
         # } YHSM_AEAD_OTP_DECODED_RESP;
+        fmt = "< %is I H B B H B" % (defines.PUBLIC_ID_SIZE)
         this_public_id, \
             key_handle, \
             use_ctr, \
             session_ctr, \
             ts_high, \
             ts_low, \
-            self.status = struct.unpack("< %is I H B B H B" % (defines.PUBLIC_ID_SIZE), data)
+            self.status = struct.unpack(fmt, data)
 
         if this_public_id != self.public_id:
             raise exception.YHSM_Error('Bad public_id in response (%s != %s)' %

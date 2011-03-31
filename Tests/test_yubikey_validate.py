@@ -17,15 +17,15 @@ class YubiKeyEmu():
     Emulate the internal memory of a YubiKey.
     """
 
-    def __init__(self, user_id, session_counter, timestamp, session_use):
+    def __init__(self, user_id, use_ctr, timestamp, session_ctr):
         if len(user_id) != pyhsm.defines.UID_SIZE:
             raise pyhsm.exception.YHSM_WrongInputSize(
                 'user_id', pyhsm.defines.UID_SIZE, len(user_id))
 
         self.user_id = user_id
-        self.session_counter = session_counter
+        self.use_ctr = use_ctr
         self.timestamp = timestamp
-        self.session_use = session_use
+        self.session_ctr = session_ctr
         self.rnd = struct.unpack('H', os.urandom(2))[0]
 
     def pack(self):
@@ -37,22 +37,22 @@ class YubiKeyEmu():
         #define UID_SIZE 6
 	#typedef struct {
         #  uint8_t userId[UID_SIZE];
-        #  uint16_t sessionCtr;
+        #  uint16_t sessionCtr;		# NOTE: this is use_ctr
         #  uint24_t timestamp;
-        #  uint8_t sessionUse;
+        #  uint8_t sessionUse;		# NOTE: this is session_ctr
         #  uint16_t rnd;
         #  uint16_t crc;
 	#} TICKET;
+        fmt = "< %is H HB B H" % (pyhsm.defines.UID_SIZE)
 
         ts_high = (self.timestamp & 0x00ff0000) >> 16
         ts_low  =  self.timestamp & 0x0000ffff
 
-        res = self.user_id + struct.pack('<HHBBH', \
-                                             self.session_counter, \
-                                             ts_low, \
-                                             ts_high, \
-                                             self.session_use, \
-                                             self.rnd)
+        res = struct.pack(fmt, self.user_id, \
+                              self.use_ctr, \
+                              ts_low, ts_high, \
+                              self.session_ctr, \
+                              self.rnd)
         crc = 0xffff - crc16(res)
 
         return res + struct.pack('<H', crc)
