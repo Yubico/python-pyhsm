@@ -5,19 +5,18 @@ implementations of HMAC commands to execute on a YubiHSM
 # All rights reserved.
 
 import struct
-import defines
 
 __all__ = [
     # constants
     # functions
     # classes
-    'YHSM_Cmd_Echo',
-    'YHSM_Cmd_System_Info',
-    'YHSM_Cmd_Random',
+    'YHSM_Cmd_HMAC_SHA1_Write',
+    'YHSM_GeneratedHMACSHA1',
 ]
 
-import exception
-from cmd import YHSM_Cmd
+import pyhsm.exception
+import pyhsm.defines
+from pyhsm.cmd import YHSM_Cmd
 
 class YHSM_Cmd_HMAC_SHA1_Write(YHSM_Cmd):
     """
@@ -27,32 +26,32 @@ class YHSM_Cmd_HMAC_SHA1_Write(YHSM_Cmd):
     """
     def __init__(self, stick, key_handle, data, flags = None, final = True):
         if flags != None and type(flags) is not int:
-            raise exception.YHSM_WrongInputType(
+            raise pyhsm.exception.YHSM_WrongInputType(
                 'flags', type(1), type(flags))
         if type(data) is not str:
-            raise exception.YHSM_WrongInputType(
+            raise pyhsm.exception.YHSM_WrongInputType(
                 'data', type(''), type(data))
-        if len(data) > defines.YSM_MAX_PKT_SIZE - 6:
-            raise exception.YHSM_InputTooLong(
-                'data', defines.YSM_MAX_PKT_SIZE - 6, len(data))
+        if len(data) > pyhsm.defines.YSM_MAX_PKT_SIZE - 6:
+            raise pyhsm.exception.YHSM_InputTooLong(
+                'data', pyhsm.defines.YSM_MAX_PKT_SIZE - 6, len(data))
 
         if flags == None:
-            flags = defines.YSM_HMAC_RESET
+            flags = pyhsm.defines.YSM_HMAC_RESET
             if final:
-                flags |= defines.YSM_HMAC_FINAL
+                flags |= pyhsm.defines.YSM_HMAC_FINAL
 
         self.final = final
         self.key_handle = key_handle
         self.flags = flags
         packed = _raw_pack(self.key_handle, self.flags, data)
-        YHSM_Cmd.__init__(self, stick, defines.YSM_HMAC_SHA1_GENERATE, packed)
+        YHSM_Cmd.__init__(self, stick, pyhsm.defines.YSM_HMAC_SHA1_GENERATE, packed)
 
     def next(self, data, final = False):
         """
         Add more input to the HMAC SHA1.
         """
         if final:
-            self.flags = defines.YSM_HMAC_FINAL
+            self.flags = pyhsm.defines.YSM_HMAC_FINAL
         else:
             self.flags = 0x0
         self.payload = _raw_pack(self.key_handle, self.flags, data)
@@ -83,19 +82,22 @@ class YHSM_Cmd_HMAC_SHA1_Write(YHSM_Cmd):
         key_handle, \
              self.status, \
              num_bytes = struct.unpack_from('<IBB', data, 0)
-        if self.status == defines.YSM_STATUS_OK:
+        if self.status == pyhsm.defines.YSM_STATUS_OK:
             # struct.hash is not always of size SHA1_HASH_SIZE,
             # it is really the size of numBytes
             if num_bytes:
                 sha1 = data[6:6 + num_bytes]
             else:
-                sha1 = '\x00' * defines.SHA1_HASH_SIZE
+                sha1 = '\x00' * pyhsm.defines.SHA1_HASH_SIZE
             self.response = YHSM_GeneratedHMACSHA1(key_handle, sha1, self.final)
             return self.response
         else:
-            raise exception.YHSM_CommandFailed('YHSM_HMAC_SHA1_GENERATE', self.status)
+            raise pyhsm.exception.YHSM_CommandFailed('YHSM_HMAC_SHA1_GENERATE', self.status)
 
 def _raw_pack(key_handle, flags, data):
+    """
+    Common code for packing payload to YHSM_HMAC_SHA1_GENERATE command.
+    """
     # #define YHSM_HMAC_RESET          0x01    // Flag to indicate reset at first packet
     # #define YHSM_HMAC_FINAL          0x02    // Flag to indicate that the hash shall be calculated
     # typedef struct {

@@ -4,8 +4,6 @@ common exceptions for the pyhsm package
 # Copyright (c) 2011, Yubico AB
 # All rights reserved.
 
-import defines
-
 __all__ = [
     # constants
     # functions
@@ -17,6 +15,8 @@ __all__ = [
     'YHSM_WrongInputType',
     'YHSM_CommandFailed'
 ]
+
+import pyhsm.defines
 
 class YHSM_Error(Exception):
     """
@@ -75,6 +75,6 @@ class YHSM_CommandFailed(YHSM_Error):
     """
     def __init__(self, name, status):
         self.status = status
-        self.status_str = defines.status2str(status)
+        self.status_str = pyhsm.defines.status2str(status)
         reason = "Command %s failed: %s" % (name, self.status_str)
         YHSM_Error.__init__(self, reason)

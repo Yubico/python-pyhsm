@@ -3,10 +3,8 @@ module for accessing a YubiHSM
 """
 # Copyright (c) 2011, Yubico AB
 # All rights reserved.
-import struct
 
-import exception
-import defines
+import struct
 
 __all__ = [
     # constants
@@ -15,6 +13,9 @@ __all__ = [
     # classes
     'YHSM_Cmd',
 ]
+
+import pyhsm.exception
+import pyhsm.defines
 
 class YHSM_Cmd():
     """
@@ -43,7 +44,7 @@ class YHSM_Cmd():
         #   uint8_t cmd;                        // YSM_xxx command
         #   uint8_t payload[YSM_MAX_PKT_SIZE];  // Payload
         # } YSM_PKT;
-        if self.command != defines.YSM_NULL:
+        if self.command != pyhsm.defines.YSM_NULL:
             # YSM_NULL is the exception to the rule - it should NOT be prefixed with YSM_PKT.bcnt
             cmd_buf = struct.pack('BB', len(self.payload) + 1, self.command)
         else:
@@ -61,27 +62,27 @@ class YHSM_Cmd():
         if not res:
             if self.response_length > 0:
                 reset(self.stick)
-                raise exception.YHSM_Error('YubiHSM did not respond')
+                raise pyhsm.exception.YHSM_Error('YubiHSM did not respond')
             return None
         response_len, response_status = struct.unpack('BB', res)
         response_len -= 1 # the status byte has been read already
         debug_info = None
-        if response_status & defines.YSM_RESPONSE:
+        if response_status & pyhsm.defines.YSM_RESPONSE:
             debug_info = "%s response (%i/0x%x bytes)" \
                 % (pyhsm.defines.cmd2str(response_status - pyhsm.defines.YSM_RESPONSE), \
                        response_len, response_len)
         # read response payload
         res = self.stick.read(response_len, debug_info)
         if res:
-            if response_status == self.command | defines.YSM_RESPONSE:
+            if response_status == self.command | pyhsm.defines.YSM_RESPONSE:
                 self.executed = True
                 self.response_status = response_status
                 return self.parse_result(res)
             else:
                 reset(self.stick)
-                raise exception.YHSM_Error('YubiHSM responded to wrong command')
+                raise pyhsm.exception.YHSM_Error('YubiHSM responded to wrong command')
         else:
-            raise exception.YHSM_Error('YubiHSM did not respond')
+            raise pyhsm.exception.YHSM_Error('YubiHSM did not respond')
 
     def parse_result(self, data):
         """
@@ -95,7 +96,7 @@ def reset(stick):
     """
     Send a bunch of zero-bytes to the YubiHSM, and flush the input buffer.
     """
-    nulls = (defines.YSM_MAX_PKT_SIZE - 1) * '\x00'
-    res = YHSM_Cmd(stick, defines.YSM_NULL, payload = nulls).execute(read_response = False)
+    nulls = (pyhsm.defines.YSM_MAX_PKT_SIZE - 1) * '\x00'
+    res = YHSM_Cmd(stick, pyhsm.defines.YSM_NULL, payload = nulls).execute(read_response = False)
     stick.flush()
     return res == 0

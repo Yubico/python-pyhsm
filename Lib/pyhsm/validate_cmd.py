@@ -15,7 +15,7 @@ __all__ = [
 
 import pyhsm.defines
 import pyhsm.exception
-from aead_cmd import YHSM_AEAD_Cmd
+from pyhsm.aead_cmd import YHSM_AEAD_Cmd
 
 class YHSM_Cmd_AEAD_Validate_OTP(YHSM_AEAD_Cmd):
     """

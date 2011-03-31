@@ -48,4 +48,4 @@ __all__ = ["base"
            "validate_cmd"
            ]
 
-from base import YHSM
+from pyhsm.base import YHSM

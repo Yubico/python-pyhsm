@@ -6,7 +6,6 @@ implementations of debugging commands to execute on a YubiHSM
 # All rights reserved.
 
 import struct
-import defines
 
 __all__ = [
     # constants
@@ -15,7 +14,8 @@ __all__ = [
     'YHSM_Cmd_Monitor_Exit',
 ]
 
-from cmd import YHSM_Cmd
+import pyhsm.defines
+from pyhsm.cmd import YHSM_Cmd
 
 class YHSM_Cmd_Monitor_Exit(YHSM_Cmd):
     """
@@ -30,7 +30,7 @@ class YHSM_Cmd_Monitor_Exit(YHSM_Cmd):
         #} YHSM_MONITOR_EXIT_REQ;
 
         packed = struct.pack('<II', 0xbaadbeef, 0xffffffff - 0xbaadbeef)
-        YHSM_Cmd.__init__(self, stick, defines.YSM_MONITOR_EXIT, packed)
+        YHSM_Cmd.__init__(self, stick, pyhsm.defines.YSM_MONITOR_EXIT, packed)
         self.response_length = 0
 
     def parse_result(self, data):

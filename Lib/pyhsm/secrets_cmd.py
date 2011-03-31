@@ -6,7 +6,6 @@ implementation of YUBIKEY_SECRETS
 # All rights reserved.
 
 import struct
-import defines
 
 __all__ = [
     # constants
@@ -15,18 +14,19 @@ __all__ = [
     'YHSM_YubiKeySecret',
 ]
 
-from cmd import YHSM_Cmd
-import exception
+import pyhsm.defines
+import pyhsm.exception
+from pyhsm.cmd import YHSM_Cmd
 
 class YHSM_YubiKeySecret():
     """ Small class to represent a YUBIKEY_SECRETS struct. """
     def __init__(self, key, uid):
-        if len(key) != defines.KEY_SIZE:
-            raise exception.YHSM_WrongInputSize(
-                'key', defines.KEY_SIZE, len(key))
+        if len(key) != pyhsm.defines.KEY_SIZE:
+            raise pyhsm.exception.YHSM_WrongInputSize(
+                'key', pyhsm.defines.KEY_SIZE, len(key))
 
         if type(uid) is not str:
-            raise exception.YHSM_WrongInputType(
+            raise pyhsm.exception.YHSM_WrongInputType(
                 'uid', type(''), type(uid))
 
         self.key = key
@@ -39,4 +39,4 @@ class YHSM_YubiKeySecret():
         #   uint8_t key[KEY_SIZE];              // AES key
         #   uint8_t uid[UID_SIZE];              // Unique (secret) ID
         # } YUBIKEY_SECRETS;
-        return self.key + self.uid.ljust(defines.UID_SIZE, chr(0))
+        return self.key + self.uid.ljust(pyhsm.defines.UID_SIZE, chr(0))
