@@ -106,7 +106,7 @@ class TestYubikeyValidate(test_common.YHSM_TestCase):
         self.yk_rnd = YubiKeyRnd(self.yk_uid)
         self.yk_public_id = '4d4d4d4d4d4d'.decode('hex')
 
-        secret = pyhsm.secrets_cmd.YHSM_YubiKeySecret(self.yk_key, self.yk_uid)
+        secret = pyhsm.aead_cmd.YHSM_YubiKeySecret(self.yk_key, self.yk_uid)
         self.hsm.load_secret(secret)
 
         #self.kh_generate = 0x06		# key handle 0x9 is allowed to generate aeads
@@ -121,7 +121,7 @@ class TestYubikeyValidate(test_common.YHSM_TestCase):
 
     def test_validate_aead_cmp(self):
         """ Test that the AEAD generated contains our secrets. """
-        secret = pyhsm.secrets_cmd.YHSM_YubiKeySecret(self.yk_key, self.yk_uid)
+        secret = pyhsm.aead_cmd.YHSM_YubiKeySecret(self.yk_key, self.yk_uid)
         cleartext = secret.pack()
         self.assertTrue(self.hsm.validate_aead(self.yk_public_id, self.kh_validate, self.aead, cleartext))
         wrong_cleartext = 'X' + cleartext[1:]

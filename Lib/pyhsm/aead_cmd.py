@@ -14,12 +14,12 @@ __all__ = [
     'YHSM_Cmd_AEAD_Random_Generate'
     'YHSM_Cmd_AEAD_Buffer_Generate',
     'YHSM_Cmd_AEAD_Decrypt_Cmp',
-    'YHSM_GeneratedAEAD'
+    'YHSM_GeneratedAEAD',
+    'YHSM_YubiKeySecret',
 ]
 
 import pyhsm.defines
 import pyhsm.exception
-import pyhsm.secrets_cmd
 from pyhsm.cmd import YHSM_Cmd
 
 class YHSM_AEAD_Cmd(YHSM_Cmd):
@@ -88,7 +88,7 @@ class YHSM_Cmd_AEAD_Generate(YHSM_AEAD_Cmd):
         if type(key_handle) is not int:
             raise pyhsm.exception.YHSM_WrongInputType( \
                 'key_handle', type(1), type(key_handle))
-        if isinstance(data, pyhsm.secrets_cmd.YHSM_YubiKeySecret):
+        if isinstance(data, YHSM_YubiKeySecret):
             data = data.pack()
         if type(data) is not str:
             raise pyhsm.exception.YHSM_WrongInputType( \
@@ -265,3 +265,26 @@ class YHSM_GeneratedAEAD():
         f = open(filename, "r")
         self.data = f.read(pyhsm.defines.YSM_MAX_KEY_SIZE + pyhsm.defines.YSM_BLOCK_SIZE)
         f.close()
+
+class YHSM_YubiKeySecret():
+    """ Small class to represent a YUBIKEY_SECRETS struct. """
+    def __init__(self, key, uid):
+        if len(key) != pyhsm.defines.KEY_SIZE:
+            raise pyhsm.exception.YHSM_WrongInputSize(
+                'key', pyhsm.defines.KEY_SIZE, len(key))
+
+        if type(uid) is not str:
+            raise pyhsm.exception.YHSM_WrongInputType(
+                'uid', type(''), type(uid))
+
+        self.key = key
+        self.uid = uid
+
+    def pack(self):
+        """ Return key and uid packed for sending in a command to the YubiHSM. """
+        # # 22-bytes Yubikey secrets block
+        # typedef struct {
+        #   uint8_t key[KEY_SIZE];              // AES key
+        #   uint8_t uid[UID_SIZE];              // Unique (secret) ID
+        # } YUBIKEY_SECRETS;
+        return self.key + self.uid.ljust(pyhsm.defines.UID_SIZE, chr(0))

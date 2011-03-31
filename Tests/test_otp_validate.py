@@ -22,7 +22,7 @@ class TestOtpValidate(test_common.YHSM_TestCase):
         # 00000009 - stored ok
         key_handle = 9	# Enabled flags 00000020 = YHSM_AEAD_GENERATE
 
-        secret = pyhsm.secrets_cmd.YHSM_YubiKeySecret(key, uid)
+        secret = pyhsm.aead_cmd.YHSM_YubiKeySecret(key, uid)
         self.hsm.load_secret(secret)
 
         try:
@@ -41,7 +41,7 @@ class TestOtpValidate(test_common.YHSM_TestCase):
         # 00000003 - stored ok
         key_handle = 3
 
-        secret = pyhsm.secrets_cmd.YHSM_YubiKeySecret(key, uid)
+        secret = pyhsm.aead_cmd.YHSM_YubiKeySecret(key, uid)
         self.hsm.load_secret(secret)
 
         aead = self.hsm.generate_aead(public_id, key_handle)
@@ -58,5 +58,5 @@ class TestOtpValidate(test_common.YHSM_TestCase):
     def test_yubikey_secrets(self):
         """ Test the class representing the YUBIKEY_SECRETS struct. """
         aes_128_key = 'a' * 16
-        first = pyhsm.secrets_cmd.YHSM_YubiKeySecret(aes_128_key, 'b')
+        first = pyhsm.aead_cmd.YHSM_YubiKeySecret(aes_128_key, 'b')
         self.assertEqual(len(first.pack()), pyhsm.defines.KEY_SIZE + pyhsm.defines.UID_SIZE)

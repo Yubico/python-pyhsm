@@ -23,7 +23,7 @@ class TestInternalDB(test_common.YHSM_TestCase):
         # Key handle 0x2000 has all flags enabled
         key_handle = 0x2000
 
-        secret = pyhsm.secrets_cmd.YHSM_YubiKeySecret(self.key, self.uid)
+        secret = pyhsm.aead_cmd.YHSM_YubiKeySecret(self.key, self.uid)
         self.hsm.load_secret(secret)
 
         aead = self.hsm.generate_aead(self.public_id, key_handle)
@@ -51,7 +51,7 @@ class TestInternalDB(test_common.YHSM_TestCase):
         # find an unused OTP ;)
         this_public_id = self.public_id[:-1] + os.urandom(1)
 
-        secret = pyhsm.secrets_cmd.YHSM_YubiKeySecret(self.key, self.uid)
+        secret = pyhsm.aead_cmd.YHSM_YubiKeySecret(self.key, self.uid)
         self.hsm.load_secret(secret)
 
         aead = self.hsm.generate_aead(this_public_id, key_handle)

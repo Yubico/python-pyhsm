@@ -53,7 +53,6 @@ import pyhsm.buffer_cmd
 import pyhsm.db_cmd
 import pyhsm.debug_cmd
 import pyhsm.hmac_cmd
-import pyhsm.secrets_cmd
 import pyhsm.validate_cmd
 
 class YHSM():
@@ -156,7 +155,7 @@ class YHSM():
         this operation would be followed by one or more generate_aead()
         commands to actually retreive the generated secret (in encrypted form).
         """
-        if isinstance(secret, pyhsm.secrets_cmd.YHSM_YubiKeySecret):
+        if isinstance(secret, pyhsm.aead_cmd.YHSM_YubiKeySecret):
             secret = secret.pack()
         return pyhsm.buffer_cmd.YHSM_Cmd_Buffer_Load(self.stick, secret).execute()
 

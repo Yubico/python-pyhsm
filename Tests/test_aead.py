@@ -14,7 +14,7 @@ class TestAEAD(test_common.YHSM_TestCase):
         self.nonce = "4d4d4d4d4d4d".decode('hex')
         self.key = "A" * 16
         self.uid = '\x4d\x01\x4d\x02\x4d\x03'
-        self.secret = pyhsm.secrets_cmd.YHSM_YubiKeySecret(self.key, self.uid)
+        self.secret = pyhsm.aead_cmd.YHSM_YubiKeySecret(self.key, self.uid)
 
     def test_aead_cmd_class(self):
         """ Test YHSM_AEAD_Cmd class. """
