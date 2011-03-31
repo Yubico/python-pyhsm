@@ -60,12 +60,13 @@ class YHSM_Cmd_Buffer_Random_Load(YHSM_Cmd):
     """
     def __init__(self, stick, num_bytes, offset = 0):
         self.offset = offset
+        self.num_bytes = num_bytes
         # typedef struct {
         #   uint8_t offs;                       // Offset in buffer. Zero flushes/resets buffer first
         #   uint8_t numBytes;                   // Number of bytes to randomize
         # } YSM_BUFFER_RANDOM_LOAD_REQ;
-        fmt = "B B" % self.data_len
-        packed = struct.pack(fmt, self.offset, num_bytes)
+        fmt = "B B"
+        packed = struct.pack(fmt, self.offset, self.num_bytes)
         YHSM_Cmd.__init__(self, stick, defines.YSM_BUFFER_RANDOM_LOAD, packed)
 
     def parse_result(self, data):
