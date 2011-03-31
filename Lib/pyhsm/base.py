@@ -111,6 +111,12 @@ class YHSM():
 
         return basic_cmd.YHSM_Cmd_Random(self.stick, num_bytes).execute()
 
+    def random_reseed(self, seed):
+        """
+        Provide YubiHSM DRBG_CTR with a new seed (32 bytes).
+        """
+        return basic_cmd.YHSM_Cmd_Random_Reseed(self.stick, seed).execute()
+
     def get_nonce(self, increment=1):
         """ Get current nonce from YubiHSM. """
         if type(increment) is not int:

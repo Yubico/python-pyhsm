@@ -42,3 +42,14 @@ class TestBasics(test_common.YHSM_TestCase):
         n4 = self.hsm.get_nonce(1)
         # and now we see the 9 increment
         self.assertEqual(n3.nonce + 9, n4.nonce)
+
+    def test_random_reseed(self):
+        """
+        Tets random reseed.
+        """
+        # Unsure if we can test anything except the status returned is OK
+        self.assertTrue(self.hsm.random_reseed('A' * 32))
+        # at least test we didn't disable the RNG
+        r1 = self.hsm.random(10)
+        r2 = self.hsm.random(10)
+        self.assertNotEqual(r1, r2)

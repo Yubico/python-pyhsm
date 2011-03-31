@@ -121,6 +121,7 @@ YSM_BUFFER_RANDOM_LOAD		= 0x21
 YSM_NONCE_GET			= 0x22
 YSM_ECHO			= 0x23
 YSM_RANDOM_GENERATE		= 0x24
+YSM_RANDOM_RESEED		= 0x25
 YSM_SYSTEM_INFO_QUERY		= 0x26
 YSM_MONITOR_EXIT		= 0x7f
 
@@ -143,6 +144,7 @@ def cmd2str(cmd):
              0x22: 'YSM_NONCE_GET',
              0x23: 'YSM_ECHO',
              0x24: 'YSM_RANDOM_GENERATE',
+             0x25: 'YSM_RANDOM_RESEED',
              0x26: 'YSM_SYSTEM_INFO_QUERY',
              0x7f: 'YSM_MONITOR_EXIT',
              }
