@@ -27,6 +27,9 @@ class YHSM_Cmd_DB_YubiKey_Store(YHSM_Cmd):
 
     The input is an AEAD, perhaps previously created using generate_aead().
     """
+
+    status = None
+
     def __init__(self, stick, public_id, key_handle, aead):
         self.key_handle = key_handle
         # store padded public_id for comparision in parse_result

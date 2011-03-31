@@ -24,6 +24,10 @@ class YHSM_Cmd_HMAC_SHA1_Write(YHSM_Cmd):
 
     Set final=False to not get a hash generated for the initial request.
     """
+
+    status = None
+    response = None
+
     def __init__(self, stick, key_handle, data, flags = None, final = True):
         if flags != None and type(flags) is not int:
             raise pyhsm.exception.YHSM_WrongInputType(

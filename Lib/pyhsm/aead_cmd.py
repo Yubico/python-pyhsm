@@ -27,10 +27,12 @@ class YHSM_AEAD_Cmd(YHSM_Cmd):
     Class for common non-trivial parse_result for commands returning a
     YSM_AEAD_GENERATE_RESP.
     """
-    # make pylint happy
+
     nonce = ''
     key_handle = 0
     status = 0
+    response = None
+
     def __repr__(self):
         if self.executed:
             return '<%s instance at %s: nonce=%s, key_handle=0x%x, status=%s>' % (
@@ -104,7 +106,7 @@ class YHSM_Cmd_AEAD_Generate(YHSM_AEAD_Cmd):
         # } YSM_AEAD_GENERATE_REQ;
         fmt = "< %is I B %is" % (pyhsm.defines.YSM_AEAD_NONCE_SIZE, len(self.data))
         packed = struct.pack(fmt, nonce, key_handle, len(self.data), self.data)
-        YHSM_Cmd.__init__(self, stick, pyhsm.defines.YSM_AEAD_GENERATE, packed)
+        YHSM_AEAD_Cmd.__init__(self, stick, pyhsm.defines.YSM_AEAD_GENERATE, packed)
 
 class YHSM_Cmd_AEAD_Random_Generate(YHSM_AEAD_Cmd):
     """
@@ -135,7 +137,7 @@ class YHSM_Cmd_AEAD_Random_Generate(YHSM_AEAD_Cmd):
         # } YSM_RANDOM_AEAD_GENERATE_REQ;
         fmt = "< %is I B" % (pyhsm.defines.YSM_AEAD_NONCE_SIZE)
         packed = struct.pack(fmt, nonce, key_handle, num_bytes)
-        YHSM_Cmd.__init__(self, stick, pyhsm.defines.YSM_RANDOM_AEAD_GENERATE, packed)
+        YHSM_AEAD_Cmd.__init__(self, stick, pyhsm.defines.YSM_RANDOM_AEAD_GENERATE, packed)
 
 class YHSM_Cmd_AEAD_Buffer_Generate(YHSM_AEAD_Cmd):
     """
@@ -165,13 +167,16 @@ class YHSM_Cmd_AEAD_Buffer_Generate(YHSM_AEAD_Cmd):
         # } YSM_BUFFER_AEAD_GENERATE_REQ;
         packed = struct.pack("< %is I" % (pyhsm.defines.YSM_AEAD_NONCE_SIZE), \
                                  self.nonce, self.key_handle)
-        YHSM_Cmd.__init__(self, stick, pyhsm.defines.YSM_BUFFER_AEAD_GENERATE, packed)
+        YHSM_AEAD_Cmd.__init__(self, stick, pyhsm.defines.YSM_BUFFER_AEAD_GENERATE, packed)
 
 class YHSM_Cmd_AEAD_Decrypt_Cmp(YHSM_Cmd):
     """
     Validate an AEAD using the YubiHSM, matching it against some known plain text.
     Matching is done inside the YubiHSM so the decrypted AEAD is never exposed.
     """
+
+    status = None
+
     def __init__(self, stick, nonce, key_handle, aead, cleartext):
         if not isinstance(aead, YHSM_GeneratedAEAD):
             raise pyhsm.exception.YHSM_Error("Input 'aead' is not an YHSM_GeneratedAEAD : %s" \
@@ -256,15 +261,15 @@ class YHSM_GeneratedAEAD():
 
     def save(self, filename):
         """ Store AEAD in a file. """
-        f = open(filename, "w")
-        f.write(self.data)
-        f.close()
+        aead_f = open(filename, "w")
+        aead_f.write(self.data)
+        aead_f.close()
 
     def load(self, filename):
         """ Load AEAD from a file. """
-        f = open(filename, "r")
-        self.data = f.read(pyhsm.defines.YSM_MAX_KEY_SIZE + pyhsm.defines.YSM_BLOCK_SIZE)
-        f.close()
+        aead_f = open(filename, "r")
+        self.data = aead_f.read(pyhsm.defines.YSM_MAX_KEY_SIZE + pyhsm.defines.YSM_BLOCK_SIZE)
+        aead_f.close()
 
 class YHSM_YubiKeySecret():
     """ Small class to represent a YUBIKEY_SECRETS struct. """

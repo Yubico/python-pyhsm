@@ -159,7 +159,7 @@ class YHSM():
             secret = secret.pack()
         return pyhsm.buffer_cmd.YHSM_Cmd_Buffer_Load(self.stick, secret).execute()
 
-    def load_random(self, bytes, offset = 0):
+    def load_random(self, num_bytes, offset = 0):
         """
         Ask YubiHSM to load random data into the internal buffer.
 
@@ -167,7 +167,7 @@ class YHSM():
         this operation would be followed by one or more generate_aead()
         commands to actually retreive the generated secret (in encrypted form).
         """
-        return pyhsm.buffer_cmd.YHSM_Cmd_Buffer_Random_Load(self.stick, bytes, offset).execute()
+        return pyhsm.buffer_cmd.YHSM_Cmd_Buffer_Random_Load(self.stick, num_bytes, offset).execute()
 
     def generate_aead_simple(self, nonce, key_handle, data):
         """

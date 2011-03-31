@@ -21,6 +21,10 @@ class YHSM_Cmd():
     """
     Base class for YubiHSM commands.
     """
+
+    response_status = None
+    executed = False
+
     def __init__(self, stick, command, payload=''):
         """
         The base class for all YSM_ commands.
@@ -31,9 +35,7 @@ class YHSM_Cmd():
         """
         self.stick = stick
         self.command = command
-        self.response_length = 0
         self.payload = payload
-        self.executed = False
         return None
 
     def execute(self, read_response=True):
@@ -57,13 +59,24 @@ class YHSM_Cmd():
         self.stick.write(cmd_buf, debug_info)
         if not read_response:
             return None
-        # read response status
+        return self._read_response()
+
+    def _read_response(self):
+        """
+        After writing a command, read response.
+        """
+        # // Up- and downlink packet
+        # typedef struct {
+        #   uint8_t bcnt;                       // Number of bytes (cmd + payload)
+        #   uint8_t cmd;                        // YSM_xxx command
+        #   uint8_t payload[YSM_MAX_PKT_SIZE];  // Payload
+        # } YSM_PKT;
+
+        # read YSM_PKT.bcnt and YSM_PKT.cmd
         res = self.stick.read(2, 'response length + response status')
         if not res:
-            if self.response_length > 0:
-                reset(self.stick)
-                raise pyhsm.exception.YHSM_Error('YubiHSM did not respond')
-            return None
+            reset(self.stick)
+            raise pyhsm.exception.YHSM_Error('YubiHSM did not respond')
         response_len, response_status = struct.unpack('BB', res)
         response_len -= 1 # the status byte has been read already
         debug_info = None
@@ -71,7 +84,7 @@ class YHSM_Cmd():
             debug_info = "%s response (%i/0x%x bytes)" \
                 % (pyhsm.defines.cmd2str(response_status - pyhsm.defines.YSM_RESPONSE), \
                        response_len, response_len)
-        # read response payload
+        # read YSM_PKT.payload
         res = self.stick.read(response_len, debug_info)
         if res:
             if response_status == self.command | pyhsm.defines.YSM_RESPONSE:
