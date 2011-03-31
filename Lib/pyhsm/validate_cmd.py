@@ -5,8 +5,6 @@ implementations of validation commands for YubiHSM
 # All rights reserved.
 
 import struct
-import defines
-import exception
 
 __all__ = [
     # constants
@@ -15,24 +13,26 @@ __all__ = [
     'YHSM_Cmd_AEAD_Validate_OTP',
 ]
 
-from cmd import YHSM_Cmd
+import pyhsm.defines
+import pyhsm.exception
+from aead_cmd import YHSM_AEAD_Cmd
 
-class YHSM_Cmd_AEAD_Validate_OTP(YHSM_Cmd):
+class YHSM_Cmd_AEAD_Validate_OTP(YHSM_AEAD_Cmd):
     """
     Request the YubiHSM to validate an OTP using an externally stored AEAD.
     """
     def __init__(self, stick, public_id, otp, key_handle, aead):
-        if len(public_id) > defines.PUBLIC_ID_SIZE:
-            raise exception.YHSM_WrongInputSize(
-                'public_id', defines.PUBLIC_ID_SIZE, len(public_id))
-        if len(otp) != defines.OTP_SIZE:
-            raise exception.YHSM_WrongInputSize(
-                'otp', defines.OTP_SIZE, len(otp))
-        if len(aead) != defines.YUBIKEY_AEAD_SIZE:
-            raise exception.YHSM_WrongInputSize(
-                'aead', defines.YUBIKEY_AEAD_SIZE, len(aead))
+        if len(public_id) > pyhsm.defines.PUBLIC_ID_SIZE:
+            raise pyhsm.exception.YHSM_WrongInputSize(
+                'public_id', pyhsm.defines.PUBLIC_ID_SIZE, len(public_id))
+        if len(otp) != pyhsm.defines.OTP_SIZE:
+            raise pyhsm.exception.YHSM_WrongInputSize(
+                'otp', pyhsm.defines.OTP_SIZE, len(otp))
+        if len(aead) != pyhsm.defines.YUBIKEY_AEAD_SIZE:
+            raise pyhsm.exception.YHSM_WrongInputSize(
+                'aead', pyhsm.defines.YUBIKEY_AEAD_SIZE, len(aead))
         # store padded public_id for comparision in parse_result
-        self.public_id = public_id.ljust(defines.PUBLIC_ID_SIZE, chr(0x0))
+        self.public_id = public_id.ljust(pyhsm.defines.PUBLIC_ID_SIZE, chr(0x0))
         self.otp = otp
         self.key_handle = key_handle
         self.response = None
@@ -43,29 +43,14 @@ class YHSM_Cmd_AEAD_Validate_OTP(YHSM_Cmd):
         #   uint8_t otp[OTP_SIZE];              // OTP
         #   uint8_t aead[YUBIKEY_AEAD_SIZE];    // AEAD block
         # } YSM_AEAD_OTP_DECODE_REQ;
-        packed = struct.pack("< %is I %is %is" % (defines.YSM_AEAD_NONCE_SIZE, \
-                                                      defines.OTP_SIZE, \
-                                                      defines.YUBIKEY_AEAD_SIZE), \
-                                 self.public_id, \
+        fmt = "< %is I %is %is" % (pyhsm.defines.YSM_AEAD_NONCE_SIZE, \
+                                       pyhsm.defines.OTP_SIZE, \
+                                       pyhsm.defines.YUBIKEY_AEAD_SIZE)
+        packed = struct.pack(fmt, self.public_id, \
                                  self.key_handle, \
                                  self.otp, \
                                  aead)
-        YHSM_Cmd.__init__(self, stick, defines.YSM_AEAD_OTP_DECODE, packed)
-
-    def __repr__(self):
-        if self.executed:
-            return '<%s instance at %s: public_id=%s, key_handle=0x%x, status=0x%x>' % (
-                self.__class__.__name__,
-                hex(id(self)),
-                self.public_id.encode('hex'),
-                self.key_handle,
-                self.status
-                )
-        else:
-            return '<%s instance at %s (not executed)>' % (
-                self.__class__.__name__,
-                hex(id(self))
-                )
+        YHSM_AEAD_Cmd.__init__(self, stick, pyhsm.defines.YSM_AEAD_OTP_DECODE, packed)
 
     def parse_result(self, data):
         # typedef struct {
@@ -77,7 +62,7 @@ class YHSM_Cmd_AEAD_Validate_OTP(YHSM_Cmd):
         #   uint16_t tstpl;                      // Timestamp (low part)
         #   YHSM_STATUS status;                  // Validation status
         # } YHSM_AEAD_OTP_DECODED_RESP;
-        fmt = "< %is I H B B H B" % (defines.PUBLIC_ID_SIZE)
+        fmt = "< %is I H B B H B" % (pyhsm.defines.PUBLIC_ID_SIZE)
         this_public_id, \
             key_handle, \
             use_ctr, \
@@ -87,17 +72,17 @@ class YHSM_Cmd_AEAD_Validate_OTP(YHSM_Cmd):
             self.status = struct.unpack(fmt, data)
 
         if this_public_id != self.public_id:
-            raise exception.YHSM_Error('Bad public_id in response (%s != %s)' %
+            raise pyhsm.exception.YHSM_Error('Bad public_id in response (%s != %s)' %
                                       (this_public_id.encode('hex'), self.public_id.encode('hex')))
         if key_handle != self.key_handle:
-            raise(exception.YHSM_Error("Bad key_handle in response (got '0x%x', expected '0x%x')", \
+            raise(pyhsm.exception.YHSM_Error("Bad key_handle in response (got '0x%x', expected '0x%x')", \
                                            key_handle, self.key_handle))
 
-        if self.status == defines.YSM_STATUS_OK:
+        if self.status == pyhsm.defines.YSM_STATUS_OK:
             self.response = YHSM_ValidationResult(self.public_id, use_ctr, session_ctr, ts_high, ts_low)
             return self.response
         else:
-            raise exception.YHSM_CommandFailed(defines.cmd2str(self.command), self.status)
+            raise pyhsm.exception.YHSM_CommandFailed(pyhsm.defines.cmd2str(self.command), self.status)
 
 
 class YHSM_ValidationResult():
