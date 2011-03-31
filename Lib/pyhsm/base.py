@@ -89,6 +89,20 @@ class YHSM():
         # nice exception if we are.
         return data == echo
 
+    def set_debug(self, new):
+        """
+        Set debug mode (boolean).
+
+        Returns old setting.
+        """
+        if type(new) is not bool:
+            raise exception.YHSM_WrongInputType(
+                'new', bool, type(new))
+        old = self.debug
+        self.debug = new
+        self.stick.set_debug(new)
+        return old
+
     #
     # Basic commands
     #

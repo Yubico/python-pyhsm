@@ -111,6 +111,19 @@ class YHSM_Stick():
         """ Get raw serial device. Only intended for test code/debugging! """
         return self.ser;
 
+    def set_debug(self, new):
+        """
+        Set debug mode (boolean).
+
+        Returns old setting.
+        """
+        if type(new) is not bool:
+            raise exception.YHSM_WrongInputType(
+                'new', bool, type(new))
+        old = self.debug
+        self.debug = new
+        return old
+
     def __repr__(self):
         return '<%s instance at %s: %s - r:%i w:%i>' % (
             self.__class__.__name__,
