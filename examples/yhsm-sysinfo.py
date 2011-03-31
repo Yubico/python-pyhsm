@@ -24,7 +24,11 @@ res = 0
 try:
     s = pyhsm.base.YHSM(device=device, debug=debug)
 
-    print "Version: %s" % s.info()
+    print "Version        : %s" % (s.info())
+
+    nonce = s.get_nonce()
+    print "Power-up count : %i" % (nonce.pu_count)
+
 except pyhsm.exception.YHSM_Error, e:
     print "ERROR: %s" % e
     res = 1

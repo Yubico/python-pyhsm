@@ -101,3 +101,47 @@ class YHSM_Cmd_Random(YHSM_Cmd):
             raise exception.YHSM_Error("Incorrect number of bytes in response (got %s, expected %s)" \
                                            % (num_bytes, self.num_bytes))
         return data[1:1 + num_bytes]
+
+class YHSM_Cmd_Nonce_Get(YHSM_Cmd):
+    """
+    Get nonce value from YubiHSM - causes it to increment by one (or a specified number).
+    """
+    def __init__(self, stick, increment):
+        if type(increment) is not int:
+            raise exception.YHSM_WrongInputType( \
+                'increment', type(1), type(increment))
+        # typedef struct {
+        #   uint16_t increment;                 // Size of increment to next nonce
+        # } YSM_NONCE_GET_REQ;
+        packed = struct.pack("<H", increment)
+        YHSM_Cmd.__init__(self, stick, defines.YSM_NONCE_GET, packed)
+
+    def parse_result(self, data):
+        # typedef struct {
+        #   YSM_STATUS status;                  // Status
+        #   uint8_t nonce[YSM_AEAD_NONCE_SIZE]; // Nonce
+        # } YSM_NONCE_GET_RESP;
+        fmt = "B %is" % (defines.YSM_AEAD_NONCE_SIZE)
+        self.status, nonce = struct.unpack(fmt, data)
+        if self.status == defines.YSM_STATUS_OK:
+            self.response = YHSM_NonceResponse(nonce)
+            return self.response
+        else:
+            raise exception.YHSM_CommandFailed(defines.cmd2str(self.command), self.status)
+
+class YHSM_NonceResponse():
+    """ Small class to hold response of Nonce_Get command. """
+    def __init__(self, nonce):
+        # The power-up count can be deduced from the nonce =)
+        self.volatile = struct.unpack("<L", nonce[0:4])[0]
+        self.pu_count = struct.unpack("<H", nonce[4:6])[0]
+        self.nonce = (self.pu_count << 32) + self.volatile
+
+    def __repr__(self):
+        return '<%s instance at %s: nonce=%i, pu_count=%i, volatile=%i>' % (
+            self.__class__.__name__,
+            hex(id(self)),
+            self.nonce,
+            self.pu_count,
+            self.volatile
+            )

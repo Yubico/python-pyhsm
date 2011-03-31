@@ -111,6 +111,14 @@ class YHSM():
 
         return basic_cmd.YHSM_Cmd_Random(self.stick, num_bytes).execute()
 
+    def get_nonce(self, increment=1):
+        """ Get current nonce from YubiHSM. """
+        if type(increment) is not int:
+            raise exception.YHSM_WrongInputType(
+                'increment', type(1), type(increment))
+
+        return basic_cmd.YHSM_Cmd_Nonce_Get(self.stick, increment).execute()
+
     #
     # AEAD related commands
     #
