@@ -88,6 +88,9 @@ class YHSM_Cmd_AEAD_Validate_OTP(YHSM_Cmd):
         if this_public_id != self.public_id:
             raise exception.YHSM_Error('Bad public_id in response (%s != %s)' %
                                       (this_public_id.encode('hex'), self.public_id.encode('hex')))
+        if key_handle != self.key_handle:
+            raise(exception.YHSM_Error("Bad key_handle in response (got '0x%x', expected '0x%x')", \
+                                           key_handle, self.key_handle))
 
         if self.status == defines.YSM_STATUS_OK:
             self.response = YHSM_ValidationResult(self.public_id, use_ctr, session_ctr, ts_high, ts_low)

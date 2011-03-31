@@ -6,7 +6,6 @@ implementations of internal buffer commands for YubiHSM
 # All rights reserved.
 
 import struct
-import defines
 
 __all__ = [
     # constants
@@ -15,17 +14,18 @@ __all__ = [
     'YHSM_Cmd_Buffer_Load',
 ]
 
-from cmd import YHSM_Cmd
-import exception
+import pyhsm.defines
+import pyhsm.exception
+from pyhsm.cmd import YHSM_Cmd
 
 class YHSM_Cmd_Buffer_Load(YHSM_Cmd):
     """
     Ask YubiHSM to load some data into it's internal buffer.
     """
     def __init__(self, stick, data, offset = 0):
-        if len(data) > defines.YSM_DATA_BUF_SIZE:
-            raise exception.YHSM_InputTooLong(
-                'data', defines.YSM_DATA_BUF_SIZE, len(data))
+        if len(data) > pyhsm.defines.YSM_DATA_BUF_SIZE:
+            raise pyhsm.exception.YHSM_InputTooLong(
+                'data', pyhsm.defines.YSM_DATA_BUF_SIZE, len(data))
         self.data_len = len(data)
         self.offset = offset
         # typedef struct {
@@ -35,7 +35,7 @@ class YHSM_Cmd_Buffer_Load(YHSM_Cmd):
         # } YSM_BUFFER_LOAD_REQ;
         fmt = "B B %is" % self.data_len
         packed = struct.pack(fmt, self.offset, self.data_len, data)
-        YHSM_Cmd.__init__(self, stick, defines.YSM_BUFFER_LOAD, packed)
+        YHSM_Cmd.__init__(self, stick, pyhsm.defines.YSM_BUFFER_LOAD, packed)
 
     def parse_result(self, data):
         """ Return the number of bytes now in the YubiHSM internal buffer. """
@@ -47,7 +47,7 @@ class YHSM_Cmd_Buffer_Load(YHSM_Cmd):
             # if offset was 0, the buffer was reset and
             # we can verify the length returned
             if count != self.data_len:
-                raise exception.YHSM_Error("Incorrect number of bytes in buffer (got %i, expected %i)" \
+                raise pyhsm.exception.YHSM_Error("Incorrect number of bytes in buffer (got %i, expected %i)" \
                                                % (self.data_len, count))
         return count
 
@@ -67,7 +67,7 @@ class YHSM_Cmd_Buffer_Random_Load(YHSM_Cmd):
         # } YSM_BUFFER_RANDOM_LOAD_REQ;
         fmt = "B B"
         packed = struct.pack(fmt, self.offset, self.num_bytes)
-        YHSM_Cmd.__init__(self, stick, defines.YSM_BUFFER_RANDOM_LOAD, packed)
+        YHSM_Cmd.__init__(self, stick, pyhsm.defines.YSM_BUFFER_RANDOM_LOAD, packed)
 
     def parse_result(self, data):
         """ Return True if the public_id in the response matches the one in the request. """
@@ -79,6 +79,6 @@ class YHSM_Cmd_Buffer_Random_Load(YHSM_Cmd):
             # if offset was 0, the buffer was reset and
             # we can verify the length returned
             if count != self.num_bytes:
-                raise exception.YHSM_Error("Incorrect number of bytes in buffer (got %i, expected %i)" \
+                raise pyhsm.exception.YHSM_Error("Incorrect number of bytes in buffer (got %i, expected %i)" \
                                                % (self.num_bytes, count))
         return count

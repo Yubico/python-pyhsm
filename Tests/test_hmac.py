@@ -22,6 +22,9 @@ class TestHMACSHA1(test_common.YHSM_TestCase):
         res = self.hsm.hmac_sha1(self.kh, data).execute()
         self.assertEquals(res.hash_result.encode('hex'), '0922d3405faa3d194f82a45830737d5cc6c75d24')
 
+        # test of repr method
+        self.assertEquals(str, type(str(res)))
+
     def test_hmac_continuation(self):
         """ Test HMAC continuation. """
         data = 'Sample #2'

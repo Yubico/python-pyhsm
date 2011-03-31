@@ -28,7 +28,7 @@ class YHSM_Cmd_Echo(YHSM_Cmd):
     def __init__(self, stick, payload=''):
         if len(payload) > defines.YSM_MAX_PKT_SIZE - 1:
             raise exception.YHSM_InputTooLong(
-                'payload', defines.YSM_MAX_PKT_SIZE - 1, len(data))
+                'payload', defines.YSM_MAX_PKT_SIZE - 1, len(payload))
         packed = chr(len(payload)) + payload
         YHSM_Cmd.__init__(self, stick, defines.YSM_ECHO, packed)
 
@@ -49,8 +49,8 @@ class YHSM_Cmd_System_Info(YHSM_Cmd):
         self.version_major = 0
         self.version_minor = 0
         self.version_build = 0
-        self.protocolVersion = 0
-        self.systemUid = None
+        self.protocol_ver = 0
+        self.system_uid = None
 
     def __repr__(self):
         if self.executed:
@@ -58,8 +58,8 @@ class YHSM_Cmd_System_Info(YHSM_Cmd):
                 self.__class__.__name__,
                 hex(id(self)),
                 (self.version_major, self.version_minor, self.version_build),
-                self.protocolVersion,
-                self.systemUid.encode('hex')
+                self.protocol_ver,
+                self.system_uid.encode('hex')
                 )
         else:
             return '<%s instance at %s (not executed)>' % (
@@ -79,8 +79,8 @@ class YHSM_Cmd_System_Info(YHSM_Cmd):
         self.version_major, \
             self.version_minor, \
             self.version_build, \
-            self.protocolVersion, \
-            self.systemUid = struct.unpack('BBBB12s', data)
+            self.protocol_ver, \
+            self.system_uid = struct.unpack('BBBB12s', data)
         return self
 
 

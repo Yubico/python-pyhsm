@@ -6,7 +6,6 @@ collection of utility functions
 # All rights reserved.
 
 import struct
-import exception
 
 __all__ = [
     # constants
@@ -17,12 +16,14 @@ __all__ = [
     # classes
 ]
 
+import pyhsm.exception
+
 def hexdump(src, length=8):
     """ Produce a string hexdump of src, for debug output."""
     if not src:
         return str(src)
     if type(src) is not str:
-        raise Exception('Hexdump \'src\' must be string (got %s)' % type(src))
+        raise pyhsm.exception.YHSM_Error('Hexdump \'src\' must be string (got %s)' % type(src))
     offset = 0
     result = ''
     for this in group(src, length):
@@ -44,12 +45,12 @@ def key_handle_to_int(this):
     in the most human readable form in packet traces.
     """
     try:
-        n = int(this)
-        return n
+        num = int(this)
+        return num
     except ValueError:
         if this[:2] == "0x":
             return int(this, 16)
         if (len(this) == 4):
-            n = struct.unpack('<I', this)[0]
-            return n
-    raise exception.YHSM_Error("Could not parse key_handle '%s'" % (this))
+            num = struct.unpack('<I', this)[0]
+            return num
+    raise pyhsm.exception.YHSM_Error("Could not parse key_handle '%s'" % (this))

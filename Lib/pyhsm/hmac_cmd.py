@@ -114,10 +114,10 @@ class YHSM_GeneratedHMACSHA1():
         self.final = final
 
     def __repr__(self):
-        return '<%s instance at %s: key_handle=0x%x, t(hash_result)=%s, final=%s>' % (
+        return '<%s instance at %s: key_handle=0x%x, trunc(hash_result)=%s, final=%s>' % (
             self.__class__.__name__,
             hex(id(self)),
             self.key_handle,
-            hash_result[:4].encode('hex'),
+            self.hash_result[:4].encode('hex'),
             self.final,
             )

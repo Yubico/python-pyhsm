@@ -15,9 +15,11 @@ __all__ = [
     'Stick',
 ]
 
-import serial
 import sys
-import util
+import serial
+
+import pyhsm.util
+import pyhsm.exception
 
 class YHSM_Stick():
     """
@@ -53,7 +55,7 @@ class YHSM_Stick():
             sys.stderr.write("%s: WRITE %s:\n%s\n" %(
                     self.__class__.__name__,
                     debug_info,
-                    util.hexdump(data)
+                    pyhsm.util.hexdump(data)
                     ))
         return self.ser.write(data)
 
@@ -75,7 +77,7 @@ class YHSM_Stick():
             sys.stderr.write("%s: READ %i:\n%s\n" %(
                     self.__class__.__name__,
                     len(res),
-                    util.hexdump(res)
+                    pyhsm.util.hexdump(res)
                     ))
         self.num_read_bytes += len(res)
         return res
@@ -100,16 +102,16 @@ class YHSM_Stick():
                     ))
         old_timeout = self.ser.timeout
         self.ser.timeout = 0.1
-        x = self.ser.read(1)
-        while len(x):
+        data = self.ser.read(1)
+        while len(data):
             if self.debug:
-                sys.stderr.write("%s: DRAINED 0x%x (%c)\n" %(self.__class__.__name__, ord(x[0]), x[0]))
-            x = self.ser.read(1)
+                sys.stderr.write("%s: DRAINED 0x%x (%c)\n" %(self.__class__.__name__, ord(data[0]), data[0]))
+            data = self.ser.read(1)
         self.ser.timeout = old_timeout
 
     def raw_device(self):
         """ Get raw serial device. Only intended for test code/debugging! """
-        return self.ser;
+        return self.ser
 
     def set_debug(self, new):
         """
@@ -118,7 +120,7 @@ class YHSM_Stick():
         Returns old setting.
         """
         if type(new) is not bool:
-            raise exception.YHSM_WrongInputType(
+            raise pyhsm.exception.YHSM_WrongInputType(
                 'new', bool, type(new))
         old = self.debug
         self.debug = new
