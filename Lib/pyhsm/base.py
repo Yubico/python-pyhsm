@@ -150,18 +150,6 @@ class YHSM():
     #
     # AEAD related commands
     #
-    def generate_secret(self, num_bytes = defines.KEY_SIZE + defines.UID_SIZE, offset = 0):
-        """
-        Ask YubiHSM to generate a YubiKey secret.
-        """
-        if type(num_bytes) is not int:
-            raise exception.YHSM_WrongInputType(
-                'num_bytes', type(1), type(num_bytes))
-        if type(offset) is not int:
-            raise exception.YHSM_WrongInputType(
-                'offset', type(1), type(offset))
-        return buffer_cmd.YHSM_Cmd_Secrets_Generate(self.stick, num_bytes, offset).execute()
-
     def load_secret(self, secret):
         """
         Ask YubiHSM to load a pre-existing YubiKey secret.
@@ -173,6 +161,16 @@ class YHSM():
         if isinstance(secret, secrets_cmd.YHSM_YubiKeySecret):
             secret = secret.pack()
         return buffer_cmd.YHSM_Cmd_Buffer_Load(self.stick, secret).execute()
+
+    def load_random(self, bytes, offset = 0):
+        """
+        Ask YubiHSM to load random data into the internal buffer.
+
+        The result is stored internally in the YubiHSM in temporary memory -
+        this operation would be followed by one or more generate_aead()
+        commands to actually retreive the generated secret (in encrypted form).
+        """
+        return buffer_cmd.YHSM_Cmd_Buffer_Random_Load(self.stick, bytes, offset).execute()
 
     def generate_aead_simple(self, nonce, key_handle, data):
         """
