@@ -16,6 +16,14 @@ class TestAEAD(test_common.YHSM_TestCase):
         self.uid = '\x4d\x01\x4d\x02\x4d\x03'
         self.secret = pyhsm.secrets_cmd.YHSM_YubiKeySecret(self.key, self.uid)
 
+    def test_aead_cmd_class(self):
+        """ Test YHSM_AEAD_Cmd class. """
+        this = pyhsm.aead_cmd.YHSM_AEAD_Cmd(None, None)
+        # test repr method
+        self.assertEquals(str, type(str(this)))
+        this.executed = True
+        self.assertEquals(str, type(str(this)))
+
     def test_generate_aead_simple(self):
         """ Test generate_aead_simple. """
         # Enabled flags 00000002 = YSM_AEAD_GENERATE
@@ -26,6 +34,9 @@ class TestAEAD(test_common.YHSM_TestCase):
 
         self.assertEqual(aead.nonce, self.nonce)
         self.assertEqual(aead.key_handle, key_handle)
+
+        # test repr method
+        self.assertEquals(str, type(str(aead)))
 
     def test_generate_aead_simple_validates(self):
         """ Test decrypt_cmp of generate_aead_simple result. """
