@@ -14,6 +14,8 @@
 # key handle (!) in YubiHSM 2 that can only COMPARE. This might add
 # to the overall security in certain applications.
 #
+# Hashing the password before sending it to the YubiHSM (e.g. using PBKDF2)
+# in order to further enhance security is left as an exercise to the reader.
 #
 # Example usage :
 #
