@@ -77,8 +77,6 @@ class YHSM():
     def reset(self):
         """ Perform stream resynchronization. Return True if successful. """
         pyhsm.cmd.reset(self.stick)
-        # Short sleep necessary with firmware 0.9.2. Will be removed.
-        time.sleep(0.005)
         # Now verify we are in sync
         data = 'ekoeko'
         echo = self.echo(data)

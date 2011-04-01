@@ -29,7 +29,7 @@
 the pyhsm package
 """
 
-__version__ = '0.9.2pre1'
+__version__ = '0.9.4pre1'
 
 __all__ = ["base"
            "cmd"
