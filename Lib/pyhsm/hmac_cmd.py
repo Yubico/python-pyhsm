@@ -58,7 +58,7 @@ class YHSM_Cmd_HMAC_SHA1_Write(YHSM_Cmd):
         else:
             self.flags = 0x0
         if to_buffer:
-            flags |= pyhsm.defines.YSM_HMAC_TO_BUFFER
+            self.flags |= pyhsm.defines.YSM_HMAC_TO_BUFFER
         self.payload = _raw_pack(self.key_handle, self.flags, data)
         self.final = final
         return self

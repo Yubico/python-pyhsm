@@ -63,8 +63,6 @@ class YHSM_Stick():
         """
         Read a number of bytes from YubiHSM device.
         """
-        if num_bytes < 1:
-            return 0
         if self.debug:
             if not debug_info:
                 debug_info = str(num_bytes)
@@ -108,6 +106,7 @@ class YHSM_Stick():
                 sys.stderr.write("%s: DRAINED 0x%x (%c)\n" %(self.__class__.__name__, ord(data[0]), data[0]))
             data = self.ser.read(1)
         self.ser.timeout = old_timeout
+        return True
 
     def raw_device(self):
         """ Get raw serial device. Only intended for test code/debugging! """

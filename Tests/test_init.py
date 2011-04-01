@@ -13,6 +13,8 @@ import test_buffer
 import test_db
 import test_hmac
 import test_otp_validate
+import test_stick
+import test_util
 import test_yubikey_validate
 
 test_modules = [test_aead,
@@ -22,6 +24,8 @@ test_modules = [test_aead,
                 test_db,
                 test_hmac,
                 test_otp_validate,
+                test_stick,
+                test_util,
                 test_yubikey_validate,
                 ]
 

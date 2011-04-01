@@ -32,8 +32,6 @@ module for accessing a YubiHSM
 # Copyright (c) 2011, Yubico AB
 # All rights reserved.
 
-import time
-
 __all__ = [
     # constants
     # functions

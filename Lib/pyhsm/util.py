@@ -22,8 +22,7 @@ def hexdump(src, length=8):
     """ Produce a string hexdump of src, for debug output."""
     if not src:
         return str(src)
-    if type(src) is not str:
-        raise pyhsm.exception.YHSM_Error('Hexdump \'src\' must be string (got %s)' % type(src))
+    src = input_validate_str(src, 'src')
     offset = 0
     result = ''
     for this in group(src, length):
@@ -143,7 +142,7 @@ def validate_cmd_response_str(name, got, expected, hex_encode=True):
     if got != expected:
         if hex_encode:
             got_s = got.encode('hex')
-            exp_s = exp.encode('hex')
+            exp_s = expected.encode('hex')
         else:
             got_s = got
             exp_s = expected

@@ -4,6 +4,7 @@
 import sys
 import unittest
 import pyhsm
+import serial
 
 import test_common
 
@@ -119,3 +120,7 @@ class TestBasics(test_common.YHSM_TestCase):
     def test_drain(self):
         """ Test YubiHSM drain. """
         self.hsm.drain()
+
+    def test_raw_device(self):
+        """ Test YubiHSM raw device fetch. """
+        self.assertNotEqual(False, self.hsm.get_raw_device())
