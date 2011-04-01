@@ -89,3 +89,9 @@ class TestHMACSHA1(test_common.YHSM_TestCase):
 
         this = lambda kh: self.hsm.hmac_sha1(kh, data).execute()
         self.who_can(this, expected = [0x11])
+
+    def test_generated_sha1_class(self):
+        """ YHSM_GeneratedHMACSHA1 class. """
+        this = pyhsm.hmac_cmd.YHSM_GeneratedHMACSHA1(0x0, 'a' * 20, True)
+        # test repr method
+        self.assertEquals(str, type(str(this)))

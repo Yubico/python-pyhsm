@@ -64,6 +64,10 @@ class YHSM_AEAD_Cmd(YHSM_Cmd):
             key_handle, \
             self.status, \
             num_bytes = struct.unpack_from("< %is I B B" % (pyhsm.defines.YSM_AEAD_NONCE_SIZE), data, 0)
+
+        pyhsm.util.validate_cmd_response_str('nonce', nonce, self.nonce)
+        pyhsm.util.validate_cmd_response_hex('key_handle', key_handle, self.key_handle)
+
         if self.status == pyhsm.defines.YSM_STATUS_OK:
             # struct.hash is not always of size SHA1_HASH_SIZE,
             # it is really the size of numBytes
@@ -81,12 +85,9 @@ class YHSM_Cmd_AEAD_Generate(YHSM_AEAD_Cmd):
     `data' is either a string, or a YHSM_YubiKeySecret.
     """
     def __init__(self, stick, nonce, key_handle, data):
-        nonce = pyhsm.util.input_validate_nonce(nonce)
-        key_handle = pyhsm.util.input_validate_key_handle(key_handle)
-        data = pyhsm.util.input_validate_yubikey_secret(data)
-        self.data = data
-        self.nonce = nonce
-        self.key_handle = key_handle
+        self.nonce = pyhsm.util.input_validate_nonce(nonce, pad = True)
+        self.key_handle = pyhsm.util.input_validate_key_handle(key_handle)
+        self.data = pyhsm.util.input_validate_yubikey_secret(data)
         # typedef struct {
         #   uint8_t nonce[YSM_AEAD_NONCE_SIZE]; // Nonce (publicId for Yubikey AEADs)
         #   uint32_t keyHandle;                 // Key handle
@@ -104,14 +105,9 @@ class YHSM_Cmd_AEAD_Random_Generate(YHSM_AEAD_Cmd):
     To generate a secret for a YubiKey, use public_id as nonce.
     """
     def __init__(self, stick, nonce, key_handle, num_bytes):
-        nonce = pyhsm.util.input_validate_nonce(nonce)
-        key_handle = pyhsm.util.input_validate_key_handle(key_handle)
-        if type(num_bytes) is not int:
-            raise pyhsm.exception.YHSM_WrongInputType( \
-                'num_bytes', type(1), type(num_bytes))
-        self.nonce = nonce
-        self.key_handle = key_handle
-        self.num_bytes = num_bytes
+        self.nonce = pyhsm.util.input_validate_nonce(nonce, pad = True)
+        self.key_handle = pyhsm.util.input_validate_key_handle(key_handle)
+        self.num_bytes = pyhsm.util.input_validate_int(num_bytes, 'num_bytes')
         # typedef struct {
         #   uint8_t nonce[YSM_AEAD_NONCE_SIZE]; // Nonce (publicId for Yubikey AEADs)
         #   uint32_t keyHandle;                 // Key handle
@@ -132,17 +128,8 @@ class YHSM_Cmd_AEAD_Buffer_Generate(YHSM_AEAD_Cmd):
     all have a YubiHSM attached to them.
     """
     def __init__(self, stick, nonce, key_handle):
-        if type(nonce) is not str:
-            raise pyhsm.exception.YHSM_WrongInputType( \
-                'nonce', type(''), type(nonce))
-        if len(nonce) > pyhsm.defines.YSM_AEAD_NONCE_SIZE:
-            raise pyhsm.exception.YHSM_InputTooLong(
-                'nonce', pyhsm.defines.YSM_AEAD_NONCE_SIZE, len(nonce))
-        if type(key_handle) is not int:
-            raise pyhsm.exception.YHSM_WrongInputType( \
-                'key_handle', type(1), type(key_handle))
-        self.nonce = nonce
-        self.key_handle = key_handle
+        self.nonce = pyhsm.util.input_validate_nonce(nonce, pad = True)
+        self.key_handle = pyhsm.util.input_validate_key_handle(key_handle)
         # typedef struct {
         #   uint8_t nonce[YSM_AEAD_NONCE_SIZE]; // Nonce (publicId for Yubikey AEADs)
         #   uint32_t keyHandle;                 // Key handle
@@ -160,40 +147,15 @@ class YHSM_Cmd_AEAD_Decrypt_Cmp(YHSM_Cmd):
     status = None
 
     def __init__(self, stick, nonce, key_handle, aead, cleartext):
-        if not isinstance(aead, YHSM_GeneratedAEAD):
-            raise pyhsm.exception.YHSM_Error("Input 'aead' is not an YHSM_GeneratedAEAD : %s" \
-                                           % (aead))
-        if type(cleartext) is not str:
-            raise pyhsm.exception.YHSM_WrongInputType(
-                'cleartext', type(''), type(cleartext))
-        expected_ct_len = len(aead.data) - pyhsm.defines.YSM_AEAD_MAC_SIZE
-        if len(cleartext) != expected_ct_len:
-            raise pyhsm.exception.YHSM_WrongInputSize('cleartext', expected_ct_len, len(cleartext))
-        if cleartext:
-            if len(cleartext) < expected_ct_len:
-                # must pad with zeros
-                cleartext = cleartext.ljust(expected_ct_len, chr(0x0))
-            data = cleartext + aead.data
-            if len(data) > pyhsm.defines.YSM_MAX_PKT_SIZE - 10:
-                raise pyhsm.exception.YHSM_InputTooLong(
-                    'packed_aead+cleartext', pyhsm.defines.YSM_MAX_PKT_SIZE - 10, len(data))
-        else:
-            # Without cleartext, we only ask the YubiHSM to validate the MAC of the AEAD
-            # (the MAC is the last YSM_AEAD_MAC_SIZE bytes of aead.data)
-            data = aead.data[0 - pyhsm.defines.YSM_AEAD_MAC_SIZE:]
-        if type(nonce) is not str:
-            raise pyhsm.exception.YHSM_WrongInputType(
-                'nonce', type(''), type(nonce))
-        if len(nonce) > pyhsm.defines.YSM_AEAD_NONCE_SIZE:
+        aead = pyhsm.util.input_validate_aead(aead)
+        expected_ct_len = len(aead) - pyhsm.defines.YSM_AEAD_MAC_SIZE
+        cleartext = pyhsm.util.input_validate_str(cleartext, 'cleartext', exact_len = expected_ct_len)
+        self.nonce = pyhsm.util.input_validate_nonce(nonce, pad = True)
+        self.key_handle = pyhsm.util.input_validate_key_handle(key_handle)
+        data = cleartext + aead
+        if len(data) > pyhsm.defines.YSM_MAX_PKT_SIZE - 10:
             raise pyhsm.exception.YHSM_InputTooLong(
-                'nonce', pyhsm.defines.YSM_AEAD_NONCE_SIZE, len(nonce))
-        if type(key_handle) is not int:
-            raise pyhsm.exception.YHSM_WrongInputType(
-                'key_handle', type(1), type(key_handle))
-
-        # store padded for comparision in parse_result
-        self.nonce = nonce.ljust(pyhsm.defines.YSM_AEAD_NONCE_SIZE, chr(0x0))
-        self.key_handle = key_handle
+                'cleartext+aead', pyhsm.defines.YSM_MAX_PKT_SIZE - 10, len(data))
         # typedef struct {
         #   uint8_t nonce[YSM_AEAD_NONCE_SIZE]; // Nonce (publicId for Yubikey AEADs)
         #   uint32_t keyHandle;                 // Key handle
@@ -212,12 +174,8 @@ class YHSM_Cmd_AEAD_Decrypt_Cmp(YHSM_Cmd):
         # } YSM_AEAD_DECRYPT_CMP_RESP;
         fmt = "< %is I B" % (pyhsm.defines.YSM_AEAD_NONCE_SIZE)
         nonce, key_handle, self.status = struct.unpack(fmt, data)
-        if nonce != self.nonce:
-            raise pyhsm.exception.YHSM_Error("Incorrect nonce in response (got %s, expected %s)" \
-                                                 % (nonce.encode('hex'), self.nonce.encode('hex')))
-        if key_handle != self.key_handle:
-            raise pyhsm.exception.YHSM_Error("Incorrect key_handle in response (got 0x%x, expected 0x%x)" \
-                                                 % (key_handle, self.key_handle))
+        pyhsm.util.validate_cmd_response_str('nonce', nonce, self.nonce)
+        pyhsm.util.validate_cmd_response_hex('key_handle', key_handle, self.key_handle)
         if self.status == pyhsm.defines.YSM_STATUS_OK:
             return True
         if self.status == pyhsm.defines.YSM_MISMATCH:
@@ -256,16 +214,8 @@ class YHSM_GeneratedAEAD():
 class YHSM_YubiKeySecret():
     """ Small class to represent a YUBIKEY_SECRETS struct. """
     def __init__(self, key, uid):
-        if len(key) != pyhsm.defines.KEY_SIZE:
-            raise pyhsm.exception.YHSM_WrongInputSize(
-                'key', pyhsm.defines.KEY_SIZE, len(key))
-
-        if type(uid) is not str:
-            raise pyhsm.exception.YHSM_WrongInputType(
-                'uid', type(''), type(uid))
-
-        self.key = key
-        self.uid = uid
+        self.key = pyhsm.util.input_validate_str(key, 'key', exact_len = pyhsm.defines.KEY_SIZE)
+        self.uid = pyhsm.util.input_validate_str(uid, 'uid', max_len = pyhsm.defines.UID_SIZE)
 
     def pack(self):
         """ Return key and uid packed for sending in a command to the YubiHSM. """

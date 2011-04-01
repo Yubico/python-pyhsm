@@ -76,7 +76,8 @@ class YHSM_Cmd():
         res = self.stick.read(2, 'response length + response status')
         if not res:
             reset(self.stick)
-            raise pyhsm.exception.YHSM_Error('YubiHSM did not respond')
+            raise pyhsm.exception.YHSM_Error('YubiHSM did not respond to command %s' \
+                                                 % (pyhsm.defines.cmd2str(self.command)) )
         response_len, response_status = struct.unpack('BB', res)
         response_len -= 1 # the status byte has been read already
         debug_info = None

@@ -31,22 +31,9 @@ class YHSM_Cmd_DB_YubiKey_Store(YHSM_Cmd):
     status = None
 
     def __init__(self, stick, public_id, key_handle, aead):
-        self.key_handle = key_handle
-        # store padded public_id for comparision in parse_result
-        self.public_id = public_id.ljust(pyhsm.defines.YSM_AEAD_NONCE_SIZE, chr(0x0))
-
-        # Check if public_id provided is too long
-        if len(self.public_id) != pyhsm.defines.YSM_AEAD_NONCE_SIZE:
-            raise pyhsm.exception.YHSM_WrongInputSize(
-                'public_id', pyhsm.defines.YSM_AEAD_NONCE_SIZE, len(self.public_id))
-
-        if isinstance(aead, pyhsm.aead_cmd.YHSM_GeneratedAEAD):
-            aead = aead.data
-
-        if len(aead) != pyhsm.defines.YUBIKEY_AEAD_SIZE:
-            raise pyhsm.exception.YHSM_WrongInputSize(
-                'aead', pyhsm.defines.YUBIKEY_AEAD_SIZE, len(aead))
-
+        self.key_handle = pyhsm.util.input_validate_key_handle(key_handle)
+        self.public_id = pyhsm.util.input_validate_nonce(public_id, pad = True)
+        aead = pyhsm.util.input_validate_aead(aead, expected_len = pyhsm.defines.YUBIKEY_AEAD_SIZE)
         # typedef struct {
         #   uint8_t publicId[YSM_AEAD_NONCE_SIZE]; // Public id (nonce)
         #   uint32_t keyHandle;                    // Key handle
@@ -54,7 +41,6 @@ class YHSM_Cmd_DB_YubiKey_Store(YHSM_Cmd):
         # } YSM_YUBIKEY_AEAD_STORE_REQ;
         fmt = "< %is I %is" % (pyhsm.defines.YSM_AEAD_NONCE_SIZE, pyhsm.defines.YUBIKEY_AEAD_SIZE)
         packed = struct.pack(fmt, self.public_id, self.key_handle, aead)
-
         YHSM_Cmd.__init__(self, stick, pyhsm.defines.YSM_YUBIKEY_AEAD_STORE, packed)
 
     def parse_result(self, data):
@@ -67,13 +53,11 @@ class YHSM_Cmd_DB_YubiKey_Store(YHSM_Cmd):
         public_id, \
             key_handle, \
             self.status = struct.unpack("< %is I B" % (pyhsm.defines.YSM_AEAD_NONCE_SIZE), data)
+
+        pyhsm.util.validate_cmd_response_str('public_id', public_id, self.public_id)
+        pyhsm.util.validate_cmd_response_hex('key_handle', key_handle, self.key_handle)
+
         if self.status == pyhsm.defines.YSM_STATUS_OK:
-            if public_id != self.public_id:
-                raise(pyhsm.exception.YHSM_Error("Unknown public_id in response (got '%s', expected '%s')", \
-                                               public_id.encode('hex'), self.public_id.encode('hex')))
-            if key_handle != self.key_handle:
-                raise(pyhsm.exception.YHSM_Error("Unknown key_handle in response (got '0x%x', expected '0x%x')", \
-                                               key_handle, self.key_handle))
             return True
         else:
             raise pyhsm.exception.YHSM_CommandFailed(pyhsm.defines.cmd2str(self.command), self.status)
@@ -83,18 +67,13 @@ class YHSM_Cmd_DB_Validate_OTP(YHSM_Cmd):
     Request the YubiHSM to validate an OTP for a YubiKey stored
     in the internal database.
     """
+
+    response = None
+    status = None
+
     def __init__(self, stick, public_id, otp):
-        if len(public_id) > pyhsm.defines.YSM_AEAD_NONCE_SIZE:
-            raise pyhsm.exception.YHSM_WrongInputSize(
-                'public_id', pyhsm.defines.YSM_AEAD_NONCE_SIZE, len(public_id))
-        if len(otp) != pyhsm.defines.OTP_SIZE:
-            raise pyhsm.exception.YHSM_WrongInputSize(
-                'otp', pyhsm.defines.OTP_SIZE, len(otp))
-        # store padded public_id for comparision in parse_result
-        self.public_id = public_id.ljust(pyhsm.defines.YSM_AEAD_NONCE_SIZE, chr(0x0))
-        self.otp = otp
-        self.response = None
-        self.status = None
+        self.public_id = pyhsm.util.input_validate_nonce(public_id, pad = True)
+        self.otp = pyhsm.util.input_validate_str(otp, 'otp', exact_len = pyhsm.defines.OTP_SIZE)
         # typedef struct {
         #   uint8_t publicId[YSM_AEAD_NONCE_SIZE]; // Public id
         #   uint8_t otp[OTP_SIZE];              // OTP
@@ -127,20 +106,18 @@ class YHSM_Cmd_DB_Validate_OTP(YHSM_Cmd):
         #   YHSM_STATUS status;                  // Validation status
         # } YHSM_AEAD_OTP_DECODED_RESP;
         fmt = "%is H B B H B" % (pyhsm.defines.PUBLIC_ID_SIZE)
-        this_public_id, \
+        public_id, \
             use_ctr, \
             session_ctr, \
             ts_high, \
             ts_low, \
             self.status = struct.unpack(fmt, data)
 
-        if this_public_id != self.public_id:
-            raise pyhsm.exception.YHSM_Error('Bad public_id in response (%s != %s)' %
-                                      (this_public_id.encode('hex'), self.public_id.encode('hex')))
+        pyhsm.util.validate_cmd_response_str('public_id', public_id, self.public_id)
 
         if self.status == pyhsm.defines.YSM_STATUS_OK:
             self.response = pyhsm.validate_cmd.YHSM_ValidationResult( \
-                self.public_id, use_ctr, session_ctr, ts_high, ts_low)
+                public_id, use_ctr, session_ctr, ts_high, ts_low)
             return self.response
         else:
             raise pyhsm.exception.YHSM_CommandFailed(pyhsm.defines.cmd2str(self.command), self.status)

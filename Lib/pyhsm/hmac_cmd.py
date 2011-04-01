@@ -23,34 +23,33 @@ class YHSM_Cmd_HMAC_SHA1_Write(YHSM_Cmd):
     Calculate HMAC SHA1 using a key_handle in the YubiHSM.
 
     Set final=False to not get a hash generated for the initial request.
+
+    Set to_buffer=True to get the SHA1 stored into the internal buffer, for
+    use in some other cryptographic operation.
     """
 
     status = None
     result = None
 
-    def __init__(self, stick, key_handle, data, flags = None, final = True):
-        if flags != None and type(flags) is not int:
-            raise pyhsm.exception.YHSM_WrongInputType(
-                'flags', type(1), type(flags))
-        if type(data) is not str:
-            raise pyhsm.exception.YHSM_WrongInputType(
-                'data', type(''), type(data))
-        if len(data) > pyhsm.defines.YSM_MAX_PKT_SIZE - 6:
-            raise pyhsm.exception.YHSM_InputTooLong(
-                'data', pyhsm.defines.YSM_MAX_PKT_SIZE - 6, len(data))
+    def __init__(self, stick, key_handle, data, flags = None, final = True, to_buffer = False):
+        data = pyhsm.util.input_validate_str(data, 'data', max_len = pyhsm.defines.YSM_MAX_PKT_SIZE - 6)
+        self.key_handle = pyhsm.util.input_validate_key_handle(key_handle)
 
-        if flags == None:
+        if flags != None:
+            flags = pyhsm.util.input_validate_int(flags, 'flags', max_value=0xff)
+        else:
             flags = pyhsm.defines.YSM_HMAC_RESET
             if final:
                 flags |= pyhsm.defines.YSM_HMAC_FINAL
+            if to_buffer:
+                flags |= pyhsm.defines.YSM_HMAC_TO_BUFFER
 
         self.final = final
-        self.key_handle = key_handle
         self.flags = flags
         packed = _raw_pack(self.key_handle, self.flags, data)
         YHSM_Cmd.__init__(self, stick, pyhsm.defines.YSM_HMAC_SHA1_GENERATE, packed)
 
-    def next(self, data, final = False):
+    def next(self, data, final = False, to_buffer = False):
         """
         Add more input to the HMAC SHA1.
         """
@@ -58,6 +57,8 @@ class YHSM_Cmd_HMAC_SHA1_Write(YHSM_Cmd):
             self.flags = pyhsm.defines.YSM_HMAC_FINAL
         else:
             self.flags = 0x0
+        if to_buffer:
+            flags |= pyhsm.defines.YSM_HMAC_TO_BUFFER
         self.payload = _raw_pack(self.key_handle, self.flags, data)
         self.final = final
         return self
@@ -95,9 +96,7 @@ class YHSM_Cmd_HMAC_SHA1_Write(YHSM_Cmd):
              self.status, \
              num_bytes = struct.unpack_from('<IBB', data, 0)
 
-        if key_handle != self.key_handle:
-            raise(pyhsm.exception.YHSM_Error("Bad key_handle in response (got '0x%x', expected '0x%x')", \
-                                                 key_handle, self.key_handle))
+        pyhsm.util.validate_cmd_response_hex('key_handle', key_handle, self.key_handle)
 
         if self.status == pyhsm.defines.YSM_STATUS_OK:
             # struct.hash is not always of size SHA1_HASH_SIZE,

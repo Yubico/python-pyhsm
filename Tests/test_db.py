@@ -93,3 +93,9 @@ class TestInternalDB(test_common.YHSM_TestCase):
         except pyhsm.exception.YHSM_CommandFailed, e:
             if e.status != pyhsm.defines.YSM_OTP_REPLAY:
                 raise
+
+        # increase session_ctr and test using different method
+        session_ctr += 1
+        YK = YubiKeyEmu(self.uid, use_ctr, timestamp, session_ctr)
+        mh_from_key = YK.from_key(this_public_id, self.key)
+        pyhsm.yubikey.validate_otp(self.hsm, mh_from_key)

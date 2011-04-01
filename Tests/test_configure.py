@@ -17,7 +17,7 @@ class ConfigureYubiHSMforTest(test_common.YHSM_TestCase):
         """ Test echo before reconfiguration. """
         self.assertTrue(self.hsm.echo('test'))
 
-    def xtest_configure_YHSM(self):
+    def test_configure_YHSM(self):
         """
         Reconfiguring YubiHSM for tests.
         """

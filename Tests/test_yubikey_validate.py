@@ -137,3 +137,13 @@ class TestYubikeyValidate(test_common.YHSM_TestCase):
         """ Test modhex encoding/decoding. """
         h = '4d014d024d4ddd5382b11195144da07d'
         self.assertEquals(h, modhex_decode( modhex_encode(h) ) )
+
+    def test_split_id_otp(self):
+        """ Test public_id + OTP split function. """
+        public_id, otp, = pyhsm.yubikey.split_id_otp("ft" * 16)
+        self.assertEqual(public_id, '')
+        self.assertEqual(otp, "ft" * 16)
+
+        public_id, otp, = pyhsm.yubikey.split_id_otp("cc" + "ft" * 16)
+        self.assertEqual(public_id, 'cc')
+        self.assertEqual(otp, "ft" * 16)

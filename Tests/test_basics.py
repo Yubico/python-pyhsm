@@ -86,6 +86,11 @@ class TestBasics(test_common.YHSM_TestCase):
         # test repr method
         self.assertEquals(str, type(str(self.hsm)))
 
+    def test_yhsm_stick_class(self):
+        """ Test YHSM_Stick class. """
+        # test repr method
+        self.assertEquals(str, type(str(self.hsm.stick)))
+
     def test_set_debug(self):
         """ Test set_debug on YHSM. """
         old = self.hsm.set_debug(True)
@@ -103,8 +108,6 @@ class TestBasics(test_common.YHSM_TestCase):
         this = pyhsm.basic_cmd.YHSM_Cmd_System_Info(None)
         # test repr method
         self.assertEquals(str, type(str(this)))
-        this.executed = True
-        self.assertEquals(str, type(str(this)))
 
     def test_sysinfo(self):
         """ Test sysinfo. """
@@ -112,3 +115,7 @@ class TestBasics(test_common.YHSM_TestCase):
         self.assertTrue(info.version_major > 0 or info.version_minor > 0)
         self.assertEqual(12, len(info.system_uid))
         self.assertEquals(str, type(str(info)))
+
+    def test_drain(self):
+        """ Test YubiHSM drain. """
+        self.hsm.drain()

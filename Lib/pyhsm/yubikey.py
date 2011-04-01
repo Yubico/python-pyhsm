@@ -40,21 +40,9 @@ def validate_yubikey_with_aead(hsm, from_key, aead, key_handle):
     The parameter `aead' is either a string, or an instance of YHSM_GeneratedAEAD.
     """
 
-    if isinstance(aead, pyhsm.aead_cmd.YHSM_GeneratedAEAD):
-        aead = aead.data
-
-    if type(from_key) is not str:
-        raise pyhsm.exception.YHSM_WrongInputType(
-            'from_key', type(''), type(from_key))
-    if type(aead) is not str:
-        raise pyhsm.exception.YHSM_WrongInputType(
-            'aead', type(''), type(aead))
-    if type(key_handle) is not int:
-        raise pyhsm.exception.YHSM_WrongInputType(
-            'key_handle', type(1), type(key_handle))
-
-    if len(aead) == 30 * 2:
-        aead = aead.decode('hex')
+    from_key = pyhsm.util.input_validate_str(from_key, 'from_key', max_len = 48)
+    aead = pyhsm.util.input_validate_aead(aead)
+    key_handle = pyhsm.util.input_validate_key_handle(key_handle)
 
     public_id, otp = split_id_otp(from_key)
 

@@ -73,7 +73,7 @@ def input_validate_int(value, name, max_value=None):
         raise pyhsm.exception.YHSM_WrongInputSize(name, max_value, value)
     return value
 
-def input_validate_nonce(nonce, name='nonce'):
+def input_validate_nonce(nonce, name='nonce', pad = False):
     """ Input validation for nonces. """
     if type(nonce) is not str:
         raise pyhsm.exception.YHSM_WrongInputType( \
@@ -81,7 +81,10 @@ def input_validate_nonce(nonce, name='nonce'):
     if len(nonce) > pyhsm.defines.YSM_AEAD_NONCE_SIZE:
         raise pyhsm.exception.YHSM_InputTooLong(
             name, pyhsm.defines.YSM_AEAD_NONCE_SIZE, len(nonce))
-    return nonce
+    if pad:
+        return nonce.ljust(pyhsm.defines.YSM_AEAD_NONCE_SIZE, chr(0x0))
+    else:
+        return nonce
 
 def input_validate_key_handle(key_handle, name='key_handle'):
     """ Input validation for key_handles. """
@@ -98,12 +101,15 @@ def input_validate_yubikey_secret(data, name='data'):
         data = data.pack()
     return input_validate_str(data, name)
 
-def input_validate_aead(aead, name='aead'):
+def input_validate_aead(aead, name='aead', expected_len=None):
     """ Input validation for YHSM_GeneratedAEAD or string. """
     if isinstance(aead, pyhsm.aead_cmd.YHSM_GeneratedAEAD):
         aead = aead.data
-    max_aead_len = pyhsm.defines.YSM_MAX_KEY_SIZE + pyhsm.defines.YSM_AEAD_MAC_SIZE
-    return input_validate_str(aead, name, max_len=max_aead_len)
+    if expected_len != None:
+        return input_validate_str(aead, name, exact_len = expected_len)
+    else:
+        max_aead_len = pyhsm.defines.YSM_MAX_KEY_SIZE + pyhsm.defines.YSM_AEAD_MAC_SIZE
+        return input_validate_str(aead, name, max_len=max_aead_len)
 
 
 
