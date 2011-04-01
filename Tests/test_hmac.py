@@ -25,6 +25,14 @@ class TestHMACSHA1(test_common.YHSM_TestCase):
         # test of repr method
         self.assertEquals(str, type(str(this)))
 
+    def test_hmac_numeric_flags(self):
+        """ Test HMAC SHA1 with numeric flags. """
+        data = 'Sample #2'
+
+        flags = pyhsm.defines.YSM_HMAC_RESET | pyhsm.defines.YSM_HMAC_FINAL
+        this = self.hsm.hmac_sha1(self.kh, data, flags = flags).execute()
+        self.assertEquals(this.get_hash().encode('hex'), '0922d3405faa3d194f82a45830737d5cc6c75d24')
+
     def test_hmac_continuation(self):
         """ Test HMAC continuation. """
         data = 'Sample #2'
@@ -95,3 +103,26 @@ class TestHMACSHA1(test_common.YHSM_TestCase):
         this = pyhsm.hmac_cmd.YHSM_GeneratedHMACSHA1(0x0, 'a' * 20, True)
         # test repr method
         self.assertEquals(str, type(str(this)))
+
+    def test_sha1_to_buffer(self):
+        """ Test HMAC SHA1 to internal buffer. """
+        self.assertEqual(0, self.hsm.load_random(0, offset = 0)) # offset = 0 clears buffer
+
+        self.hsm.hmac_sha1(self.kh, 'testing is fun!', to_buffer = True)
+        # Verify there is now 20 bytes in the buffer
+        self.assertEqual(pyhsm.defines.SHA1_HASH_SIZE, self.hsm.load_random(0, offset = 1))
+
+    def test_hmac_continuation_with_buffer(self):
+        """ Test HMAC continuation with buffer. """
+        data = 'Sample #2'
+
+        self.assertEqual(0, self.hsm.load_random(0, offset = 0)) # offset = 0 clears buffer
+        self.assertEqual(0, self.hsm.load_random(0, offset = 1))
+
+        this = self.hsm.hmac_sha1(self.kh, '', final = False)
+        self.assertEquals(this.get_hash().encode('hex'), '00' * 20)
+        this.next(data[:3], final = False).execute()
+        this.next(data[3:], final = False).execute()
+        this.next('', final = True, to_buffer = True).execute()
+        # Verify there is now 20 bytes in the buffer
+        self.assertEqual(pyhsm.defines.SHA1_HASH_SIZE, self.hsm.load_random(0, offset = 1))

@@ -73,16 +73,12 @@ class YHSM_Cmd_HMAC_SHA1_Write(YHSM_Cmd):
 
     def __repr__(self):
         if self.executed:
-            return '<%s instance at %s: key_handle=0x%x, flags=0x%x>' % (
+            return '<%s instance at %s: key_handle=0x%x, flags=0x%x, executed=%s>' % (
                 self.__class__.__name__,
                 hex(id(self)),
                 self.key_handle,
                 self.flags,
-                )
-        else:
-            return '<%s instance at %s (not executed)>' % (
-                self.__class__.__name__,
-                hex(id(self))
+                self.executed,
                 )
 
     def parse_result(self, data):

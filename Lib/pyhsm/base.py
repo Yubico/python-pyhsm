@@ -265,12 +265,12 @@ class YHSM():
     #
     # HMAC commands
     #
-    def hmac_sha1(self, key_handle, data, final = True):
+    def hmac_sha1(self, key_handle, data, flags = None, final = True, to_buffer = False):
         """
         Have the YubiHSM generate a HMAC SHA1 of 'data' using a key handle.
         """
         return pyhsm.hmac_cmd.YHSM_Cmd_HMAC_SHA1_Write( \
-            self.stick, key_handle, data, final = final).execute()
+            self.stick, key_handle, data, flags = flags, final = final, to_buffer = to_buffer).execute()
 
 
     #
