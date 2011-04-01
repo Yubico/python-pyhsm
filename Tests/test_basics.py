@@ -124,3 +124,10 @@ class TestBasics(test_common.YHSM_TestCase):
     def test_raw_device(self):
         """ Test YubiHSM raw device fetch. """
         self.assertNotEqual(False, self.hsm.get_raw_device())
+
+    def test_unknown_defines(self):
+        """ Test command/response to string. """
+        self.assertEqual("YSM_NULL", pyhsm.defines.cmd2str(0))
+        self.assertEqual("0xff", pyhsm.defines.cmd2str(0xff))
+        self.assertEqual("YSM_STATUS_OK", pyhsm.defines.status2str(0x80))
+        self.assertEqual("0x00", pyhsm.defines.status2str(0))

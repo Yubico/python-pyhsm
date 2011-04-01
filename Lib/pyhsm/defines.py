@@ -98,7 +98,7 @@ def status2str(num):
 
     if num in known:
         return known[num]
-    return "0x02%x" % (num)
+    return "0x%02x" % (num)
 
 # HMAC flags
 YSM_HMAC_RESET		= 0x01     # Flag to indicate reset at first packet
@@ -154,4 +154,4 @@ def cmd2str(cmd):
              }
     if cmd in known:
         return known[cmd]
-    return "0x02%x" % (cmd)
+    return "0x%02x" % (cmd)
