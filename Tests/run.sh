@@ -9,4 +9,13 @@ set -e
 
 : ${PYTHON:="python"}
 
-$PYTHON $mydir/../setup.py test $*
+if [ "x$1" = "x--cover" ]; then
+    cd $mydir/../Lib
+    exclude=""
+    if [ "x$YHSM_ZAP" = "x" ]; then
+	exclude="--exclude=test_configure"
+    fi
+    nosetests --with-coverage -w . -w ../Tests/ $exclude
+else
+    $PYTHON $mydir/../setup.py test $*
+fi
