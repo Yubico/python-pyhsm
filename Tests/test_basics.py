@@ -80,3 +80,35 @@ class TestBasics(test_common.YHSM_TestCase):
         # Now decrypt it again and verify result
         decrypted = self.hsm.aes_ecb_decrypt(pyhsm.defines.TEMP_KEY_HANDLE, ciphertext)
         self.assertEqual(plaintext, decrypted)
+
+    def test_yhsm_class(self):
+        """ Test YHSM class. """
+        # test repr method
+        self.assertEquals(str, type(str(self.hsm)))
+
+    def test_set_debug(self):
+        """ Test set_debug on YHSM. """
+        old = self.hsm.set_debug(True)
+        if old:
+            self.hsm.set_debug(False)
+        self.hsm.set_debug(old)
+        try:
+            self.hsm.set_debug('Test')
+            self.fail("Expected non-bool exception.")
+        except pyhsm.exception.YHSM_WrongInputType:
+            pass
+
+    def test_sysinfo_cmd_class(self):
+        """ Test YHSM_Cmd_System_Info class. """
+        this = pyhsm.basic_cmd.YHSM_Cmd_System_Info(None)
+        # test repr method
+        self.assertEquals(str, type(str(this)))
+        this.executed = True
+        self.assertEquals(str, type(str(this)))
+
+    def test_sysinfo(self):
+        """ Test sysinfo. """
+        info = self.hsm.info()
+        self.assertTrue(info.version_major > 0 or info.version_minor > 0)
+        self.assertEqual(12, len(info.system_uid))
+        self.assertEquals(str, type(str(info)))

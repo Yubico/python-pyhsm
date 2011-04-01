@@ -54,9 +54,8 @@ class YHSM_Cmd_AES_ECB(YHSM_Cmd):
             result, \
             self.status = struct.unpack(fmt, data)
 
-        if key_handle != self.key_handle:
-            raise(pyhsm.exception.YHSM_Error("Bad key_handle in response (got '0x%x', expected '0x%x')", \
-                                           key_handle, self.key_handle))
+        # check that returned key_handle matches the one in the request
+        pyhsm.util.validate_cmd_response_hex('key_handle', key_handle, self.key_handle)
 
         if self.status == pyhsm.defines.YSM_STATUS_OK:
             return result
@@ -69,10 +68,8 @@ class YHSM_Cmd_AES_ECB_Encrypt(YHSM_Cmd_AES_ECB):
     Have the YubiHSM AES ECB encrypt something using the key of a key handle.
     """
     def __init__(self, stick, key_handle, plaintext):
-        if type(plaintext) is not str:
-            raise pyhsm.exception.YHSM_WrongInputType(
-                'plaintext', type(''), type(plaintext))
-        self.key_handle = key_handle
+        pyhsm.util.input_validate_str(plaintext, name='plaintext')
+        self.key_handle = pyhsm.util.input_validate_key_handle(key_handle)
         # typedef struct {
         #   uint32_t keyHandle;                 // Key handle
         #   uint8_t plaintext[YHSM_BLOCK_SIZE];  // Plaintext block
@@ -87,10 +84,8 @@ class YHSM_Cmd_AES_ECB_Decrypt(YHSM_Cmd_AES_ECB):
     Have the YubiHSM AES ECB decrypt something using the key of a key handle.
     """
     def __init__(self, stick, key_handle, ciphertext):
-        if type(ciphertext) is not str:
-            raise pyhsm.exception.YHSM_WrongInputType(
-                'ciphertext', type(''), type(ciphertext))
-        self.key_handle = key_handle
+        pyhsm.util.input_validate_str(ciphertext, name='ciphertext')
+        self.key_handle = pyhsm.util.input_validate_key_handle(key_handle)
         # #define YHSM_BLOCK_SIZE          16    // Size of block operations
         # typedef struct {
         #   uint32_t keyHandle;                  // Key handle
@@ -109,13 +104,9 @@ class YHSM_Cmd_AES_ECB_Compare(YHSM_Cmd_AES_ECB):
     providing added security in some applications.
     """
     def __init__(self, stick, key_handle, ciphertext, plaintext):
-        if type(ciphertext) is not str:
-            raise pyhsm.exception.YHSM_WrongInputType(
-                'ciphertext', type(''), type(ciphertext))
-        if type(plaintext) is not str:
-            raise pyhsm.exception.YHSM_WrongInputType(
-                'plaintext', type(''), type(plaintext))
-        self.key_handle = key_handle
+        pyhsm.util.input_validate_str(ciphertext, name='ciphertext')
+        pyhsm.util.input_validate_str(plaintext, name='plaintext')
+        self.key_handle = pyhsm.util.input_validate_key_handle(key_handle)
         # #define YHSM_BLOCK_SIZE          16    // Size of block operations
         # typedef struct {
         #   uint32_t keyHandle;                  // Key handle
@@ -137,9 +128,8 @@ class YHSM_Cmd_AES_ECB_Compare(YHSM_Cmd_AES_ECB):
         key_handle, \
             self.status = struct.unpack(fmt, data)
 
-        if key_handle != self.key_handle:
-            raise(pyhsm.exception.YHSM_Error("Bad key_handle in response (got '0x%x', expected '0x%x')", \
-                                           key_handle, self.key_handle))
+        # check that returned key_handle matches the one in the request
+        pyhsm.util.validate_cmd_response_hex('key_handle', key_handle, self.key_handle)
 
         if self.status == pyhsm.defines.YSM_STATUS_OK:
             return True

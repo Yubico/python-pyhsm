@@ -104,10 +104,11 @@ class YHSM():
     # Basic commands
     #
     def echo(self, data):
-        """ Echo test. """
-        if type(data) is not str:
-            raise pyhsm.exception.YHSM_WrongInputType(
-                'data', type(''), type(data))
+        """
+        Echo test.
+
+        `data' is a string.
+        """
         return pyhsm.basic_cmd.YHSM_Cmd_Echo(self.stick, data).execute()
 
     def info(self):
@@ -115,25 +116,27 @@ class YHSM():
         return pyhsm.basic_cmd.YHSM_Cmd_System_Info(self.stick).execute()
 
     def random(self, num_bytes):
-        """ Get random bytes from YubiHSM. """
-        if type(num_bytes) is not int:
-            raise pyhsm.exception.YHSM_WrongInputType(
-                'num_bytes', type(1), type(num_bytes))
+        """
+        Get random bytes from YubiHSM.
 
+        `num_bytes' is an integer.
+        """
         return pyhsm.basic_cmd.YHSM_Cmd_Random(self.stick, num_bytes).execute()
 
     def random_reseed(self, seed):
         """
-        Provide YubiHSM DRBG_CTR with a new seed (32 bytes).
+        Provide YubiHSM DRBG_CTR with a new seed.
+
+        `seed' is a string of length 32.
         """
         return pyhsm.basic_cmd.YHSM_Cmd_Random_Reseed(self.stick, seed).execute()
 
     def get_nonce(self, increment=1):
-        """ Get current nonce from YubiHSM. """
-        if type(increment) is not int:
-            raise pyhsm.exception.YHSM_WrongInputType(
-                'increment', type(1), type(increment))
+        """
+        Get current nonce from YubiHSM.
 
+        `increment' is an optional integer (default: 1).
+        """
         return pyhsm.basic_cmd.YHSM_Cmd_Nonce_Get(self.stick, increment).execute()
 
     def load_temp_key(self, nonce, key_handle, aead):

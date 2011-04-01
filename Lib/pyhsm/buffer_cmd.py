@@ -23,11 +23,9 @@ class YHSM_Cmd_Buffer_Load(YHSM_Cmd):
     Ask YubiHSM to load some data into it's internal buffer.
     """
     def __init__(self, stick, data, offset = 0):
-        if len(data) > pyhsm.defines.YSM_DATA_BUF_SIZE:
-            raise pyhsm.exception.YHSM_InputTooLong(
-                'data', pyhsm.defines.YSM_DATA_BUF_SIZE, len(data))
+        data = pyhsm.util.input_validate_str(data, 'data', max_len = pyhsm.defines.YSM_DATA_BUF_SIZE)
         self.data_len = len(data)
-        self.offset = offset
+        self.offset = pyhsm.util.input_validate_int(offset, 'offset', pyhsm.defines.YSM_DATA_BUF_SIZE - 1)
         # typedef struct {
         #   uint8_t offs;                       // Offset in buffer. Zero flushes/resets buffer first
         #   uint8_t numBytes;                   // Number of bytes to load

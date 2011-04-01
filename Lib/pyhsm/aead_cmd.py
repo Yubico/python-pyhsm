@@ -81,20 +81,9 @@ class YHSM_Cmd_AEAD_Generate(YHSM_AEAD_Cmd):
     `data' is either a string, or a YHSM_YubiKeySecret.
     """
     def __init__(self, stick, nonce, key_handle, data):
-        if type(nonce) is not str:
-            raise pyhsm.exception.YHSM_WrongInputType( \
-                'nonce', type(''), type(nonce))
-        if len(nonce) > pyhsm.defines.YSM_AEAD_NONCE_SIZE:
-            raise pyhsm.exception.YHSM_InputTooLong(
-                'nonce', pyhsm.defines.YSM_AEAD_NONCE_SIZE, len(nonce))
-        if type(key_handle) is not int:
-            raise pyhsm.exception.YHSM_WrongInputType( \
-                'key_handle', type(1), type(key_handle))
-        if isinstance(data, YHSM_YubiKeySecret):
-            data = data.pack()
-        if type(data) is not str:
-            raise pyhsm.exception.YHSM_WrongInputType( \
-                'data', type(''), type(data))
+        nonce = pyhsm.util.input_validate_nonce(nonce)
+        key_handle = pyhsm.util.input_validate_key_handle(key_handle)
+        data = pyhsm.util.input_validate_yubikey_secret(data)
         self.data = data
         self.nonce = nonce
         self.key_handle = key_handle
@@ -115,15 +104,8 @@ class YHSM_Cmd_AEAD_Random_Generate(YHSM_AEAD_Cmd):
     To generate a secret for a YubiKey, use public_id as nonce.
     """
     def __init__(self, stick, nonce, key_handle, num_bytes):
-        if type(nonce) is not str:
-            raise pyhsm.exception.YHSM_WrongInputType( \
-                'nonce', type(''), type(nonce))
-        if len(nonce) > pyhsm.defines.YSM_AEAD_NONCE_SIZE:
-            raise pyhsm.exception.YHSM_InputTooLong(
-                'nonce', pyhsm.defines.YSM_AEAD_NONCE_SIZE, len(nonce))
-        if type(key_handle) is not int:
-            raise pyhsm.exception.YHSM_WrongInputType( \
-                'key_handle', type(1), type(key_handle))
+        nonce = pyhsm.util.input_validate_nonce(nonce)
+        key_handle = pyhsm.util.input_validate_key_handle(key_handle)
         if type(num_bytes) is not int:
             raise pyhsm.exception.YHSM_WrongInputType( \
                 'num_bytes', type(1), type(num_bytes))

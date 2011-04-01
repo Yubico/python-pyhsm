@@ -26,9 +26,11 @@ class YHSM_Cmd_Echo(YHSM_Cmd):
     Send something to the stick, and expect to get it echoed back.
     """
     def __init__(self, stick, payload=''):
-        if len(payload) > pyhsm.defines.YSM_MAX_PKT_SIZE - 1:
-            raise pyhsm.exception.YHSM_InputTooLong(
-                'payload', pyhsm.defines.YSM_MAX_PKT_SIZE - 1, len(payload))
+        payload = pyhsm.util.input_validate_str(payload, 'payload', max_len = pyhsm.defines.YSM_MAX_PKT_SIZE - 1)
+        # typedef struct {
+        #   uint8_t numBytes;                   // Number of bytes in data field
+        #   uint8_t data[YSM_MAX_PKT_SIZE - 1]; // Data
+        # } YSM_ECHO_REQ;
         packed = chr(len(payload)) + payload
         YHSM_Cmd.__init__(self, stick, pyhsm.defines.YSM_ECHO, packed)
 
@@ -89,7 +91,10 @@ class YHSM_Cmd_Random(YHSM_Cmd):
     Ask stick to generate a number of random bytes.
     """
     def __init__(self, stick, num_bytes):
-        self.num_bytes = num_bytes
+        self.num_bytes = pyhsm.util.input_validate_int(num_bytes, 'num_bytes', pyhsm.defines.YSM_MAX_PKT_SIZE - 1)
+        # typedef struct {
+        #   uint8_t numBytes;                   // Number of bytes to generate
+        # } YSM_RANDOM_GENERATE_REQ;
         packed = chr(self.num_bytes)
         YHSM_Cmd.__init__(self, stick, pyhsm.defines.YSM_RANDOM_GENERATE, packed)
 
@@ -98,10 +103,7 @@ class YHSM_Cmd_Random(YHSM_Cmd):
         #   uint8_t numBytes;                   // Number of bytes generated
         #   uint8_t rnd[YSM_MAX_PKT_SIZE - 1];  // Random data
         # } YHSM_RANDOM_GENERATE_RESP;
-        num_bytes = ord(data[0])
-        if num_bytes != self.num_bytes:
-            raise pyhsm.exception.YHSM_Error("Incorrect number of bytes in response (got %s, expected %s)" \
-                                           % (num_bytes, self.num_bytes))
+        num_bytes = pyhsm.util.validate_cmd_response_int('num_bytes', ord(data[0]), self.num_bytes)
         return data[1:1 + num_bytes]
 
 
@@ -113,12 +115,7 @@ class YHSM_Cmd_Random_Reseed(YHSM_Cmd):
     status = None
 
     def __init__(self, stick, seed):
-        if type(seed) is not str:
-            raise pyhsm.exception.YHSM_WrongInputType( \
-                'seed', type(32), type(seed))
-        if len(seed) != pyhsm.defines.CTR_DRBG_SEED_SIZE:
-            raise pyhsm.exception.YHSM_WrongInputSize(
-                'seed', pyhsm.defines.CTR_DRBG_SEED_SIZE, len(seed))
+        seed = pyhsm.util.input_validate_str(seed, 'seed', exact_len = pyhsm.defines.CTR_DRBG_SEED_SIZE)
         # #define CTR_DRBG_SEED_SIZE      32
         # typedef struct {
         #   uint8_t seed[CTR_DRBG_SEED_SIZE];   // New seed
@@ -149,33 +146,16 @@ class YHSM_Cmd_Temp_Key_Load(YHSM_Cmd):
     status = None
 
     def __init__(self, stick, nonce, key_handle, aead):
-        if type(nonce) is not str:
-            raise pyhsm.exception.YHSM_WrongInputType( \
-                'nonce', type(''), type(nonce))
-        if len(nonce) > pyhsm.defines.YSM_AEAD_NONCE_SIZE:
-            raise pyhsm.exception.YHSM_InputTooLong(
-                'nonce', pyhsm.defines.YSM_AEAD_NONCE_SIZE, len(nonce))
-
-        if type(key_handle) is not int:
-            raise pyhsm.exception.YHSM_WrongInputType( \
-                'key_handle', type(1), type(key_handle))
-
-        if isinstance(aead, pyhsm.aead_cmd.YHSM_GeneratedAEAD):
-            aead = aead.data
-
-        max_aead_len = pyhsm.defines.YSM_MAX_KEY_SIZE + pyhsm.defines.YSM_AEAD_MAC_SIZE
-        if len(aead) > max_aead_len:
-            raise pyhsm.exception.YHSM_InputTooLong(
-                'nonce', max_aead_len, len(nonce))
-
-        self.nonce = nonce
-        self.key_handle = key_handle
+        self.nonce = pyhsm.util.input_validate_nonce(nonce)
+        self.key_handle = pyhsm.util.input_validate_key_handle(key_handle)
+        aead = pyhsm.util.input_validate_aead(aead)
         # typedef struct {
         #   uint8_t nonce[YSM_AEAD_NONCE_SIZE]; // Nonce
         #   uint32_t keyHandle;                 // Key handle to unlock AEAD
         #   uint8_t numBytes;                   // Number of bytes (explicit key size 16, 20, 24 or 32 bytes + hash)
         #   uint8_t aead[YSM_MAX_KEY_SIZE + YSM_AEAD_MAC_SIZE]; // AEAD block
         # } YSM_TEMP_KEY_LOAD_REQ;
+        max_aead_len = pyhsm.defines.YSM_MAX_KEY_SIZE + pyhsm.defines.YSM_AEAD_MAC_SIZE
         fmt = "< %is I B %is" % (pyhsm.defines.YSM_AEAD_NONCE_SIZE, max_aead_len)
         packed = struct.pack(fmt, self.nonce, self.key_handle, len(aead), aead)
         YHSM_Cmd.__init__(self, stick, pyhsm.defines.YSM_TEMP_KEY_LOAD, packed)
@@ -188,12 +168,11 @@ class YHSM_Cmd_Temp_Key_Load(YHSM_Cmd):
         # } YSM_TEMP_KEY_LOAD_RESP;
         fmt = "< %is I B" % (pyhsm.defines.YSM_AEAD_NONCE_SIZE)
         nonce, key_handle, self.status = struct.unpack(fmt, data)
-        if nonce != self.nonce:
-            raise(pyhsm.exception.YHSM_Error("Unknown nonce in response (got '%s', expected '%s')", \
-                                           nonce.encode('hex'), self.nonce.encode('hex')))
-        if key_handle != self.key_handle:
-            raise(pyhsm.exception.YHSM_Error("Unknown key_handle in response (got '0x%x', expected '0x%x')", \
-                                           key_handle, self.key_handle))
+
+        # Validate data in response against values we used in request
+        pyhsm.util.validate_cmd_response_str('nonce', nonce, self.nonce)
+        pyhsm.util.validate_cmd_response_hex('key_handle', key_handle, self.key_handle)
+
         if self.status == pyhsm.defines.YSM_STATUS_OK:
             return True
         else:
@@ -209,9 +188,7 @@ class YHSM_Cmd_Nonce_Get(YHSM_Cmd):
     response = None
 
     def __init__(self, stick, increment):
-        if type(increment) is not int:
-            raise pyhsm.exception.YHSM_WrongInputType( \
-                'increment', type(1), type(increment))
+        pyhsm.util.input_validate_int(increment, 'increment')
         # typedef struct {
         #   uint16_t increment;                 // Size of increment to next nonce
         # } YSM_NONCE_GET_REQ;

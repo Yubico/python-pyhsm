@@ -16,6 +16,14 @@ class TestOtpValidate(test_common.YHSM_TestCase):
         self.kh_decrypt = 0x1001
         self.kh_compare = 0x1001
 
+    def test_aes_ecb_cmd_class(self):
+        """ Test YHSM_Cmd_AES_ECB class. """
+        this = pyhsm.aes_ecb_cmd.YHSM_Cmd_AES_ECB(None, None, '')
+        # test repr method
+        self.assertEquals(str, type(str(this)))
+        this.executed = True
+        self.assertEquals(str, type(str(this)))
+
     def test_encrypt_decrypt(self):
         """ Test to AES ECB decrypt something encrypted. """
         plaintext = 'Fjaellen 2011'.ljust(pyhsm.defines.YSM_BLOCK_SIZE)	# pad for compare after decrypt
