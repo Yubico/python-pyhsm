@@ -15,7 +15,7 @@ if [ "x$1" = "x--cover" ]; then
     if [ "x$YHSM_ZAP" = "x" ]; then
 	exclude="--exclude=test_configure"
     fi
-    nosetests --with-coverage -w . -w ../Tests/ $exclude
+    nosetests --with-coverage $exclude . ../Tests/
 else
     $PYTHON $mydir/../setup.py test $*
 fi
