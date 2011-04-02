@@ -64,7 +64,7 @@ class YHSM_KSMRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         if self.path.startswith(args.serve_url):
             from_key = self.path[len(args.serve_url):]
 
-            val_res = validate_yubikey_otp(self, from_key)
+            val_res = decrypt_yubikey_otp(self, from_key)
 
             self.send_response(200)
             self.send_header('Content-type', 'text/html')
@@ -92,15 +92,17 @@ class YHSM_KSMRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         """ For logging client host without resolving. """
         return self.client_address[0]
 
-def validate_yubikey_otp(self, from_key):
+def decrypt_yubikey_otp(self, from_key):
     """
-    Validate a YubiKey OTP.
+    Try to decrypt a YubiKey OTP.
 
     Returns a string starting with either 'OK' or 'ERR' :
 
        'OK counter=ab12 low=dd34 high=2a use=0a'
 
        'ERR Unknown public_id'
+
+    on YubiHSM errors (or bad OTP), only 'ERR' is returned.
     """
     global valid_input_from_key
     if not re.match(valid_input_from_key, from_key):
