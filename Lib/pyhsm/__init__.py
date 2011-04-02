@@ -44,7 +44,6 @@ __all__ = ["base"
            "basic_cmd"
            "debug_cmd"
            "hmac_cmd"
-           "secrets_cmd"
            "validate_cmd"
            ]
 

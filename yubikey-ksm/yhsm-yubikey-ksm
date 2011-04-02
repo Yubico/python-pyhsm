@@ -74,7 +74,7 @@ class YHSM_KSMRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
             global saved_key_handle
             filename = aead_filename(args.aead_dir, saved_key_handle, public_id)
-            aead = pyhsm.secrets_cmd.YHSM_GeneratedAEAD(public_id, args.key_handle, '')
+            aead = pyhsm.aead_cmd.YHSM_GeneratedAEAD(public_id, args.key_handle, '')
             try:
                 aead.load(filename)
             except IOError:

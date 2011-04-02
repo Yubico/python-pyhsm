@@ -128,7 +128,7 @@ def import_keys(hsm, args):
         if args.verbose:
             print "  %s" % (padded_id)
 
-        secret = pyhsm.secrets_cmd.YHSM_YubiKeySecret(key, uid)
+        secret = pyhsm.aead_cmd.YHSM_YubiKeySecret(key, uid)
         hsm.load_secret(secret)
 
         for kh in args.key_handles.keys():
