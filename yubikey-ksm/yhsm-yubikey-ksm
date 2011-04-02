@@ -64,35 +64,7 @@ class YHSM_KSMRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         if self.path.startswith(args.serve_url):
             from_key = self.path[len(args.serve_url):]
 
-            global valid_input_from_key
-            if not re.match(valid_input_from_key, from_key):
-                self.log_error("IN: %s, Invalid public_id" % (from_key))
-                self.send_response(403, 'Invalid public_id')
-                return
-
-            public_id, otp = pyhsm.yubikey.split_id_otp(from_key)
-
-            global saved_key_handle
-            filename = aead_filename(args.aead_dir, saved_key_handle, public_id)
-            aead = pyhsm.aead_cmd.YHSM_GeneratedAEAD(public_id, args.key_handle, '')
-            try:
-                aead.load(filename)
-            except IOError:
-                self.log_error("IN: %s, File %s not found, or not readable" % (from_key, filename))
-                self.send_response(404, 'Unknown public_id')
-                return
-
-            try:
-                res = pyhsm.yubikey.validate_yubikey_with_aead(hsm, from_key, aead, args.key_handle)
-                # XXX double-check public_id in res, in case BaseHTTPServer suddenly becomes multi-threaded
-                # XXX fix use vs session counter confusion
-                val_res = "OK counter=%04x low=%04x high=%02x use=%02x" % \
-                    (res.use_ctr, res.ts_low, res.ts_high, res.session_ctr)
-            except pyhsm.exception.YHSM_Error, e:
-                self.log_error ("IN: %s, Validate FAILED: %s" % (from_key, str(e)))
-                val_res = "ERR"
-
-            self.log_message("SUCCESS OTP %s PT hsm %s", from_key, val_res)
+            val_res = validate_yubikey_otp(self, from_key)
 
             self.send_response(200)
             self.send_header('Content-type', 'text/html')
@@ -119,6 +91,45 @@ class YHSM_KSMRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     def my_address_string(self):
         """ For logging client host without resolving. """
         return self.client_address[0]
+
+def validate_yubikey_otp(self, from_key):
+    """
+    Validate a YubiKey OTP.
+
+    Returns a string starting with either 'OK' or 'ERR' :
+
+       'OK counter=ab12 low=dd34 high=2a use=0a'
+
+       'ERR Unknown public_id'
+    """
+    global valid_input_from_key
+    if not re.match(valid_input_from_key, from_key):
+        self.log_error("IN: %s, Invalid OTP" % (from_key))
+        return "ERR Invalid OTP"
+
+    public_id, otp = pyhsm.yubikey.split_id_otp(from_key)
+
+    global saved_key_handle
+    filename = aead_filename(args.aead_dir, saved_key_handle, public_id)
+    aead = pyhsm.aead_cmd.YHSM_GeneratedAEAD(public_id, args.key_handle, '')
+    try:
+        aead.load(filename)
+    except IOError:
+        self.log_error("IN: %s, File %s not found, or not readable" % (from_key, filename))
+        return "ERR Unknown public_id"
+
+    try:
+        res = pyhsm.yubikey.validate_yubikey_with_aead(hsm, from_key, aead, args.key_handle)
+        # XXX double-check public_id in res, in case BaseHTTPServer suddenly becomes multi-threaded
+        # XXX fix use vs session counter confusion
+        val_res = "OK counter=%04x low=%04x high=%02x use=%02x" % \
+            (res.use_ctr, res.ts_low, res.ts_high, res.session_ctr)
+    except pyhsm.exception.YHSM_Error, e:
+        self.log_error ("IN: %s, Validate FAILED: %s" % (from_key, str(e)))
+        val_res = "ERR"
+
+    self.log_message("SUCCESS OTP %s PT hsm %s", from_key, val_res)
+    return val_res
 
 def aead_filename(aead_dir, key_handle, public_id):
     """
