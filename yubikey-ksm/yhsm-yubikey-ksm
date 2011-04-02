@@ -148,7 +148,7 @@ def parse_args():
     global default_dir
     global default_serve_url
 
-    parser = argparse.ArgumentParser(description = "Generate secrets using YubiHSM",
+    parser = argparse.ArgumentParser(description = "Decrypt YubiKey OTPs using YubiHSM",
                                      add_help=True
                                      )
     parser.add_argument('-D', '--device',
