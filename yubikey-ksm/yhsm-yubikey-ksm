@@ -220,7 +220,7 @@ def run(args):
     server_address = (args.listen_addr, args.listen_port)
     httpd = BaseHTTPServer.HTTPServer(server_address, YHSM_KSMRequestHandler)
     global saved_key_handle
-    my_log_message(args, syslog.LOG_INFO, "Serving requests to 'http://%s:%s%s' with key handle %s/%s (YHSM: '%s', AEADs in '%s')" \
+    my_log_message(args, syslog.LOG_INFO, "Serving requests to 'http://%s:%s%s' with key handle %s/%s (YubiHSM: '%s', AEADs in '%s')" \
                        % (args.listen_addr, args.listen_port, args.serve_url, saved_key_handle, args.key_handle, args.device, args.aead_dir))
     httpd.serve_forever()
 
@@ -243,7 +243,7 @@ def main():
     try:
         hsm = pyhsm.YHSM(device = args.device, debug = args.debug)
     except serial.SerialException, e:
-        my_log_message(args, syslog.LOG_ERR, 'Failed opening YHSM device "%s" : %s' %(args.device, e))
+        my_log_message(args, syslog.LOG_ERR, 'Failed opening YubiHSM device "%s" : %s' %(args.device, e))
         sys.exit(1)
 
     try:
