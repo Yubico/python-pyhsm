@@ -1,10 +1,37 @@
 #!/usr/bin/env python
 #
+# Small network server decrypting YubiKey OTPs using an attached YubiHSM.
+#
+# To support unlimited numbers of YubiKeys, the YubiKey AES keys are
+# stored in AEAD's (Authenticated Encryption with Associated Data) on
+# the host computer.
+#
+# When an OTP is received, we find the right AEAD for this key (based on
+# the public ID of the YubiKey), and then send the AEAD together with the
+# OTP to the YubiHSM. The YubiHSM is able to decrypt the AEAD (if it has
+# the appropriate key handle configured), and then able to decrypt the
+# YubiKey OTP using the AES key stored in the AEAD.
+#
+# The information the YubiKey encrypted using it's AES key is then
+# returned in clear text from the YubiHSM. This includes the counter
+# information and also (relative) timestamps.
+#
+# It is not the job of the KSM (or YubiHSM) to ensure that the OTP has
+# not been seen before - that is done by the validation server (using
+# the database) :
+#
+#      O            +----------+
+#     /|\           |Validation|     +-----+   +---------+
+#      |  -- OTP--> |  server  | --> | KSM +---| YubiHSM |
+#     / \           +----------+     +-----+   +---------+
+#                         |
+#     user             +--+--+
+#                      | DB  |
+#                      +-----+
+#
 # Copyright (c) 2011, Yubico AB
 # All rights reserved.
 #
-
-# logging till syslog
 
 import os
 import sys
@@ -17,7 +44,6 @@ import pyhsm
 import pyhsm.yubikey
 import serial
 
-#default_device = "/dev/serial/by-id/usb-Yubico_Yubico_ServerOnStick_498F517E3932-if00"
 default_device = "/dev/ttyACM0"
 default_dir = "/dev/shm/yubico/secrets"
 default_serve_url = "/wsapi/decrypt?otp="
