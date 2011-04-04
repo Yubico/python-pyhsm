@@ -161,7 +161,7 @@ def parse_args():
                         dest='aead_dir',
                         default=default_dir,
                         required=False,
-                        help='Aead directory - base directory of your aeads (default : "%s").' % default_dir
+                        help='AEAD directory - base directory of your AEADs (default : "%s").' % default_dir
                         )
     parser.add_argument('-U', '--serve-url',
                         dest='serve_url',
@@ -207,7 +207,7 @@ def parse_args():
 
 def args_fixup(args):
     if not os.path.isdir(args.aead_dir):
-        my_log_message(args, syslog.LOG_ERR, "Aead directory '%s' does not exist." % (args.aead_dir))
+        my_log_message(args, syslog.LOG_ERR, "AEAD directory '%s' does not exist." % (args.aead_dir))
         sys.exit(1)
 
     global saved_key_handle
