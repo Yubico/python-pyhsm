@@ -146,7 +146,7 @@ class YHSM_Cmd_Temp_Key_Load(YHSM_Cmd):
     status = None
 
     def __init__(self, stick, nonce, key_handle, aead):
-        self.nonce = pyhsm.util.input_validate_nonce(nonce)
+        self.nonce = pyhsm.util.input_validate_nonce(nonce, pad = True)
         self.key_handle = pyhsm.util.input_validate_key_handle(key_handle)
         aead = pyhsm.util.input_validate_aead(aead)
         # typedef struct {
@@ -215,7 +215,8 @@ class YHSM_NonceResponse():
         # The power-up count can be deduced from the nonce =)
         self.volatile = struct.unpack("<L", nonce[0:4])[0]
         self.pu_count = struct.unpack("<H", nonce[4:6])[0]
-        self.nonce = (self.pu_count << 32) + self.volatile
+        self.nonce_int = (self.pu_count << 32) + self.volatile
+        self.nonce = nonce
 
     def __repr__(self):
         return '<%s instance at %s: nonce=%i, pu_count=%i, volatile=%i>' % (
