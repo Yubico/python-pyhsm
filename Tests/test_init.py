@@ -12,6 +12,7 @@ import test_basics
 import test_buffer
 import test_db
 import test_hmac
+import test_oath
 import test_otp_validate
 import test_stick
 import test_util
@@ -23,6 +24,7 @@ test_modules = [test_aead,
                 test_buffer,
                 test_db,
                 test_hmac,
+                test_oath,
                 test_otp_validate,
                 test_stick,
                 test_util,

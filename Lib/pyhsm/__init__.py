@@ -46,7 +46,9 @@ __all__ = ["base"
            "db_cmd"
            "debug_cmd"
            "hmac_cmd"
+           "oath_hotp"
            "validate_cmd"
+           "yubikey"
            ]
 
 from pyhsm.base import YHSM
