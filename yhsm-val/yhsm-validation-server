@@ -4,22 +4,28 @@
 # All rights reserved.
 #
 
+import re
 import os
 import sys
-import BaseHTTPServer
-import argparse
 import syslog
-import re
+import serial
+import sqlite3
+import argparse
+import urlparse
+import BaseHTTPServer
 sys.path.append('Lib');
 import pyhsm
+import pyhsm.oath_hotp
 import pyhsm.yubikey
-import serial
 
 default_device = "/dev/ttyACM0"
 default_dir = "/dev/shm/yubico/secrets"
 default_serve_url = "/yhsm/validate?"
+default_db_file = "/var/yubico/yhsm-validation-server.db"
+default_oath_window = 5
 
 ykotp_valid_input = re.compile('^[cbdefghijklnrtuv]{32,48}$')
+oath_valid_input = re.compile('^[cbdefghijklnrtuv0-9]{6,20}$')
 
 hsm = None
 args = None
@@ -28,26 +34,23 @@ saved_key_handle = None
 class YHSM_KSMRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
     def do_GET(self):
-        # Example session:
-        # in  : GET /wsapi/decrypt?otp=ftftftccccdvvbfcfduvvcubikngtchlubtutucrld HTTP/1.0
-        # out : OK counter=0004 low=f585 high=3e use=03
         global args
         if self.path.startswith(args.serve_url):
             res = None
             mode = None
-            cmd = self.path[len(args.serve_url):]
-            if cmd.startswith("otp=") and args.mode_otp:
+            params = urlparse.parse_qs(self.path[len(args.serve_url):])
+            if "otp" in params and args.mode_otp:
                 # YubiKey OTP
                 mode = 'YubiKey OTP'
-                res = validate_yubikey_otp(self, cmd[4:])
-            elif cmd.startswith("oath=") and args.mode_oath:
+                res = validate_yubikey_otp(self, params)
+            elif "oath" in params and args.mode_oath:
                 mode = 'OATH'
-                res = validate_oath(self, cmd[5:])
-            elif cmd.startswith("pwhash=") and args.mode_pwhash:
+                res = validate_oath(self, params)
+            elif "pwhash" in params and args.mode_pwhash:
                 mode = 'Password hash'
-                res = validate_pwhash(self, cmd[7:])
+                res = validate_pwhash(self, params)
 
-            self.log_message("%s validation result: %s -> %s", mode, cmd, res)
+            self.log_message("%s validation result: %s -> %s", mode, self.path, res)
 
             if res != None:
                 self.send_response(200)
@@ -80,10 +83,11 @@ class YHSM_KSMRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         """ For logging client host without resolving. """
         return self.client_address[0]
 
-def validate_yubikey_otp(self, from_key):
+def validate_yubikey_otp(self, params):
     """
     Validate YubiKey OTP using YubiHSM internal database.
     """
+    from_key = params["otp"][0]
     global ykotp_valid_input
     if not re.match(ykotp_valid_input, from_key):
         self.log_error("IN: %s, Invalid OTP" % (from_key))
@@ -96,18 +100,100 @@ def validate_yubikey_otp(self, from_key):
     except pyhsm.exception.YHSM_CommandFailed, e:
         return "ERR %s" % (pyhsm.defines.status2str(e.status))
 
-def validate_oath(self, from_key):
+def validate_oath(self, params):
     """
-    Validate OATH code using YubiHSM HMAC-SHA1 hashing.
+    Validate OATH code using YubiHSM HMAC-SHA1 hashing with token keys secured in AEAD's
+    that we have stored in an SQLite3 database.
     """
-    return "ERR Not implemented"
+    from_key = params["oath"][0]
+    global oath_valid_input
+    if not re.match(oath_valid_input, from_key):
+        self.log_error("IN: %s, Invalid OATH OTP" % (params))
+        return "ERR Invalid OATH OTP"
+    uid, otp, = get_oath_bits(params)
+    if not uid or not otp:
+        self.log_error("IN: %s, could not get UID/OTP ('%s'/'%s')" % (params, uid, otp))
+        return "ERR Invalid OATH input"
+    if args.debug:
+        print "OATH uid %s, OTP %s" % (uid, otp)
 
-def validate_pwhash(self, from_key):
+    # Fetch counter value for `uid' from database
+    global args
+    try:
+        db = ValOathDb(args.db_file)
+        entry = db.get(uid)
+    except Exception, e:
+        self.log_error("IN: %s, database error : '%s'" % (params, e))
+        return "ERR Internal error"
+
+    # Check for correct OATH OTP
+    global hsm
+    nonce = entry.data["nonce"].decode('hex')
+    aead = entry.data["aead"].decode('hex')
+    new_counter = pyhsm.oath_hotp.search_for_oath_code(hsm, entry.data["key_handle"], nonce, aead, \
+                                                           entry.data["oath_c"], otp, args.look_ahead)
+    if args.debug:
+        print "OATH %i..%i -> new C == %s" % (entry.data["oath_c"], entry.data["oath_c"] + args.look_ahead, new_counter)
+    if type(new_counter) != int:
+        # XXX increase 'throttling parameter'
+        return "ERR Could not validate OATH OTP"
+    try:
+        # Must successfully store new_counter before we return OK
+        db.update_oath_c(entry, new_counter)
+        return "OK counter=%04x" % (new_counter)
+    except Exception, e:
+        self.log_error("IN: %s, database error updating counter : %s" % (params, e))
+        return "ERR Internal error"
+
+def validate_pwhash(self, params):
     """
     Validate password hash using YubiHSM.
     """
     return "ERR Not implemented"
 
+def get_oath_bits(params):
+    """ Extract the OATH uid and OTP from params. """
+    if "uid" in params:
+        return params["uid"][0], params["oath"][0]
+    m = re.match("^([cbdefghijklnrtuv]*)([0-9]{6,8})", params["oath"][0])
+    uid, otp, = m.groups()
+    uid = pyhsm.yubikey.modhex_decode(uid)
+    return uid, int(otp),
+
+class ValOathDb():
+    """ Provides access to database with AEAD's and other information for OATH tokens. """
+
+    def __init__(self, filename):
+        self.filename = filename
+        self.conn = sqlite3.connect(self.filename)
+        self.conn.row_factory = sqlite3.Row
+
+
+    def get(self, key):
+        """ Fetch entry from database. """
+        c = self.conn.cursor()
+        for row in c.execute("SELECT key, nonce, key_handle, aead, oath_C, oath_T FROM oath WHERE key = ?", (key,)):
+            return ValOathEntry(row)
+        raise Exception("OATH token for '%s' not found in database (%s)" % (key, self.filename))
+
+    def update_oath_c(self, entry, new_c):
+        """
+        Update the OATH HOTP counter value for `entry' in the database.
+
+        Use SQL statement to ensure we only ever increase the counter.
+        """
+        key = entry.data["key"]
+        c = self.conn.cursor()
+        c.execute("UPDATE oath SET oath_c = ? WHERE key = ? AND ? > oath_c",
+                  (new_c, key, new_c,))
+        self.conn.commit()
+        return c.rowcount == 1
+
+class ValOathEntry():
+    """ Class to hold a row of ValOathDb. """
+    def __init__(self, row):
+        if row:
+            self.data = row
 
 def parse_args():
     """
@@ -116,7 +202,7 @@ def parse_args():
     global default_device
     global default_serve_url
 
-    parser = argparse.ArgumentParser(description = "Generate secrets using YubiHSM",
+    parser = argparse.ArgumentParser(description = "Validate secrets using YubiHSM",
                                      add_help=True
                                      )
     parser.add_argument('-D', '--device',
@@ -124,12 +210,6 @@ def parse_args():
                         default=default_device,
                         required=False,
                         help='YubiHSM device (default : "%s").' % default_device
-                        )
-    parser.add_argument('-B', '--aead-dir',
-                        dest='aead_dir',
-                        default=default_dir,
-                        required=False,
-                        help='Aead directory - base directory of your aeads (default : "%s").' % default_dir
                         )
     parser.add_argument('-U', '--serve-url',
                         dest='serve_url',
@@ -179,14 +259,23 @@ def parse_args():
                         action='store_true', default=False,
                         help='Enable password hash validation.'
                         )
+    parser.add_argument('--db-file',
+                        dest='db_file',
+                        default=default_db_file,
+                        required=False,
+                        help='DB file for storing AEAD\'s etc. for --pwhash and --oath (default : "%s").' \
+                            % default_db_file
+                        )
+    parser.add_argument('--oath-window',
+                        dest='look_ahead',
+                        required=False,
+                        default = default_oath_window,
+                        help='Number of OATH codes to search (default: %i).' % default_oath_window
+                        )
 
     return parser.parse_args()
 
 def args_fixup(args):
-    if not os.path.isdir(args.aead_dir):
-        my_log_message(args, syslog.LOG_ERR, "Aead directory '%s' does not exist." % (args.aead_dir))
-        sys.exit(1)
-
     global saved_key_handle
     saved_key_handle = args.hmac_kh
 

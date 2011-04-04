@@ -18,6 +18,7 @@ import argparse
 sys.path.append('Lib');
 import pyhsm
 import pyhsm.yubikey
+import yhsm-validation-server
 
 default_device = "/dev/ttyACM0"
 
@@ -46,10 +47,16 @@ def parse_args():
                         action='store_true', default=False,
                         help='Enable debug operation.'
                         )
+    parser.add_mutually_exclusive_group()
     parser.add_argument('--otp',
                         dest='otp',
-                        required=True,
+                        required=False,
                         help='The output from your YubiKey.'
+                        )
+    parser.add_argument('--oath',
+                        dest='oath',
+                        required=False,
+                        help='The output from your OATH-HOTP token.'
                         )
 
     args = parser.parse_args()
@@ -77,6 +84,16 @@ def validate_otp(hsm, args):
         # not found
         return 0xff
 
+def validate_oath(hsm, args):
+    """
+    Validate an OATH OTP.
+    """
+    res = yhsm-validation-server.validate_oath({'oath': args.oath})
+    if args.verbose:
+        print "OK %s" % (res)
+    return 0
+
+
 def main():
     args = parse_args()
 
@@ -86,7 +103,11 @@ def main():
 
     hsm = pyhsm.YHSM(device = args.device, debug=args.debug)
 
-    status = validate_otp(hsm, args)
+    if args.otp:
+        status = validate_otp(hsm, args)
+    elif args.oath:
+        status = validate_oath(hsm, args)
+
     sys.exit(status)
 
 if __name__ == '__main__':
