@@ -105,6 +105,7 @@ def validate_oath(self, params):
     Validate OATH code using YubiHSM HMAC-SHA1 hashing with token keys secured in AEAD's
     that we have stored in an SQLite3 database.
     """
+    global args
     from_key = params["oath"][0]
     global oath_valid_input
     if not re.match(oath_valid_input, from_key):
@@ -118,7 +119,6 @@ def validate_oath(self, params):
         print "OATH uid %s, OTP %s" % (uid, otp)
 
     # Fetch counter value for `uid' from database
-    global args
     try:
         db = ValOathDb(args.db_file)
         entry = db.get(uid)
@@ -149,7 +149,24 @@ def validate_pwhash(self, params):
     """
     Validate password hash using YubiHSM.
     """
-    return "ERR Not implemented"
+    pwhash, nonce, aead, key_handle = get_pwhash_bits(params)
+    plaintext = ":".join([nonce, pwhash])
+    if hsm.aes_ecb_compare(key_handle, aead.decode('hex'), plaintext):
+        return "OK pwhash validated"
+    return "ERR Could not validate pwhash"
+
+def get_pwhash_bits(params):
+    """ Extract bits for password hash validation from params. """
+    if not "pwhash" in params or \
+            not "nonce" in params or \
+            not "aead" in params or \
+            not "kh" in params:
+        raise Exception("Missing required parameter in request (pwhash, nonce, key, aead or kh)")
+    pwhash = params["pwhash"][0]
+    nonce = params["nonce"][0]
+    aead = params["aead"][0]
+    key_handle = pyhsm.util.key_handle_to_int(params["kh"][0])
+    return pwhash, nonce, aead, key_handle
 
 def get_oath_bits(params):
     """ Extract the OATH uid and OTP from params. """
