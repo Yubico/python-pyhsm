@@ -38,11 +38,11 @@ class YHSM_Cmd_HMAC_SHA1_Write(YHSM_Cmd):
         if flags != None:
             flags = pyhsm.util.input_validate_int(flags, 'flags', max_value=0xff)
         else:
-            flags = pyhsm.defines.YSM_HMAC_RESET
+            flags = pyhsm.defines.YSM_HMAC_SHA1_RESET
             if final:
-                flags |= pyhsm.defines.YSM_HMAC_FINAL
+                flags |= pyhsm.defines.YSM_HMAC_SHA1_FINAL
             if to_buffer:
-                flags |= pyhsm.defines.YSM_HMAC_TO_BUFFER
+                flags |= pyhsm.defines.YSM_HMAC_SHA1_TO_BUFFER
 
         self.final = final
         self.flags = flags
@@ -54,11 +54,11 @@ class YHSM_Cmd_HMAC_SHA1_Write(YHSM_Cmd):
         Add more input to the HMAC SHA1.
         """
         if final:
-            self.flags = pyhsm.defines.YSM_HMAC_FINAL
+            self.flags = pyhsm.defines.YSM_HMAC_SHA1_FINAL
         else:
             self.flags = 0x0
         if to_buffer:
-            self.flags |= pyhsm.defines.YSM_HMAC_TO_BUFFER
+            self.flags |= pyhsm.defines.YSM_HMAC_SHA1_TO_BUFFER
         self.payload = _raw_pack(self.key_handle, self.flags, data)
         self.final = final
         return self
@@ -86,7 +86,7 @@ class YHSM_Cmd_HMAC_SHA1_Write(YHSM_Cmd):
         #   uint32_t keyHandle;                 // Key handle
         #   YHSM_STATUS status;                 // Status
         #   uint8_t numBytes;                   // Number of bytes in hash output
-        #   uint8_t hash[SHA1_HASH_SIZE];       // Hash output (if applicable)
+        #   uint8_t hash[YSM_SHA1_HASH_SIZE];       // Hash output (if applicable)
         # } YHSM_HMAC_SHA1_GENERATE_RESP;
         key_handle, \
              self.status, \
@@ -95,12 +95,12 @@ class YHSM_Cmd_HMAC_SHA1_Write(YHSM_Cmd):
         pyhsm.util.validate_cmd_response_hex('key_handle', key_handle, self.key_handle)
 
         if self.status == pyhsm.defines.YSM_STATUS_OK:
-            # struct.hash is not always of size SHA1_HASH_SIZE,
+            # struct.hash is not always of size YSM_SHA1_HASH_SIZE,
             # it is really the size of numBytes
             if num_bytes:
                 sha1 = data[6:6 + num_bytes]
             else:
-                sha1 = '\x00' * pyhsm.defines.SHA1_HASH_SIZE
+                sha1 = '\x00' * pyhsm.defines.YSM_SHA1_HASH_SIZE
             self.result = YHSM_GeneratedHMACSHA1(key_handle, sha1, self.final)
             return self
         else:

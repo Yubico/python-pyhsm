@@ -33,23 +33,23 @@ class YHSM_Cmd_DB_YubiKey_Store(YHSM_Cmd):
     def __init__(self, stick, public_id, key_handle, aead):
         self.key_handle = pyhsm.util.input_validate_key_handle(key_handle)
         self.public_id = pyhsm.util.input_validate_nonce(public_id, pad = True)
-        aead = pyhsm.util.input_validate_aead(aead, expected_len = pyhsm.defines.YUBIKEY_AEAD_SIZE)
+        aead = pyhsm.util.input_validate_aead(aead, expected_len = pyhsm.defines.YSM_YUBIKEY_AEAD_SIZE)
         # typedef struct {
-        #   uint8_t publicId[YSM_AEAD_NONCE_SIZE]; // Public id (nonce)
+        #   uint8_t publicId[YSM_PUBLIC_ID_SIZE]; // Public id (nonce)
         #   uint32_t keyHandle;                    // Key handle
-        #   uint8_t aead[YUBIKEY_AEAD_SIZE];       // AEAD block
-        # } YSM_YUBIKEY_AEAD_STORE_REQ;
-        fmt = "< %is I %is" % (pyhsm.defines.YSM_AEAD_NONCE_SIZE, pyhsm.defines.YUBIKEY_AEAD_SIZE)
+        #   uint8_t aead[YSM_YUBIKEY_AEAD_SIZE];       // AEAD block
+        # } YSM_DB_YUBIKEY_AEAD_STORE_REQ;
+        fmt = "< %is I %is" % (pyhsm.defines.YSM_AEAD_NONCE_SIZE, pyhsm.defines.YSM_YUBIKEY_AEAD_SIZE)
         packed = struct.pack(fmt, self.public_id, self.key_handle, aead)
-        YHSM_Cmd.__init__(self, stick, pyhsm.defines.YSM_YUBIKEY_AEAD_STORE, packed)
+        YHSM_Cmd.__init__(self, stick, pyhsm.defines.YSM_DB_YUBIKEY_AEAD_STORE, packed)
 
     def parse_result(self, data):
         """ Return True if the AEAD was stored sucessfully. """
         # typedef struct {
-        #   uint8_t publicId[YSM_AEAD_NONCE_SIZE]; // Public id (nonce)
+        #   uint8_t publicId[YSM_PUBLIC_ID_SIZE]; // Public id (nonce)
         #   uint32_t keyHandle;                 // Key handle
         #   YSM_STATUS status;                  // Validation status
-        # } YSM_YUBIKEY_AEAD_STORE_RESP;
+        # } YSM_DB_YUBIKEY_AEAD_STORE_RESP;
         public_id, \
             key_handle, \
             self.status = struct.unpack("< %is I B" % (pyhsm.defines.YSM_AEAD_NONCE_SIZE), data)
@@ -73,12 +73,12 @@ class YHSM_Cmd_DB_Validate_OTP(YHSM_Cmd):
 
     def __init__(self, stick, public_id, otp):
         self.public_id = pyhsm.util.input_validate_nonce(public_id, pad = True)
-        self.otp = pyhsm.util.input_validate_str(otp, 'otp', exact_len = pyhsm.defines.OTP_SIZE)
+        self.otp = pyhsm.util.input_validate_str(otp, 'otp', exact_len = pyhsm.defines.YSM_OTP_SIZE)
         # typedef struct {
-        #   uint8_t publicId[YSM_AEAD_NONCE_SIZE]; // Public id
-        #   uint8_t otp[OTP_SIZE];              // OTP
+        #   uint8_t publicId[YSM_PUBLIC_ID_SIZE]; // Public id
+        #   uint8_t otp[YSM_OTP_SIZE];              // OTP
         # } YSM_DB_OTP_VALIDATE_REQ;
-        fmt = "%is %is" % (pyhsm.defines.YSM_AEAD_NONCE_SIZE, pyhsm.defines.OTP_SIZE)
+        fmt = "%is %is" % (pyhsm.defines.YSM_AEAD_NONCE_SIZE, pyhsm.defines.YSM_OTP_SIZE)
         packed = struct.pack(fmt, self.public_id, self.otp)
         YHSM_Cmd.__init__(self, stick, pyhsm.defines.YSM_DB_OTP_VALIDATE, packed)
 
@@ -98,14 +98,14 @@ class YHSM_Cmd_DB_Validate_OTP(YHSM_Cmd):
 
     def parse_result(self, data):
         # typedef struct {
-        #   uint8_t public_id[PUBLIC_ID_SIZE];   // Public id
+        #   uint8_t public_id[YSM_PUBLIC_ID_SIZE];   // Public id
         #   uint16_t use_ctr;                    // Use counter
         #   uint8_t session_ctr;                 // Session counter
         #   uint8_t tstph;                       // Timestamp (high part)
         #   uint16_t tstpl;                      // Timestamp (low part)
         #   YHSM_STATUS status;                  // Validation status
         # } YHSM_AEAD_OTP_DECODED_RESP;
-        fmt = "%is H B B H B" % (pyhsm.defines.PUBLIC_ID_SIZE)
+        fmt = "%is H B B H B" % (pyhsm.defines.YSM_PUBLIC_ID_SIZE)
         public_id, \
             use_ctr, \
             session_ctr, \

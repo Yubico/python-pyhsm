@@ -100,14 +100,13 @@ def input_validate_yubikey_secret(data, name='data'):
         data = data.pack()
     return input_validate_str(data, name)
 
-def input_validate_aead(aead, name='aead', expected_len=None):
+def input_validate_aead(aead, name='aead', expected_len=None, max_aead_len = pyhsm.defines.YSM_MAX_KEY_SIZE + pyhsm.defines.YSM_AEAD_MAC_SIZE):
     """ Input validation for YHSM_GeneratedAEAD or string. """
     if isinstance(aead, pyhsm.aead_cmd.YHSM_GeneratedAEAD):
         aead = aead.data
     if expected_len != None:
         return input_validate_str(aead, name, exact_len = expected_len)
     else:
-        max_aead_len = pyhsm.defines.YSM_MAX_KEY_SIZE + pyhsm.defines.YSM_AEAD_MAC_SIZE
         return input_validate_str(aead, name, max_len=max_aead_len)
 
 

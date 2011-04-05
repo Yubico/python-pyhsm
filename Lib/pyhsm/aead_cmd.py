@@ -69,7 +69,7 @@ class YHSM_AEAD_Cmd(YHSM_Cmd):
         pyhsm.util.validate_cmd_response_hex('key_handle', key_handle, self.key_handle)
 
         if self.status == pyhsm.defines.YSM_STATUS_OK:
-            # struct.hash is not always of size SHA1_HASH_SIZE,
+            # struct.hash is not always of size YSM_SHA1_HASH_SIZE,
             # it is really the size of numBytes
             offset = pyhsm.defines.YSM_AEAD_NONCE_SIZE + 6
             aead = data[offset:offset + num_bytes]

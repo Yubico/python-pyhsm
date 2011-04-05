@@ -55,7 +55,7 @@ class TestOtpValidate(test_common.YHSM_TestCase):
 
     def test_who_can_encrypt(self):
         """ Test what key handles can encrypt AES ECB encrypted blocks. """
-        # Enabled flags 00002000 = YSM_ECB_BLOCK_ENCRYPT
+        # Enabled flags 00002000 = YSM_AES_ECB_BLOCK_ENCRYPT
         # 0000000e - stored ok
         kh_enc = 0x0e
 
@@ -66,11 +66,11 @@ class TestOtpValidate(test_common.YHSM_TestCase):
 
     def test_who_can_decrypt(self):
         """ Test what key handles can decrypt AES ECB encrypted blocks. """
-        # Enabled flags 00002000 = YSM_ECB_BLOCK_ENCRYPT
+        # Enabled flags 00002000 = YSM_AES_ECB_BLOCK_ENCRYPT
         # 0000000e - stored ok
         kh_enc = 0x0e
 
-        # Enabled flags 00004000 = YSM_ECB_BLOCK_DECRYPT
+        # Enabled flags 00004000 = YSM_AES_ECB_BLOCK_DECRYPT
         # 0000000f - stored ok
         kh_dec = 0x0f
 
@@ -82,17 +82,17 @@ class TestOtpValidate(test_common.YHSM_TestCase):
 
     def test_who_can_compare(self):
         """ Test what key handles can decrypt_compare AES ECB encrypted blocks. """
-        # Enabled flags 00002000 = YSM_ECB_BLOCK_ENCRYPT
+        # Enabled flags 00002000 = YSM_AES_ECB_BLOCK_ENCRYPT
         # 0000000e - stored ok
         kh_enc = 0x0e
 
-        # Enabled flags 00008000 = YSM_ECB_BLOCK_DECRYPT_CMP
+        # Enabled flags 00008000 = YSM_AES_ECB_BLOCK_DECRYPT_CMP
         # 00000010 - stored ok
         kh_cmp = 0x10
 
         # Decrypt implies decrypt_cmp
         #
-        # Enabled flags 00004000 = YSM_ECB_BLOCK_DECRYPT
+        # Enabled flags 00004000 = YSM_AES_ECB_BLOCK_DECRYPT
         # 0000000f - stored ok
         kh_dec = 0x0f
 

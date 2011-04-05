@@ -115,12 +115,12 @@ class YHSM_Cmd_Random_Reseed(YHSM_Cmd):
     status = None
 
     def __init__(self, stick, seed):
-        seed = pyhsm.util.input_validate_str(seed, 'seed', exact_len = pyhsm.defines.CTR_DRBG_SEED_SIZE)
-        # #define CTR_DRBG_SEED_SIZE      32
+        seed = pyhsm.util.input_validate_str(seed, 'seed', exact_len = pyhsm.defines.YSM_CTR_DRBG_SEED_SIZE)
+        # #define YSM_CTR_DRBG_SEED_SIZE      32
         # typedef struct {
-        #   uint8_t seed[CTR_DRBG_SEED_SIZE];   // New seed
+        #   uint8_t seed[YSM_CTR_DRBG_SEED_SIZE];   // New seed
         # } YSM_RANDOM_RESEED_REQ;
-        fmt = "%is" % (pyhsm.defines.CTR_DRBG_SEED_SIZE)
+        fmt = "%is" % (pyhsm.defines.YSM_CTR_DRBG_SEED_SIZE)
         packed = struct.pack(fmt, seed)
         YHSM_Cmd.__init__(self, stick, pyhsm.defines.YSM_RANDOM_RESEED, packed)
 
@@ -154,8 +154,8 @@ class YHSM_Cmd_Temp_Key_Load(YHSM_Cmd):
         # typedef struct {
         #   uint8_t nonce[YSM_AEAD_NONCE_SIZE]; // Nonce
         #   uint32_t keyHandle;                 // Key handle to unlock AEAD
-        #   uint8_t numBytes;                   // Number of bytes (explicit key size 16, 20, 24 or 32 bytes + hash)
-        #   uint8_t aead[YSM_MAX_KEY_SIZE + YSM_AEAD_MAC_SIZE]; // AEAD block
+        #   uint8_t numBytes;                   // Number of bytes (explicit key size 16, 20, 24 or 32 bytes + flags + hash)
+        #   uint8_t aead[YSM_MAX_KEY_SIZE + sizeof(uint32_t) + YSM_AEAD_MAC_SIZE]; // AEAD block
         # } YSM_TEMP_KEY_LOAD_REQ;
         fmt = "< %is I B %is" % (pyhsm.defines.YSM_AEAD_NONCE_SIZE, len(aead))
         packed = struct.pack(fmt, self.nonce, self.key_handle, len(aead), aead)
@@ -183,17 +183,19 @@ class YHSM_Cmd_Temp_Key_Load(YHSM_Cmd):
 class YHSM_Cmd_Nonce_Get(YHSM_Cmd):
     """
     Get nonce value from YubiHSM - causes it to increment by one (or a specified number).
+
+    Call with post_increment 0 to just fetch current value.
     """
 
     status = None
     response = None
 
-    def __init__(self, stick, increment):
-        pyhsm.util.input_validate_int(increment, 'increment')
+    def __init__(self, stick, post_increment):
+        pyhsm.util.input_validate_int(post_increment, 'post_increment')
         # typedef struct {
-        #   uint16_t increment;                 // Size of increment to next nonce
+        #   uint16_t postIncrement;                 // Size of increment to next nonce
         # } YSM_NONCE_GET_REQ;
-        packed = struct.pack("<H", increment)
+        packed = struct.pack("<H", post_increment)
         YHSM_Cmd.__init__(self, stick, pyhsm.defines.YSM_NONCE_GET, packed)
 
     def parse_result(self, data):

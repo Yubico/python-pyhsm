@@ -76,7 +76,7 @@ class YHSM_Cmd_AES_ECB_Encrypt(YHSM_Cmd_AES_ECB):
         # } YHSM_ECB_BLOCK_ENCRYPT_REQ;
         payload = struct.pack('<I', key_handle) + \
             plaintext.ljust(pyhsm.defines.YSM_BLOCK_SIZE, chr(0x0))
-        YHSM_Cmd_AES_ECB.__init__(self, stick, pyhsm.defines.YSM_ECB_BLOCK_ENCRYPT, payload)
+        YHSM_Cmd_AES_ECB.__init__(self, stick, pyhsm.defines.YSM_AES_ECB_BLOCK_ENCRYPT, payload)
 
 
 class YHSM_Cmd_AES_ECB_Decrypt(YHSM_Cmd_AES_ECB):
@@ -93,7 +93,7 @@ class YHSM_Cmd_AES_ECB_Decrypt(YHSM_Cmd_AES_ECB):
         # } YHSM_ECB_BLOCK_DECRYPT_REQ;
         fmt = "< I %is" % (pyhsm.defines.YSM_BLOCK_SIZE)
         payload = struct.pack(fmt, key_handle, ciphertext)
-        YHSM_Cmd_AES_ECB.__init__(self, stick, pyhsm.defines.YSM_ECB_BLOCK_DECRYPT, payload)
+        YHSM_Cmd_AES_ECB.__init__(self, stick, pyhsm.defines.YSM_AES_ECB_BLOCK_DECRYPT, payload)
 
 
 class YHSM_Cmd_AES_ECB_Compare(YHSM_Cmd_AES_ECB):
@@ -116,7 +116,7 @@ class YHSM_Cmd_AES_ECB_Compare(YHSM_Cmd_AES_ECB):
         # } YHSM_ECB_BLOCK_DECRYPT_CMP_REQ;
         fmt = "< I %is %is" % (pyhsm.defines.YSM_BLOCK_SIZE, pyhsm.defines.YSM_BLOCK_SIZE)
         payload = struct.pack(fmt, key_handle, ciphertext, plaintext)
-        YHSM_Cmd_AES_ECB.__init__(self, stick, pyhsm.defines.YSM_ECB_BLOCK_DECRYPT_CMP, payload)
+        YHSM_Cmd_AES_ECB.__init__(self, stick, pyhsm.defines.YSM_AES_ECB_BLOCK_DECRYPT_CMP, payload)
 
     def parse_result(self, data):
         # #define YHSM_BLOCK_SIZE          16    // Size of block operations
