@@ -148,15 +148,16 @@ class YHSM_Cmd_Temp_Key_Load(YHSM_Cmd):
     def __init__(self, stick, nonce, key_handle, aead):
         self.nonce = pyhsm.util.input_validate_nonce(nonce, pad = True)
         self.key_handle = pyhsm.util.input_validate_key_handle(key_handle)
-        aead = pyhsm.util.input_validate_aead(aead)
+        flags_size = struct.calcsize("<I")
+        max_aead_len = pyhsm.defines.YSM_MAX_KEY_SIZE + flags_size + pyhsm.defines.YSM_AEAD_MAC_SIZE
+        aead = pyhsm.util.input_validate_aead(aead, max_aead_len = max_aead_len)
         # typedef struct {
         #   uint8_t nonce[YSM_AEAD_NONCE_SIZE]; // Nonce
         #   uint32_t keyHandle;                 // Key handle to unlock AEAD
         #   uint8_t numBytes;                   // Number of bytes (explicit key size 16, 20, 24 or 32 bytes + hash)
         #   uint8_t aead[YSM_MAX_KEY_SIZE + YSM_AEAD_MAC_SIZE]; // AEAD block
         # } YSM_TEMP_KEY_LOAD_REQ;
-        max_aead_len = pyhsm.defines.YSM_MAX_KEY_SIZE + pyhsm.defines.YSM_AEAD_MAC_SIZE
-        fmt = "< %is I B %is" % (pyhsm.defines.YSM_AEAD_NONCE_SIZE, max_aead_len)
+        fmt = "< %is I B %is" % (pyhsm.defines.YSM_AEAD_NONCE_SIZE, len(aead))
         packed = struct.pack(fmt, self.nonce, self.key_handle, len(aead), aead)
         YHSM_Cmd.__init__(self, stick, pyhsm.defines.YSM_TEMP_KEY_LOAD, packed)
 

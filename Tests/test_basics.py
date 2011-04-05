@@ -5,6 +5,7 @@ import sys
 import unittest
 import pyhsm
 import serial
+import struct
 
 import test_common
 
@@ -63,8 +64,9 @@ class TestBasics(test_common.YHSM_TestCase):
         # key 0x2000 has all flags set
         key_handle = 0x2000
 
+        my_flags = struct.pack("< I", 0xffffffff) # full permissions when loaded into phantom key handle
         my_key = 'C' * pyhsm.defines.YSM_MAX_KEY_SIZE
-        self.hsm.load_secret(my_key)
+        self.hsm.load_secret(my_key + my_flags)
 
         aead = self.hsm.generate_aead(nonce, key_handle)
 

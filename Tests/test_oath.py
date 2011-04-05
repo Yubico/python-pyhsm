@@ -14,12 +14,14 @@ class TestOath(test_common.YHSM_TestCase):
         test_common.YHSM_TestCase.setUp(self)
 
         key = "3132333435363738393031323334353637383930".decode('hex')
+	# Enabled flags 00010000 = YSM_HMAC_SHA1_GENERATE
+        flags = struct.pack("< I", 0x10000)
         self.nonce = 'f1f2f3f4f5f6'.decode('hex')
         # key 0x2000 has all flags set
         self.key_handle = 0x2000
         self.phantom = pyhsm.defines.TEMP_KEY_HANDLE
 
-        self.hsm.load_secret(key)
+        self.hsm.load_secret(key + flags)
         self.aead = self.hsm.generate_aead(self.nonce, self.key_handle)
 
         self.assertTrue(isinstance(self.aead, pyhsm.aead_cmd.YHSM_GeneratedAEAD))
