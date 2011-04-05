@@ -84,14 +84,15 @@ class YHSM_Cmd_AES_ECB_Decrypt(YHSM_Cmd_AES_ECB):
     Have the YubiHSM AES ECB decrypt something using the key of a key handle.
     """
     def __init__(self, stick, key_handle, ciphertext):
-        pyhsm.util.input_validate_str(ciphertext, name='ciphertext')
         self.key_handle = pyhsm.util.input_validate_key_handle(key_handle)
+        pyhsm.util.input_validate_str(ciphertext, name='ciphertext')
         # #define YHSM_BLOCK_SIZE          16    // Size of block operations
         # typedef struct {
         #   uint32_t keyHandle;                  // Key handle
         #   uint8_t ciphertext[YHSM_BLOCK_SIZE]; // Ciphertext block
         # } YHSM_ECB_BLOCK_DECRYPT_REQ;
-        payload = struct.pack('<I16s', key_handle, ciphertext)
+        fmt = "< I %is" % (pyhsm.defines.YSM_BLOCK_SIZE)
+        payload = struct.pack(fmt, key_handle, ciphertext)
         YHSM_Cmd_AES_ECB.__init__(self, stick, pyhsm.defines.YSM_ECB_BLOCK_DECRYPT, payload)
 
 
@@ -104,18 +105,17 @@ class YHSM_Cmd_AES_ECB_Compare(YHSM_Cmd_AES_ECB):
     providing added security in some applications.
     """
     def __init__(self, stick, key_handle, ciphertext, plaintext):
+        self.key_handle = pyhsm.util.input_validate_key_handle(key_handle)
         pyhsm.util.input_validate_str(ciphertext, name='ciphertext')
         pyhsm.util.input_validate_str(plaintext, name='plaintext')
-        self.key_handle = pyhsm.util.input_validate_key_handle(key_handle)
         # #define YHSM_BLOCK_SIZE          16    // Size of block operations
         # typedef struct {
         #   uint32_t keyHandle;                  // Key handle
         #   uint8_t ciphertext[YHSM_BLOCK_SIZE]; // Ciphertext block
         #   uint8_t plaintext[YHSM_BLOCK_SIZE];  // Plaintext block
         # } YHSM_ECB_BLOCK_DECRYPT_CMP_REQ;
-        payload = struct.pack('<I', key_handle) + \
-            ciphertext.ljust(pyhsm.defines.YSM_BLOCK_SIZE, chr(0x0)) + \
-            plaintext.ljust(pyhsm.defines.YSM_BLOCK_SIZE, chr(0x0))
+        fmt = "< I %is %is" % (pyhsm.defines.YSM_BLOCK_SIZE, pyhsm.defines.YSM_BLOCK_SIZE)
+        payload = struct.pack(fmt, key_handle, ciphertext, plaintext)
         YHSM_Cmd_AES_ECB.__init__(self, stick, pyhsm.defines.YSM_ECB_BLOCK_DECRYPT_CMP, payload)
 
     def parse_result(self, data):
