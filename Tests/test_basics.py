@@ -35,14 +35,14 @@ class TestBasics(test_common.YHSM_TestCase):
         """ Test nonce retreival. """
         n1 = self.hsm.get_nonce()
         n2 = self.hsm.get_nonce()
-        self.assertEqual(n1.nonce + 1, n2.nonce)
+        self.assertEqual(n1.nonce_int + 1, n2.nonce_int)
         n3 = self.hsm.get_nonce(9)
         # YubiHSM returns nonce _before_ adding increment, so the increment
         # is still only 1 between n2 and n3
-        self.assertEqual(n2.nonce + 1, n3.nonce)
+        self.assertEqual(n2.nonce_int + 1, n3.nonce_int)
         n4 = self.hsm.get_nonce(1)
         # and now we see the 9 increment
-        self.assertEqual(n3.nonce + 9, n4.nonce)
+        self.assertEqual(n3.nonce_int + 9, n4.nonce_int)
 
     def test_random_reseed(self):
         """
