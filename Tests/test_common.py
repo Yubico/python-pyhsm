@@ -17,7 +17,7 @@ class YHSM_TestCase(unittest.TestCase):
         self.hsm = pyhsm.base.YHSM(device = device, debug = debug)
 
         # Check that this is a device we know how to talk to
-        assert(self.hsm.info().protocol_ver == 1)
+        assert(self.hsm.info().protocol_ver == pyhsm.defines.YSM_PROTOCOL_VERSION)
 
     def tearDown(self):
         # get destructor called properly
