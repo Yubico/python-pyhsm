@@ -77,11 +77,11 @@ class TestBasics(test_common.YHSM_TestCase):
 
         # Encrypt something with the phantom key
         plaintext = 'Testing'.ljust(pyhsm.defines.YSM_BLOCK_SIZE)	# pad for compare after decrypt
-        ciphertext = self.hsm.aes_ecb_encrypt(pyhsm.defines.TEMP_KEY_HANDLE, plaintext)
+        ciphertext = self.hsm.aes_ecb_encrypt(pyhsm.defines.YSM_TEMP_KEY_HANDLE, plaintext)
         self.assertNotEqual(plaintext, ciphertext)
 
         # Now decrypt it again and verify result
-        decrypted = self.hsm.aes_ecb_decrypt(pyhsm.defines.TEMP_KEY_HANDLE, ciphertext)
+        decrypted = self.hsm.aes_ecb_decrypt(pyhsm.defines.YSM_TEMP_KEY_HANDLE, ciphertext)
         self.assertEqual(plaintext, decrypted)
 
     def test_yhsm_class(self):

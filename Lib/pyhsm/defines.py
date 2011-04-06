@@ -19,7 +19,7 @@ __all__ = [
     'YSM_CTR_DRBG_SEED_SIZE',
     'YSM_MAX_PKT_SIZE',
     'YSM_PROTOCOL_VERSION',
-    'TEMP_KEY_HANDLE',
+    'YSM_TEMP_KEY_HANDLE',
     'UID_SIZE',
     'KEY_SIZE',
     ## statuses
@@ -80,7 +80,7 @@ YSM_MAX_PKT_SIZE	= 0x60  # Max size of a packet (excluding command byte)
 YSM_PROTOCOL_VERSION	= 1	# Protocol version for this file
 
 
-TEMP_KEY_HANDLE		= 0xffffffff # Phantom temporary key handle
+YSM_TEMP_KEY_HANDLE	= 0xffffffff # Phantom temporary key handle
 
 # these two are in ykdef.h
 UID_SIZE	= 6

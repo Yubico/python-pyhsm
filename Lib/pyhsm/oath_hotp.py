@@ -37,7 +37,7 @@ def search_for_oath_code(hsm, key_handle, nonce, aead, counter, user_code, look_
     for j in xrange(look_ahead):
         this_counter = counter + j
         secret = struct.pack("> Q", this_counter)
-        hmac_result = hsm.hmac_sha1(pyhsm.defines.TEMP_KEY_HANDLE, secret).get_hash()
+        hmac_result = hsm.hmac_sha1(pyhsm.defines.YSM_TEMP_KEY_HANDLE, secret).get_hash()
         this_code = truncate(hmac_result)
         if this_code == user_code:
             return this_counter + 1

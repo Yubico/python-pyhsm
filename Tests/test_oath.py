@@ -19,7 +19,7 @@ class TestOath(test_common.YHSM_TestCase):
         self.nonce = 'f1f2f3f4f5f6'.decode('hex')
         # key 0x2000 has all flags set
         self.key_handle = 0x2000
-        self.phantom = pyhsm.defines.TEMP_KEY_HANDLE
+        self.phantom = pyhsm.defines.YSM_TEMP_KEY_HANDLE
 
         self.hsm.load_secret(key + flags)
         self.aead = self.hsm.generate_aead(self.nonce, self.key_handle)
