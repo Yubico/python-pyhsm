@@ -87,16 +87,25 @@ class YHSM_KSMRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             res = None
             mode = None
             params = urlparse.parse_qs(self.path[len(args.serve_url):])
-            if "otp" in params and args.mode_otp:
-                # YubiKey OTP
-                mode = 'YubiKey OTP'
-                res = validate_yubikey_otp(self, params)
-            elif "hotp" in params and args.mode_hotp:
-                mode = 'OATH-HOTP'
-                res = validate_oath_hotp(self, params)
-            elif "pwhash" in params and args.mode_pwhash:
-                mode = 'Password hash'
-                res = validate_pwhash(self, params)
+            if "otp" in params:
+                if args.mode_otp:
+                    # YubiKey OTP
+                    mode = 'YubiKey OTP'
+                    res = validate_yubikey_otp(self, params)
+                else:
+                    res = "ERR 'otp' disabled"
+            elif "hotp" in params:
+                if args.mode_hotp:
+                    mode = 'OATH-HOTP'
+                    res = validate_oath_hotp(self, params)
+                else:
+                    res = "ERR 'hotp' disabled"
+            elif "pwhash" in params:
+                if args.mode_pwhash:
+                    mode = 'Password hash'
+                    res = validate_pwhash(self, params)
+                else:
+                    res = "ERR 'pwhash' disabled"
 
             self.log_message("%s validation result: %s -> %s", mode, self.path, res)
 
