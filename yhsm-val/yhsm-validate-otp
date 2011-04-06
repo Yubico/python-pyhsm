@@ -18,7 +18,6 @@ import argparse
 sys.path.append('Lib');
 import pyhsm
 import pyhsm.yubikey
-import yhsm-validation-server
 
 default_device = "/dev/ttyACM0"
 
@@ -47,17 +46,16 @@ def parse_args():
                         action='store_true', default=False,
                         help='Enable debug operation.'
                         )
-    parser.add_mutually_exclusive_group()
-    parser.add_argument('--otp',
-                        dest='otp',
-                        required=False,
-                        help='The output from your YubiKey.'
-                        )
-    parser.add_argument('--oath',
-                        dest='oath',
-                        required=False,
-                        help='The output from your OATH-HOTP token.'
-                        )
+    group = parser.add_argument_group('Modes', 'What you want to validate')
+    mode_group = group.add_mutually_exclusive_group(required = True)
+    mode_group.add_argument('--otp',
+                            dest='otp',
+                            help='The output from your YubiKey.'
+                            )
+    mode_group.add_argument('--oath',
+                            dest='oath',
+                            help='The output from your OATH-HOTP token.'
+                            )
 
     args = parser.parse_args()
     return args
@@ -88,9 +86,7 @@ def validate_oath(hsm, args):
     """
     Validate an OATH OTP.
     """
-    res = yhsm-validation-server.validate_oath({'oath': args.oath})
-    if args.verbose:
-        print "OK %s" % (res)
+    print "ERROR: Not implemented, try 'yhsm-validation-server'."
     return 0
 
 
@@ -103,6 +99,7 @@ def main():
 
     hsm = pyhsm.YHSM(device = args.device, debug=args.debug)
 
+    status = 1
     if args.otp:
         status = validate_otp(hsm, args)
     elif args.oath:
