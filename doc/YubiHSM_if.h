@@ -6,7 +6,7 @@
 **                                                                      **
 **      Date   / Sig / Rev  / History                                   **
 **      110205 / J E / 0.00 / Main                                      **
-**      110405 / J E / 0.98 / Release changes                           **
+**      110406 / J E / 0.98 / Release changes                           **
 **                                                                      **
 *************************************************************************/
 
@@ -36,21 +36,21 @@ typedef unsigned long uint32_t;
 #define YSM_MAX_PKT_SIZE        0x60    // Max size of a packet (excluding command byte)
 #define YSM_PROTOCOL_VERSION    1       // Protocol version for this file
 
-#define TEMP_KEY_HANDLE         0xffffffff  // Phantom temporary key handle
+#define YSM_TEMP_KEY_HANDLE     0xffffffff  // Phantom temporary key handle
 
 // 22-bytes Yubikey secrets block
 
 typedef struct {
     uint8_t key[KEY_SIZE];              // AES key
 	uint8_t uid[UID_SIZE];		        // Unique (secret) ID
-} YUBIKEY_SECRETS;
+} YSM_YUBIKEY_SECRETS;
 
 // AES CCM nonce
 
 typedef struct {
     uint32_t keyHandle;                 // Key handle
     uint8_t nonce[YSM_AEAD_NONCE_SIZE]; // Nonce / public id
-} CCM_NONCE;
+} YSM_CCM_NONCE;
 
 // Up- and downlink packet
 
@@ -201,9 +201,9 @@ typedef struct {
     uint32_t keyHandle;                 // Key handle
     uint8_t otp[YSM_OTP_SIZE];          // OTP
     uint8_t aead[YSM_YUBIKEY_AEAD_SIZE]; // AEAD block
-} YSM_AEAD_OTP_DECODE_REQ;
+} YSM_AEAD_YUBIKEY_OTP_DECODE_REQ;
 
-#define YSM_AEAD_OTP_DECODED    (YSM_AEAD_OTP_DECODE | YSM_RESPONSE)
+#define YSM_AEAD_YUBIKEY_OTP_DECODED    (YSM_AEAD_YUBIKEY_OTP_DECODE | YSM_RESPONSE)
 
 typedef struct {
     uint8_t publicId[YSM_PUBLIC_ID_SIZE]; // Public id (nonce)
@@ -213,7 +213,7 @@ typedef struct {
     uint8_t tstph;				        // Timestamp (high part)
     uint16_t tstpl;				        // Timestamp (low part)
     YSM_STATUS status;                  // Validation status
-} YSM_AEAD_OTP_DECODE_RESP;
+} YSM_AEAD_YUBIKEY_OTP_DECODE_RESP;
 
 ////////////////////////////////////
 // Validate OTP using interal store
@@ -329,7 +329,7 @@ typedef struct {
 typedef struct {
     uint8_t nonce[YSM_AEAD_NONCE_SIZE]; // Nonce
     uint32_t keyHandle;                 // Key handle to unlock AEAD
-    uint8_t numBytes;                   // Number of bytes (explicit key size 16, 20, 24 or 32 bytes + hash)
+    uint8_t numBytes;                   // Number of bytes (explicit key size 16, 20, 24 or 32 bytes + flags + MAC)
     uint8_t aead[YSM_MAX_KEY_SIZE + sizeof(uint32_t) + YSM_AEAD_MAC_SIZE]; // AEAD block (including flags)
 } YSM_TEMP_KEY_LOAD_REQ;
 
@@ -452,14 +452,14 @@ typedef struct {
 
 #define YSM_SYSTEM_INFO                 (YSM_SYSTEM_INFO_QUERY | YSM_RESPONSE)
 
-#define SYSTEM_UID_SIZE                 12
+#define YSM_SYSTEM_UID_SIZE             12      // Sizeof unique identifier
 
 typedef struct {
     uint8_t versionMajor;               // Major version #
     uint8_t versionMinor;               // Minor version #
     uint8_t versionBuild;               // Build version #
     uint8_t protocolVersion;            // Protocol version #
-    uint8_t systemUid[SYSTEM_UID_SIZE]; // System unique identifier
+    uint8_t systemUid[YSM_SYSTEM_UID_SIZE]; // System unique identifier
 } YSM_SYSTEM_INFO_RESP;
 
 ////////////////////////////////////
