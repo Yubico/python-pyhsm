@@ -9,7 +9,7 @@
 #        validation - including storing seen counter values
 #        in an internal database.
 #
-#  OATH - OATH-HOTP validation using secrets stored on host
+#  HOTP - OATH-HOTP validation using secrets stored on host
 #         computer (in secure AEADs only decryptable inside
 #         YubiHSM). The HMAC-SHA1 of the OATH counter value
 #         is done inside the YubiHSM, so the OATH Key is
@@ -41,10 +41,10 @@ default_device = "/dev/ttyACM0"
 default_dir = "/dev/shm/yubico/secrets"
 default_serve_url = "/yhsm/validate?"
 default_db_file = "/var/yubico/yhsm-validation-server.db"
-default_oath_window = 5
+default_hotp_window = 5
 
 ykotp_valid_input = re.compile('^[cbdefghijklnrtuv]{32,48}$')
-oath_valid_input = re.compile('^[cbdefghijklnrtuv0-9]{6,20}$')
+hotp_valid_input = re.compile('^[cbdefghijklnrtuv0-9]{6,20}$')
 
 hsm = None
 args = None
@@ -62,9 +62,9 @@ class YHSM_KSMRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                 # YubiKey OTP
                 mode = 'YubiKey OTP'
                 res = validate_yubikey_otp(self, params)
-            elif "oath" in params and args.mode_oath:
-                mode = 'OATH'
-                res = validate_oath(self, params)
+            elif "hotp" in params and args.mode_hotp:
+                mode = 'OATH-HOTP'
+                res = validate_oath_hotp(self, params)
             elif "pwhash" in params and args.mode_pwhash:
                 mode = 'Password hash'
                 res = validate_pwhash(self, params)
@@ -119,23 +119,23 @@ def validate_yubikey_otp(self, params):
     except pyhsm.exception.YHSM_CommandFailed, e:
         return "ERR %s" % (pyhsm.defines.status2str(e.status))
 
-def validate_oath(self, params):
+def validate_oath_hotp(self, params):
     """
-    Validate OATH code using YubiHSM HMAC-SHA1 hashing with token keys secured in AEAD's
-    that we have stored in an SQLite3 database.
+    Validate OATH-HOTP code using YubiHSM HMAC-SHA1 hashing with token keys
+    secured in AEAD's that we have stored in an SQLite3 database.
     """
     global args
-    from_key = params["oath"][0]
-    global oath_valid_input
-    if not re.match(oath_valid_input, from_key):
-        self.log_error("IN: %s, Invalid OATH OTP" % (params))
-        return "ERR Invalid OATH OTP"
-    uid, otp, = get_oath_bits(params)
+    from_key = params["hotp"][0]
+    global hotp_valid_input
+    if not re.match(hotp_valid_input, from_key):
+        self.log_error("IN: %s, Invalid OATH-HOTP OTP" % (params))
+        return "ERR Invalid OATH-HOTP OTP"
+    uid, otp, = get_oath_hotp_bits(params)
     if not uid or not otp:
         self.log_error("IN: %s, could not get UID/OTP ('%s'/'%s')" % (params, uid, otp))
-        return "ERR Invalid OATH input"
+        return "ERR Invalid OATH-HOTP input"
     if args.debug:
-        print "OATH uid %s, OTP %s" % (uid, otp)
+        print "OATH-HOTP uid %s, OTP %s" % (uid, otp)
 
     # Fetch counter value for `uid' from database
     try:
@@ -145,20 +145,20 @@ def validate_oath(self, params):
         self.log_error("IN: %s, database error : '%s'" % (params, e))
         return "ERR Internal error"
 
-    # Check for correct OATH OTP
+    # Check for correct OATH-HOTP OTP
     global hsm
     nonce = entry.data["nonce"].decode('hex')
     aead = entry.data["aead"].decode('hex')
     new_counter = pyhsm.oath_hotp.search_for_oath_code(hsm, entry.data["key_handle"], nonce, aead, \
                                                            entry.data["oath_c"], otp, args.look_ahead)
     if args.debug:
-        print "OATH %i..%i -> new C == %s" % (entry.data["oath_c"], entry.data["oath_c"] + args.look_ahead, new_counter)
+        print "OATH-HOTP %i..%i -> new C == %s" % (entry.data["oath_c"], entry.data["oath_c"] + args.look_ahead, new_counter)
     if type(new_counter) != int:
         # XXX increase 'throttling parameter'
-        return "ERR Could not validate OATH OTP"
+        return "ERR Could not validate OATH-HOTP OTP"
     try:
         # Must successfully store new_counter before we return OK
-        db.update_oath_c(entry, new_counter)
+        db.update_oath_hotp_c(entry, new_counter)
         return "OK counter=%04x" % (new_counter)
     except Exception, e:
         self.log_error("IN: %s, database error updating counter : %s" % (params, e))
@@ -189,11 +189,11 @@ def get_pwhash_bits(params):
     key_handle = pyhsm.util.key_handle_to_int(params["kh"][0])
     return pwhash, nonce, aead, key_handle
 
-def get_oath_bits(params):
-    """ Extract the OATH uid and OTP from params. """
+def get_oath_hotp_bits(params):
+    """ Extract the OATH-HOTP uid and OTP from params. """
     if "uid" in params:
-        return params["uid"][0], params["oath"][0]
-    m = re.match("^([cbdefghijklnrtuv]*)([0-9]{6,8})", params["oath"][0])
+        return params["uid"][0], params["hotp"][0]
+    m = re.match("^([cbdefghijklnrtuv]*)([0-9]{6,8})", params["hotp"][0])
     uid, otp, = m.groups()
     uid = pyhsm.yubikey.modhex_decode(uid)
     return uid, int(otp),
@@ -214,9 +214,9 @@ class ValOathDb():
             return ValOathEntry(row)
         raise Exception("OATH token for '%s' not found in database (%s)" % (key, self.filename))
 
-    def update_oath_c(self, entry, new_c):
+    def update_oath_hotp_c(self, entry, new_c):
         """
-        Update the OATH HOTP counter value for `entry' in the database.
+        Update the OATH-HOTP counter value for `entry' in the database.
 
         Use SQL statement to ensure we only ever increase the counter.
         """
@@ -287,8 +287,8 @@ def parse_args():
                         action='store_true', default=False,
                         help='Enable YubiKey OTP validation.'
                         )
-    parser.add_argument('--oath',
-                        dest='mode_oath',
+    parser.add_argument('--hotp',
+                        dest='mode_hotp',
                         action='store_true', default=False,
                         help='Enable OATH-HOTP validation.'
                         )
@@ -301,14 +301,14 @@ def parse_args():
                         dest='db_file',
                         default=default_db_file,
                         required=False,
-                        help='DB file for storing AEAD\'s etc. for --pwhash and --oath (default : "%s").' \
+                        help='DB file for storing AEAD\'s etc. for --pwhash and --hotp (default : "%s").' \
                             % default_db_file
                         )
-    parser.add_argument('--oath-window',
+    parser.add_argument('--hotp-window',
                         dest='look_ahead',
                         required=False,
-                        default = default_oath_window,
-                        help='Number of OATH codes to search (default: %i).' % default_oath_window
+                        default = default_hotp_window,
+                        help='Number of OATH-HOTP codes to search (default: %i).' % default_hotp_window
                         )
 
     return parser.parse_args()
