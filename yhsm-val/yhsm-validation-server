@@ -1,27 +1,56 @@
 #!/usr/bin/env python
 #
-# Credential validation server utilizing YubiHSM.
-#
-# Modes of operation :
-#
-#  OTP - YubiKey validation using internal DB in YubiHSM.
-#        The YubiHSM can take care of complete Yubico OTP
-#        validation - including storing seen counter values
-#        in an internal database.
-#
-#  HOTP - OATH-HOTP validation using secrets stored on host
-#         computer (in secure AEADs only decryptable inside
-#         YubiHSM). The HMAC-SHA1 of the OATH counter value
-#         is done inside the YubiHSM, so the OATH Key is
-#         never exposed outside the YubiHSM.
-#
-#  PWHASH - Uses AES decrypt-compare in the YubiHSM to see
-#           if a supplied password hash matches the password
-#           hash used in an earlier
-
 # Copyright (c) 2011, Yubico AB
 # All rights reserved.
 #
+"""
+ Credential validation server utilizing YubiHSM.
+
+ Modes of operation :
+
+  OTP - YubiKey validation using internal DB in YubiHSM.
+        The YubiHSM can take care of complete Yubico OTP
+        validation - including storing seen counter values
+        in an internal database.
+
+  HOTP - OATH-HOTP validation using secrets stored on host
+         computer (in secure AEADs only decryptable inside
+         YubiHSM). The HMAC-SHA1 of the OATH counter value
+         is done inside the YubiHSM, so the OATH Key is
+         never exposed outside the YubiHSM.
+
+  PWHASH - Uses AEAD plaintext compare in the YubiHSM to see
+           if a supplied password hash matches the password
+           hash used in an earlier 'set' operation. These
+           AEADs can be generated using
+           `yhsm-password-auth.py --set ...'.
+
+ All these modes must be explicitly enabled on the command
+ line to be allowed (--otp, --hotp and --pwhash).
+
+ Examples using OATH-HOTP :
+
+   > GET /yhsm/validate?hotp=ubftcdcdckcf359152 HTTP/1.1
+   ...
+   < HTTP/1.0 200 OK
+   < OK counter=0003
+
+   same again (replay), differently formatted :
+
+   > GET /yhsm/validate?uid=ubftcdcdckcf&hotp=359152 HTTP/1.1
+   ...
+   < HTTP/1.0 200 OK
+   < ERR Could not validate OATH-HOTP OTP
+
+ Example PWHASH (AEAD and NONCE as returned by
+                 `yhsm-password-auth.py --set ...') :
+
+ > GET /yhsm/validate?pwhash=pbkdf2-of-password-here&aead=2b70...2257&nonce=010203040506&kh=8192 HTTP/1.1
+ ...
+ < HTTP/1.0 200 OK
+ < OK pwhash validated
+
+"""
 
 import re
 import os
@@ -158,8 +187,10 @@ def validate_oath_hotp(self, params):
         return "ERR Could not validate OATH-HOTP OTP"
     try:
         # Must successfully store new_counter before we return OK
-        db.update_oath_hotp_c(entry, new_counter)
-        return "OK counter=%04x" % (new_counter)
+        if db.update_oath_hotp_c(entry, new_counter):
+            return "OK counter=%04x" % (new_counter)
+        else:
+            return "ERR replayed OATH-HOTP"
     except Exception, e:
         self.log_error("IN: %s, database error updating counter : %s" % (params, e))
         return "ERR Internal error"
@@ -192,10 +223,9 @@ def get_pwhash_bits(params):
 def get_oath_hotp_bits(params):
     """ Extract the OATH-HOTP uid and OTP from params. """
     if "uid" in params:
-        return params["uid"][0], params["hotp"][0]
+        return params["uid"][0], int(params["hotp"][0])
     m = re.match("^([cbdefghijklnrtuv]*)([0-9]{6,8})", params["hotp"][0])
     uid, otp, = m.groups()
-    uid = pyhsm.yubikey.modhex_decode(uid)
     return uid, int(otp),
 
 class ValOathDb():
@@ -306,7 +336,7 @@ def parse_args():
                         )
     parser.add_argument('--hotp-window',
                         dest='look_ahead',
-                        required=False,
+                        type=int, required=False,
                         default = default_hotp_window,
                         help='Number of OATH-HOTP codes to search (default: %i).' % default_hotp_window
                         )
