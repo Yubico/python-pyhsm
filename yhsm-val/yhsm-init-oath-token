@@ -60,7 +60,7 @@ def parse_args():
     parser.add_argument('--oath-c',
                         dest='oath_c',
                         required=False,
-                        default = 1,
+                        default = 0,
                         help='Initial OATH counter value.'
                         )
     parser.add_argument('--test-oath-window',
@@ -99,7 +99,9 @@ def keyhandles_fixup(args):
 def generate_aead(hsm, args):
     """ Protect the oath-k in an AEAD. """
     key = get_oath_k(args)
-    hsm.load_secret(key)
+    # Enabled flags 00010000 = YSM_HMAC_SHA1_GENERATE
+    flags = struct.pack("< I", 0x10000)
+    hsm.load_secret(key + flags)
     nonce = hsm.get_nonce().nonce
     aead = hsm.generate_aead(nonce, args.key_handle)
     if args.debug:
