@@ -1,5 +1,24 @@
 #!/usr/bin/env python
 #
+# Credential validation server utilizing YubiHSM.
+#
+# Modes of operation :
+#
+#  OTP - YubiKey validation using internal DB in YubiHSM.
+#        The YubiHSM can take care of complete Yubico OTP
+#        validation - including storing seen counter values
+#        in an internal database.
+#
+#  OATH - OATH-HOTP validation using secrets stored on host
+#         computer (in secure AEADs only decryptable inside
+#         YubiHSM). The HMAC-SHA1 of the OATH counter value
+#         is done inside the YubiHSM, so the OATH Key is
+#         never exposed outside the YubiHSM.
+#
+#  PWHASH - Uses AES decrypt-compare in the YubiHSM to see
+#           if a supplied password hash matches the password
+#           hash used in an earlier
+
 # Copyright (c) 2011, Yubico AB
 # All rights reserved.
 #
@@ -150,8 +169,10 @@ def validate_pwhash(self, params):
     Validate password hash using YubiHSM.
     """
     pwhash, nonce, aead, key_handle = get_pwhash_bits(params)
-    plaintext = ":".join([nonce, pwhash])
-    if hsm.aes_ecb_compare(key_handle, aead.decode('hex'), plaintext):
+    d_aead = aead.decode('hex')
+    plaintext_len = len(d_aead) - pyhsm.defines.YSM_AEAD_MAC_SIZE
+    pw = pwhash.ljust(plaintext_len, chr(0x0))
+    if hsm.validate_aead(nonce.decode('hex'), key_handle, d_aead, pw):
         return "OK pwhash validated"
     return "ERR Could not validate pwhash"
 
@@ -161,7 +182,7 @@ def get_pwhash_bits(params):
             not "nonce" in params or \
             not "aead" in params or \
             not "kh" in params:
-        raise Exception("Missing required parameter in request (pwhash, nonce, key, aead or kh)")
+        raise Exception("Missing required parameter in request (pwhash, nonce, aead or kh)")
     pwhash = params["pwhash"][0]
     nonce = params["nonce"][0]
     aead = params["aead"][0]

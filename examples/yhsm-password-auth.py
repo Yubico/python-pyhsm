@@ -21,17 +21,17 @@
 #
 # First, set password (create AEAD) :
 #
-#   $ ./examples/yhsm-password-auth.py --key-handle 8192 --nonce abc --verbose --set
+#   $ yhsm-password-auth.py --set --key-handle 8192 --nonce 010203040506 --verbose
 #   Enter password to encrypt : <enter password>
 #   Success! Remember the nonce and use this AEAD to validate the password later :
 #
-#   AEAD: edee7db15eb1efb35bdcc7a39d2b3ec0 NONCE: 'abc'
+#   AEAD: 2b70c81e3f84db190f772d8e8dbfe05ebded5db881e9574939a52257 NONCE: 010203040506
 #   $
 #
 # Then, later on, validate the password using the AEAD and NONCE from above :
 #
-#   $ ./examples/yhsm-password-auth.py --key-handle 8192 --nonce abc --verbose \
-#					--validate edee7db15eb1efb35bdcc7a39d2b3ec0
+#   $ yhsm-password-auth.py --key-handle 8192 --nonce 010203040506 --verbose \
+#		--validate 2b70c81e3f84db190f772d8e8dbfe05ebded5db881e9574939a52257
 #   Enter password to validate : <enter same password again>
 #   OK! Password validated.
 #   $
@@ -78,7 +78,7 @@ def parse_args():
     parser.add_argument('-N', '--nonce',
                         dest='nonce',
                         required=True,
-                        help='Nonce to use. Could be username.'
+                        help='Nonce to use. 6 bytes encoded as 12 chars hex.'
                         )
     parser.add_argument('--set',
                         dest='set',
@@ -88,6 +88,11 @@ def parse_args():
     parser.add_argument('--validate',
                         dest='validate',
                         help='AEAD to validate.'
+                        )
+    parser.add_argument('--min_length',
+                        type=int, dest='min_len',
+                        required=False, default=20,
+                        help='Minimum length to pad passwords to (default: 20).'
                         )
 
     args = parser.parse_args()
@@ -105,13 +110,12 @@ def generate_aead(hsm, args, password):
     """
     Generate an AEAD using the YubiHSM.
     """
-    plaintext = ":".join([args.nonce, password])
     try:
-        ciphertext = hsm.aes_ecb_encrypt(args.key_handle, plaintext)
-        return ciphertext
+        pw = password.ljust(args.min_len, chr(0x0))
+        return hsm.generate_aead_simple(args.nonce.decode('hex'), args.key_handle, pw)
     except pyhsm.exception.YHSM_CommandFailed, e:
         if e.status_str == 'YHSM_FUNCTION_DISABLED':
-            print "ERROR: The key handle %s is not permitted to do AES ECB encrypt." % (args.key_handle)
+            print "ERROR: The key handle %s is not permitted to YSM_AEAD_GENERATE." % (args.key_handle)
             return None
         else:
             print "ERROR: %s" % (e.reason)
@@ -120,9 +124,9 @@ def validate_aead(hsm, args, password):
     """
     Validate a previously generated AEAD using the YubiHSM.
     """
-    plaintext = ":".join([args.nonce, password])
     try:
-        return hsm.aes_ecb_compare(args.key_handle, args.validate.decode('hex'), plaintext)
+        pw = password.ljust(args.min_len, chr(0x0))
+        return hsm.validate_aead(args.nonce.decode('hex'), args.key_handle, args.validate.decode('hex'), pw)
     except pyhsm.exception.YHSM_CommandFailed, e:
         if e.status_str == 'YHSM_FUNCTION_DISABLED':
             print "ERROR: The key handle %s is not permitted to do AES ECB compare." % (args.key_handle)
@@ -157,7 +161,7 @@ def main():
 
         if args.verbose:
             print "Success! Remember the nonce and use this AEAD to validate the password later :\n"
-        print "AEAD: %s NONCE: '%s'" % (aead.encode('hex'), args.nonce)
+        print "AEAD: %s NONCE: %s" % (aead.data.encode('hex'), args.nonce)
     else:
         #
         # VALIDATE password
