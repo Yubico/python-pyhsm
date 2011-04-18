@@ -27,28 +27,40 @@
 #
 """
 the pyhsm package
+
+Basic usage :
+
+  import pyhsm
+
+  try:
+      hsm = pyhsm.base.YHSM(device="/dev/ttyACM0", debug=False)
+      print "Version : %s" % (hsm.info())
+  except pyhsm.exception.YHSM_Error, e:
+      print "ERROR: %s" % e
+
+See help(pyhsm.base) for more information.
 """
 
 __version__ = '0.9.8'
 
-__all__ = ["base"
-           "cmd"
-           "defines"
-           "exception"
-           "stick"
-           "util"
-           "yubikey"
+__all__ = ["base",
+           "cmd",
+           "defines",
+           "exception",
+           "stick",
+           "util",
+           "yubikey",
            #
-           "aead_cmd"
-           "aes_ecb_cmd"
-           "basic_cmd"
-           "buffer_cmd"
-           "db_cmd"
-           "debug_cmd"
-           "hmac_cmd"
-           "oath_hotp"
-           "validate_cmd"
-           "yubikey"
+           "aead_cmd",
+           "aes_ecb_cmd",
+           "basic_cmd",
+           "buffer_cmd",
+           "db_cmd",
+           "debug_cmd",
+           "hmac_cmd",
+           "oath_hotp",
+           "validate_cmd",
+           "yubikey",
            ]
 
 from pyhsm.base import YHSM
