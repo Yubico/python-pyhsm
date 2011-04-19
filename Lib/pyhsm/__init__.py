@@ -41,7 +41,7 @@ Basic usage :
 See help(pyhsm.base) for more information.
 """
 
-__version__ = '0.9.8'
+__version__ = '0.9.8a'
 
 __all__ = ["base",
            "cmd",
