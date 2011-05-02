@@ -11,6 +11,7 @@ __all__ = [
     # functions
     # classes
     'YHSM_Cmd_AEAD_Validate_OTP',
+    'YHSM_ValidationResult',
 ]
 
 import pyhsm.defines

@@ -9,9 +9,9 @@ __all__ = [
     # functions
     # classes
     'YHSM_Error',
+    'YHSM_InputTooShort',
+    'YHSM_InputTooLong',
     'YHSM_WrongInputSize',
-    'YHSM_WrongInputTooShort',
-    'YHSM_WrongInputTooLong',
     'YHSM_WrongInputType',
     'YHSM_CommandFailed'
 ]

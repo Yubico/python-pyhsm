@@ -14,6 +14,10 @@ __all__ = [
     'YHSM_Cmd_Echo',
     'YHSM_Cmd_System_Info',
     'YHSM_Cmd_Random',
+    'YHSM_Cmd_Random_Reseed',
+    'YHSM_Cmd_Temp_Key_Load',
+    'YHSM_Cmd_Nonce_Get',
+    'YHSM_NonceResponse',
 ]
 
 import pyhsm.defines

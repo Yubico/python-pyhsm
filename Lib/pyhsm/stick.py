@@ -12,7 +12,7 @@ __all__ = [
     'write',
     'flush',
     # classes
-    'Stick',
+    'YHSM_Stick',
 ]
 
 import sys

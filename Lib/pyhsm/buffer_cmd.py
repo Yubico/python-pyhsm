@@ -12,6 +12,7 @@ __all__ = [
     # functions
     # classes
     'YHSM_Cmd_Buffer_Load',
+    'YHSM_Cmd_Buffer_Random_Load',
 ]
 
 import pyhsm.defines

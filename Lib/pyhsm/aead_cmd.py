@@ -11,6 +11,8 @@ __all__ = [
     # constants
     # functions
     # classes
+    'YHSM_AEAD_Cmd',
+    'YHSM_Cmd_AEAD_Generate',
     'YHSM_Cmd_AEAD_Random_Generate'
     'YHSM_Cmd_AEAD_Buffer_Generate',
     'YHSM_Cmd_AEAD_Decrypt_Cmp',

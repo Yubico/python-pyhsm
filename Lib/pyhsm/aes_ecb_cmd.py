@@ -10,8 +10,10 @@ __all__ = [
     # constants
     # functions
     # classes
+    #'YHSM_Cmd_AES_ECB',
     'YHSM_Cmd_AES_ECB_Encrypt',
     'YHSM_Cmd_AES_ECB_Decrypt',
+    'YHSM_Cmd_AES_ECB_Compare',
 ]
 
 import pyhsm.defines
