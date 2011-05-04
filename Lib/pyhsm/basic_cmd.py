@@ -17,6 +17,7 @@ __all__ = [
     'YHSM_Cmd_Random_Reseed',
     'YHSM_Cmd_Temp_Key_Load',
     'YHSM_Cmd_Nonce_Get',
+    'YHSM_Cmd_Key_Storage_Unlock',
     'YHSM_NonceResponse',
 ]
 
@@ -215,6 +216,29 @@ class YHSM_Cmd_Nonce_Get(YHSM_Cmd):
         else:
             raise pyhsm.exception.YHSM_CommandFailed(pyhsm.defines.cmd2str(self.command), self.status)
 
+class YHSM_Cmd_Key_Storage_Unlock(YHSM_Cmd):
+    """
+    Have the YubiHSM unlock it's key storage using the HSM password.
+    """
+    def __init__(self, stick, password=''):
+        payload = pyhsm.util.input_validate_str(password, 'password', max_len = pyhsm.defines.YSM_BLOCK_SIZE)
+        # typedef struct {
+        #   uint8_t password[YSM_BLOCK_SIZE];  // Unlock password
+        # } YSM_KEY_STORAGE_UNLOCK_REQ;
+        packed = password.ljust(pyhsm.defines.YSM_BLOCK_SIZE, chr(0x0))
+        YHSM_Cmd.__init__(self, stick, pyhsm.defines.YSM_KEY_STORAGE_UNLOCK, packed)
+
+    def parse_result(self, data):
+        # typedef struct {
+        #   YSM_STATUS status;                  // Unlock status
+        # } YSM_KEY_STORAGE_UNLOCK_RESP;
+        fmt = "B"
+        self.status, = struct.unpack(fmt, data)
+
+        if self.status == pyhsm.defines.YSM_STATUS_OK:
+            return True
+        else:
+            raise pyhsm.exception.YHSM_CommandFailed(pyhsm.defines.cmd2str(self.command), self.status)
 
 class YHSM_NonceResponse():
     """ Small class to hold response of Nonce_Get command. """

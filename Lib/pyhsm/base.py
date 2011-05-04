@@ -143,6 +143,12 @@ class YHSM():
         """
         return pyhsm.basic_cmd.YHSM_Cmd_Temp_Key_Load(self.stick, nonce, key_handle, aead).execute()
 
+    def key_storage_unlock(self, password):
+        """
+        Have the YubiHSM unlock it's key storage using the HSM password.
+        """
+        return pyhsm.basic_cmd.YHSM_Cmd_Key_Storage_Unlock(self.stick, password).execute()
+
     #
     # AEAD related commands
     #
