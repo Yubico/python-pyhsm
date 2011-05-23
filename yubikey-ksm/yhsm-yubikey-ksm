@@ -52,7 +52,6 @@ valid_input_from_key = re.compile('^[cbdefghijklnrtuv]{32,48}$')
 
 hsm = None
 args = None
-saved_key_handle = None
 
 class YHSM_KSMRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
@@ -111,17 +110,26 @@ def decrypt_yubikey_otp(self, from_key):
 
     public_id, otp = pyhsm.yubikey.split_id_otp(from_key)
 
-    global saved_key_handle
-    filename = aead_filename(args.aead_dir, saved_key_handle, public_id)
-    aead = pyhsm.aead_cmd.YHSM_GeneratedAEAD(public_id, args.key_handle, '')
-    try:
-        aead.load(filename)
-    except IOError:
-        self.log_error("IN: %s, File %s not found, or not readable" % (from_key, filename))
+    aead_kh_int = None
+    fn_list = []
+    for kh, kh_int in args.key_handles:
+        aead = pyhsm.aead_cmd.YHSM_GeneratedAEAD(public_id, kh_int, '')
+        filename = aead_filename(args.aead_dir, kh, public_id)
+        fn_list.append(filename)
+        try:
+            aead.load(filename)
+            aead_kh_int = kh_int
+            break
+        except IOError:
+            continue
+
+    if aead_kh_int == None:
+        self.log_error("IN: %s, Found no (readable) AEAD for public_id %s" % (from_key, public_id))
+        self.log_message("Tried to load AEAD from : %s" % (fn_list))
         return "ERR Unknown public_id"
 
     try:
-        res = pyhsm.yubikey.validate_yubikey_with_aead(hsm, from_key, aead, args.key_handle)
+        res = pyhsm.yubikey.validate_yubikey_with_aead(hsm, from_key, aead, aead_kh_int)
         # XXX double-check public_id in res, in case BaseHTTPServer suddenly becomes multi-threaded
         # XXX fix use vs session counter confusion
         val_res = "OK counter=%04x low=%04x high=%02x use=%02x" % \
@@ -144,10 +152,6 @@ def parse_args():
     """
     Parse the command line arguments
     """
-    global default_device
-    global default_dir
-    global default_serve_url
-
     parser = argparse.ArgumentParser(description = "Decrypt YubiKey OTPs using YubiHSM",
                                      add_help=True
                                      )
@@ -197,8 +201,9 @@ def parse_args():
                         required=False,
                         help='Address to bind to.'
                         )
-    parser.add_argument('--key-handle',
-                        dest='key_handle',
+    parser.add_argument('--key-handle', '--key-handles',
+                        dest='key_handles',
+                        nargs='+',
                         required=True,
                         help='Key handle to use to decrypt aeads on the YHSM.'
                         )
@@ -210,18 +215,19 @@ def args_fixup(args):
         my_log_message(args, syslog.LOG_ERR, "AEAD directory '%s' does not exist." % (args.aead_dir))
         sys.exit(1)
 
-    global saved_key_handle
-    saved_key_handle = args.key_handle
-
-    args.key_handle = pyhsm.util.key_handle_to_int(args.key_handle)
+    # cache key_handle_to_int of all key handles
+    res = []
+    for kh in args.key_handles:
+        kh_int = pyhsm.util.key_handle_to_int(kh)
+        res.append((kh, kh_int,))
+    args.key_handles = res
 
 
 def run(args):
     server_address = (args.listen_addr, args.listen_port)
     httpd = BaseHTTPServer.HTTPServer(server_address, YHSM_KSMRequestHandler)
-    global saved_key_handle
-    my_log_message(args, syslog.LOG_INFO, "Serving requests to 'http://%s:%s%s' with key handle %s/%s (YubiHSM: '%s', AEADs in '%s')" \
-                       % (args.listen_addr, args.listen_port, args.serve_url, saved_key_handle, args.key_handle, args.device, args.aead_dir))
+    my_log_message(args, syslog.LOG_INFO, "Serving requests to 'http://%s:%s%s' with key handle(s) %s (YubiHSM: '%s', AEADs in '%s')" \
+                       % (args.listen_addr, args.listen_port, args.serve_url, args.key_handles, args.device, args.aead_dir))
     httpd.serve_forever()
 
 def my_log_message(args, prio, msg):
