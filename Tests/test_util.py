@@ -27,3 +27,17 @@ class TestUtil(test_common.YHSM_TestCase):
 
         self.assertRaises(pyhsm.exception.YHSM_Error, pyhsm.util.validate_cmd_response_str, \
                               'test', 'abc', 'def', hex_encode=False)
+
+    def test_input_validate_str(self):
+        """ Test string input validation. """
+        self.assertRaises(pyhsm.exception.YHSM_WrongInputType, pyhsm.util.input_validate_str, \
+                              0, 'foo', exact_len = 5)
+
+        self.assertRaises(pyhsm.exception.YHSM_InputTooLong, pyhsm.util.input_validate_str, \
+                              '1234', 'foo', max_len = 3)
+        self.assertEquals('1234', pyhsm.util.input_validate_str('1234', 'foo', max_len = 4))
+        self.assertEquals('1234', pyhsm.util.input_validate_str('1234', 'foo', max_len = 14))
+
+        self.assertRaises(pyhsm.exception.YHSM_WrongInputSize, pyhsm.util.input_validate_str, \
+                              '1234', 'foo', exact_len = 5)
+        self.assertEquals('1234', pyhsm.util.input_validate_str('1234', 'foo', exact_len = 4))

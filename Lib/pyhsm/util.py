@@ -61,7 +61,7 @@ def input_validate_str(string, name, max_len=None, exact_len=None):
     if max_len != None and len(string) > max_len:
         raise pyhsm.exception.YHSM_InputTooLong(name, max_len, len(string))
     if exact_len != None and len(string) != exact_len:
-        raise pyhsm.exception.YHSM_WrongInputSize(name, max_len, len(string))
+        raise pyhsm.exception.YHSM_WrongInputSize(name, exact_len, len(string))
     return string
 
 def input_validate_int(value, name, max_value=None):
