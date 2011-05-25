@@ -118,7 +118,7 @@ def gen_keys(hsm, args):
         if args.verbose:
             print "  %s" % (padded_id)
 
-        num_bytes = len(pyhsm.aead_cmd.YHSM_YubiKeySecret().pack())
+        num_bytes = len(pyhsm.aead_cmd.YHSM_YubiKeySecret('a' * 16, 'b' * 6).pack())
         hsm.load_random(num_bytes)
         for kh in args.key_handles.keys():
             aead = hsm.generate_aead(public_id, kh)
