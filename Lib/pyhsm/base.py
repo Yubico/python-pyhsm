@@ -234,13 +234,13 @@ class YHSM():
 
     def get_raw_device(self):
         """
-        Get the raw device. Only inteded for test code/debugging!
+        Get the raw device. Only intended for test code/debugging!
         """
         return self.stick.raw_device()
 
     def drain(self):
         """
-        Read until there is nothing more to be read. Only inteded for test code/debugging!
+        Read until there is nothing more to be read. Only intended for test code/debugging!
         """
         return self.stick.drain()
 
