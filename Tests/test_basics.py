@@ -45,6 +45,11 @@ class TestBasics(test_common.YHSM_TestCase):
         # and now we see the 9 increment
         self.assertEqual(n3.nonce_int + 9, n4.nonce_int)
 
+    def test_nonce_class(self):
+        """ Test nonce class. """
+        # test repr method
+        self.assertEquals(str, type(str(self.hsm.get_nonce(0))))
+
     def test_random_reseed(self):
         """
         Tets random reseed.
