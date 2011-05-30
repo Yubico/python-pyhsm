@@ -164,6 +164,12 @@ class YHSM():
             secret = secret.pack()
         return pyhsm.buffer_cmd.YHSM_Cmd_Buffer_Load(self.stick, secret).execute()
 
+    def load_data(self, data, offset):
+        """
+        Ask YubiHSM to load specific data into the internal buffer at a specific offset.
+        """
+        return pyhsm.buffer_cmd.YHSM_Cmd_Buffer_Load(self.stick, data, offset).execute()
+
     def load_random(self, num_bytes, offset = 0):
         """
         Ask YubiHSM to load random data into the internal buffer.

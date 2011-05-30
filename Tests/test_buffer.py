@@ -39,3 +39,17 @@ class TestBuffer(test_common.YHSM_TestCase):
         self.assertEqual(17, self.hsm.load_random(7, offset = 10))
         self.assertEqual(63, self.hsm.load_random(1, offset = 62))
         self.assertEqual(64, self.hsm.load_random(63, offset = 62))
+
+    def test_load_data(self):
+        """ Test loading data into buffer. """
+        c1 = self.hsm.load_data('Samp', offset = 0)
+        self.assertEqual(c1, 4)
+        c2 = self.hsm.load_data('123', offset = 3)
+        self.assertEqual(c2, 6)
+        c3 = self.hsm.load_data('ple #2', offset = 3)
+        self.assertEqual(c3, 9)
+        nonce = "abc123"
+        # key 0x2000 has all flags set
+        key_handle = 0x2000
+        aead = self.hsm.generate_aead(nonce, key_handle)
+        self.assertEqual(aead.data.encode('hex'), '18a88fbd7bd2275ba0a722bf80423ffab7')
