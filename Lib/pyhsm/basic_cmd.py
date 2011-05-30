@@ -250,10 +250,10 @@ class YHSM_NonceResponse():
         self.nonce = nonce
 
     def __repr__(self):
-        return '<%s instance at %s: nonce=%i, pu_count=%i, volatile=%i>' % (
+        return '<%s instance at %s: nonce=%s, pu_count=%i, volatile=%i>' % (
             self.__class__.__name__,
             hex(id(self)),
-            self.nonce,
+            self.nonce.encode('hex'),
             self.pu_count,
             self.volatile
             )
