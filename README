@@ -9,4 +9,39 @@ All rights reserved.
 
 See the file COPYING for complete license information.
 
+
+================
+  Installation
+================
+
+pyhsm is installable in the standard-python way :
+
+  $ cd pyhsm-$ver
+  $ python setup.py install
+
+This requires the python-setuptools (well, the package is called
+that in Debian/Ubuntu).
+
+You will also need the pyserial package (python-serial in
+Debian/Ubuntu) from http://pyserial.sourceforge.net/ and, to run
+the test suite, pycrypto from http://www.pycrypto.org/
+(python-crypto in Debian/Ubuntu).
+
+I use Ubuntu, so I created a PPA (Personal Package Archive) for
+easy installation (and removal) on Ubuntu systems.
+
+If you use a recent Ubuntu release, you should be able to install
+python-yubico with these commands :
+
+  $ sudo add-apt-repository ppa:fredrikt/yubico
+  $ sudo apt-get update
+  $ sudo apt-get install python-pyhsm
+
+The Launchpad PPA key generated for my packages is C7E50642.
+
+
+================
+
+Comments, feedback and patches welcome!
+
 Fredrik Thulin <fredrik@yubico.com> 2011-03-28
