@@ -44,6 +44,15 @@ python-yubico with these commands :
 
 The Launchpad PPA key generated for my packages is C7E50642.
 
+If you want to work on Debian/Ubuntu packaging, or just build packages
+directly from version controlled sources, you can find it maintained
+in a git repository.
+
+  $ git clone git://github.com/Yubico/python-pyhsm-dpkg.git
+  $ cd python-pyhsm-dpkg
+  $ git-buildpackage
+
+See https://github.com/Yubico/python-pyhsm-dpkg for more information.
 
 ================
 
