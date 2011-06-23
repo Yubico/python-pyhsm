@@ -47,6 +47,7 @@ import serial
 default_device = "/dev/ttyACM0"
 default_dir = "/dev/shm/yubico/secrets"
 default_serve_url = "/wsapi/decrypt?otp="
+default_reqtimeout = 5
 
 valid_input_from_key = re.compile('^[cbdefghijklnrtuv]{32,48}$')
 
@@ -54,6 +55,10 @@ hsm = None
 args = None
 
 class YHSM_KSMRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
+
+    def __init__(self, *other_args, **kwargs):
+        self.timeout = args.reqtimeout
+        BaseHTTPServer.BaseHTTPRequestHandler.__init__(self, *other_args, **kwargs)
 
     def do_GET(self):
         # Example session:
@@ -200,6 +205,12 @@ def parse_args():
                         default="127.0.0.1",
                         required=False,
                         help='Address to bind to.'
+                        )
+    parser.add_argument('--reqtimeout',
+                        dest='reqtimeout',
+                        type=int, default=default_reqtimeout,
+                        required=False,
+                        help='Request timeout in seconds',
                         )
     parser.add_argument('--key-handle', '--key-handles',
                         dest='key_handles',
