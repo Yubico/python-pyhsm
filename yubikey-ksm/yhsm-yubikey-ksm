@@ -1,37 +1,37 @@
 #!/usr/bin/env python
-#
-# Small network server decrypting YubiKey OTPs using an attached YubiHSM.
-#
-# To support unlimited numbers of YubiKeys, the YubiKey AES keys are
-# stored in AEAD's (Authenticated Encryption with Associated Data) on
-# the host computer.
-#
-# When an OTP is received, we find the right AEAD for this key (based on
-# the public ID of the YubiKey), and then send the AEAD together with the
-# OTP to the YubiHSM. The YubiHSM is able to decrypt the AEAD (if it has
-# the appropriate key handle configured), and then able to decrypt the
-# YubiKey OTP using the AES key stored in the AEAD.
-#
-# The information the YubiKey encrypted using it's AES key is then
-# returned in clear text from the YubiHSM. This includes the counter
-# information and also (relative) timestamps.
-#
-# It is not the job of the KSM (or YubiHSM) to ensure that the OTP has
-# not been seen before - that is done by the validation server (using
-# the database) :
-#
-#      O            +----------+
-#     /|\           |Validation|     +-----+   +---------+
-#      |  -- OTP--> |  server  | --> | KSM +---| YubiHSM |
-#     / \           +----------+     +-----+   +---------+
-#                         |
-#     user             +--+--+
-#                      | DB  |
-#                      +-----+
-#
-# Copyright (c) 2011, Yubico AB
-# All rights reserved.
-#
+"""
+Small network server decrypting YubiKey OTPs using an attached YubiHSM.
+
+To support unlimited numbers of YubiKeys, the YubiKey AES keys are
+stored in AEAD's (Authenticated Encryption with Associated Data) on
+the host computer.
+
+When an OTP is received, we find the right AEAD for this key (based on
+the public ID of the YubiKey), and then send the AEAD together with the
+OTP to the YubiHSM. The YubiHSM is able to decrypt the AEAD (if it has
+the appropriate key handle configured), and then able to decrypt the
+YubiKey OTP using the AES key stored in the AEAD.
+
+The information the YubiKey encrypted using it's AES key is then
+returned in clear text from the YubiHSM. This includes the counter
+information and also (relative) timestamps.
+
+It is not the job of the KSM (or YubiHSM) to ensure that the OTP has
+not been seen before - that is done by the validation server (using
+the database) :
+
+     O            +----------+
+    /|\           |Validation|     +-----+   +---------+
+     |  -- OTP--> |  server  | --> | KSM +---| YubiHSM |
+    / \           +----------+     +-----+   +---------+
+                        |
+    user             +--+--+
+                     | DB  |
+                     +-----+
+
+Copyright (c) 2011, Yubico AB
+All rights reserved.
+"""
 
 import os
 import sys
@@ -58,16 +58,23 @@ hsm = None
 args = None
 
 class YHSM_KSMRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
+    """
+    Handle a HTTP request.
+
+    Try to be careful and validate the input, and then look for an AEAD file matching the
+    public id of the OTP. If an AEAD for one of our key handles is found, we ask the YubiHSM
+    to decrypt the OTP using the AEAD and return the result (counter and timestamp information).
+    """
 
     def __init__(self, *other_args, **kwargs):
         self.timeout = args.reqtimeout
         BaseHTTPServer.BaseHTTPRequestHandler.__init__(self, *other_args, **kwargs)
 
     def do_GET(self):
+        """ Handle a HTTP GET request. """
         # Example session:
         # in  : GET /wsapi/decrypt?otp=ftftftccccdvvbfcfduvvcubikngtchlubtutucrld HTTP/1.0
         # out : OK counter=0004 low=f585 high=3e use=03
-        global args
         if self.path.startswith(args.serve_url):
             from_key = self.path[len(args.serve_url):]
 
@@ -83,16 +90,14 @@ class YHSM_KSMRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             self.send_response(403, 'Forbidden')
             self.end_headers()
 
-    def log_error(self, format, *fmt_args):
+    def log_error(self, fmt, *fmt_args):
         """ Log to syslog. """
-        global args
-        msg = self.my_address_string() + " - - " + format % fmt_args
+        msg = self.my_address_string() + " - - " + fmt % fmt_args
         my_log_message(args, syslog.LOG_ERR, msg)
 
-    def log_message(self, format, *fmt_args):
+    def log_message(self, fmt, *fmt_args):
         """ Log to syslog. """
-        global args
-        msg = self.my_address_string() + " - - " + format % fmt_args
+        msg = self.my_address_string() + " - - " + fmt % fmt_args
         my_log_message(args, syslog.LOG_INFO, msg)
 
     def my_address_string(self):
@@ -111,12 +116,11 @@ def decrypt_yubikey_otp(self, from_key):
 
     on YubiHSM errors (or bad OTP), only 'ERR' is returned.
     """
-    global valid_input_from_key
     if not re.match(valid_input_from_key, from_key):
         self.log_error("IN: %s, Invalid OTP" % (from_key))
         return "ERR Invalid OTP"
 
-    public_id, otp = pyhsm.yubikey.split_id_otp(from_key)
+    public_id, _otp = pyhsm.yubikey.split_id_otp(from_key)
 
     aead_kh_int = None
     fn_list = []
@@ -230,32 +234,45 @@ def parse_args():
 
     return parser.parse_args()
 
-def args_fixup(args):
-    if not os.path.isdir(args.aead_dir):
-        my_log_message(args, syslog.LOG_ERR, "AEAD directory '%s' does not exist." % (args.aead_dir))
+def args_fixup(my_args):
+    """
+    Additional checks/cleanups of parsed arguments.
+    """
+    if not os.path.isdir(my_args.aead_dir):
+        my_log_message(my_args, syslog.LOG_ERR, "AEAD directory '%s' does not exist." % (my_args.aead_dir))
         sys.exit(1)
 
-    # cache key_handle_to_int of all key handles
+    # cache key_handle_to_int of all key handles, turning args.key_handles into
+    # a list of tuples with both original value and integer
     res = []
-    for kh in args.key_handles:
+    for kh in my_args.key_handles:
         kh_int = pyhsm.util.key_handle_to_int(kh)
         res.append((kh, kh_int,))
-    args.key_handles = res
+    my_args.key_handles = res
 
 
 def run(args):
+    """
+    Start a BaseHTTPServer.HTTPServer and serve requests forever.
+    """
     server_address = (args.listen_addr, args.listen_port)
     httpd = BaseHTTPServer.HTTPServer(server_address, YHSM_KSMRequestHandler)
     my_log_message(args, syslog.LOG_INFO, "Serving requests to 'http://%s:%s%s' with key handle(s) %s (YubiHSM: '%s', AEADs in '%s')" \
                        % (args.listen_addr, args.listen_port, args.serve_url, args.key_handles, args.device, args.aead_dir))
     httpd.serve_forever()
 
-def my_log_message(args, prio, msg):
+def my_log_message(my_args, prio, msg):
+    """
+    Log to syslog, and possibly also to stderr.
+    """
     syslog.syslog(prio, msg)
-    if args.debug or args.verbose or prio == syslog.LOG_ERR:
+    if my_args.debug or my_args.verbose or prio == syslog.LOG_ERR:
         sys.stderr.write("%s\n" % (msg))
 
 def main():
+    """
+    Main program.
+    """
     my_name = os.path.basename(sys.argv[0])
     if not my_name:
         my_name = "yhsm-yubikey-ksm"
