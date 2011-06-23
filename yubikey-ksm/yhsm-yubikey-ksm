@@ -47,7 +47,10 @@ import serial
 default_device = "/dev/ttyACM0"
 default_dir = "/dev/shm/yubico/secrets"
 default_serve_url = "/wsapi/decrypt?otp="
+default_listen_addr = "127.0.0.1"
+default_port = 8002
 default_reqtimeout = 5
+default_public_id_chars = 12
 
 valid_input_from_key = re.compile('^[cbdefghijklnrtuv]{32,48}$')
 
@@ -158,59 +161,65 @@ def parse_args():
     Parse the command line arguments
     """
     parser = argparse.ArgumentParser(description = "Decrypt YubiKey OTPs using YubiHSM",
-                                     add_help=True
+                                     add_help = True,
+                                     formatter_class = argparse.ArgumentDefaultsHelpFormatter
                                      )
     parser.add_argument('-D', '--device',
                         dest='device',
                         default=default_device,
                         required=False,
-                        help='YubiHSM device (default : "%s").' % default_device
+                        help='YubiHSM device'
                         )
     parser.add_argument('-B', '--aead-dir',
                         dest='aead_dir',
                         default=default_dir,
                         required=False,
-                        help='AEAD directory - base directory of your AEADs (default : "%s").' % default_dir
+                        help='AEAD directory - base directory of your AEADs'
                         )
     parser.add_argument('-U', '--serve-url',
                         dest='serve_url',
                         default=default_serve_url,
                         required=False,
-                        help='Base URL for decrypt web service (default : "%s").' % default_serve_url
+                        help='Base URL for decrypt web service',
+                        metavar='URL',
                         )
     parser.add_argument('-v', '--verbose',
                         dest='verbose',
                         action='store_true', default=False,
-                        help='Enable verbose operation.'
+                        help='Enable verbose operation'
                         )
     parser.add_argument('--debug',
                         dest='debug',
                         action='store_true', default=False,
-                        help='Enable debug operation.'
+                        help='Enable debug operation'
                         )
     parser.add_argument('--public-id-chars',
                         dest='public_id_chars',
-                        type=int, default=12,
+                        type=int, default=default_public_id_chars,
                         required=False,
-                        help='Number of chars in generated public ids.'
+                        help='Number of chars in generated public ids',
+                        metavar='LEN',
                         )
     parser.add_argument('--port',
                         dest='listen_port',
-                        type=int, default=8002,
+                        type=int, default=default_port,
                         required=False,
-                        help='Port to listen on.'
+                        help='Port to listen on',
+                        metavar='PORT',
                         )
     parser.add_argument('--addr',
                         dest='listen_addr',
-                        default="127.0.0.1",
+                        default=default_listen_addr,
                         required=False,
-                        help='Address to bind to.'
+                        help='Address to bind to',
+                        metavar='ADDR',
                         )
     parser.add_argument('--reqtimeout',
                         dest='reqtimeout',
                         type=int, default=default_reqtimeout,
                         required=False,
                         help='Request timeout in seconds',
+                        metavar='SECONDS',
                         )
     parser.add_argument('--key-handle', '--key-handles',
                         dest='key_handles',
