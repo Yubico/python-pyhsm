@@ -127,6 +127,17 @@ class TestYubikeyValidate(test_common.YHSM_TestCase):
         wrong_cleartext = 'X' + cleartext[1:]
         self.assertFalse(self.hsm.validate_aead(self.yk_public_id, self.kh_validate, self.aead, wrong_cleartext))
 
+    def test_validate_aead_cmp_long(self):
+        """ Test validating a long AEAD """
+        cleartext = 'C' * 36
+        key_handle = 0x2000 # key 0x2000 has all flags set
+        nonce = '123456'
+        self.hsm.set_debug(True)
+        aead = self.hsm.generate_aead_simple(nonce, key_handle, cleartext)
+        self.assertTrue(self.hsm.validate_aead(nonce, key_handle, aead, cleartext))
+        wrong_cleartext = 'X' + cleartext[1:]
+        self.assertFalse(self.hsm.validate_aead(nonce, key_handle, aead, wrong_cleartext))
+
     def test_validate_yubikey(self):
         """ Test validate YubiKey OTP. """
         from_key = self.yk_rnd.from_key(self.yk_public_id, self.yk_key)
