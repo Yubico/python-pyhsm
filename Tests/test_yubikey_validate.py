@@ -132,7 +132,6 @@ class TestYubikeyValidate(test_common.YHSM_TestCase):
         cleartext = 'C' * 36
         key_handle = 0x2000 # key 0x2000 has all flags set
         nonce = '123456'
-        self.hsm.set_debug(True)
         aead = self.hsm.generate_aead_simple(nonce, key_handle, cleartext)
         self.assertTrue(self.hsm.validate_aead(nonce, key_handle, aead, cleartext))
         wrong_cleartext = 'X' + cleartext[1:]
