@@ -9,6 +9,46 @@ All rights reserved.
 
 See the file COPYING for complete license information.
 
+================
+  Introduction
+================
+
+pyhsm aims to be a reference implementation implementing all the
+functions available in the YubiHSM. The base version number of pyhsm
+will match the supported hardware version of the YubiHSM (e.g. 0.9.8,
+0.9.8a, 0.9.8b all intended to be used with hardware version 0.9.8).
+
+pyhsm also includes the regression test suite for the YubiHSM.
+
+In addition to the YubiHSM communication library, pyhsm also contains
+some applications utilizing the YubiHSM :
+
+  * yhsm-val    - a simple validation server supporting validation of
+                  YubiKey OTP's, OATH codes and password hashes.
+  * yubikey-ksm - ykval YubiKey OTP decryption backend using the
+                  YubiHSM.
+
+and some smaller examples in the examples/ directory, that might still
+be directly useful though.
+
+  * yhsm-sysinfo.py
+		- Print basic system information about the connected
+		  YubiHSM.
+  * yhsm-linux-add-entropy.py
+                - Feed Linux kernel with random entropy from the TRNG
+		  on the YubiHSM.
+  * yhsm-storage-unlock.py
+		- Unlock the key storage in the YubiHSM with your HSM
+		  password. Use with incorrect password to lock it again.
+  * yhsm-monitor-exit.py
+		- Get a YubiHSM *in debug mode* to enter configuration
+		  mode again, without having to press the little button
+		  while inserting it into the USB port.
+  * yhsm-password-auth.py
+		- Example of how to turn passwords (or hashes of
+		  passwords if you like PBKDF2) into AEADs that can be
+		  used to verify the password later on.
+
 
 ================
   Installation
@@ -36,7 +76,7 @@ I use Ubuntu, so I created a PPA (Personal Package Archive) for
 easy installation (and removal) on Ubuntu systems.
 
 If you use a recent Ubuntu release, you should be able to install
-python-yubico with these commands :
+python-pyhsm with these commands :
 
   $ sudo add-apt-repository ppa:fredrikt/yubico
   $ sudo apt-get update
