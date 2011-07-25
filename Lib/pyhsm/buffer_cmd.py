@@ -22,7 +22,17 @@ from pyhsm.cmd import YHSM_Cmd
 class YHSM_Cmd_Buffer_Load(YHSM_Cmd):
     """
     Ask YubiHSM to load some data into it's internal buffer.
+
+    @ivar data_len: Number of bytes (to be) loaded
+    @ivar offset: Offset in internal buffer where data will be/was loaded
+
+    @type data_len: integer
+    @type offset: integer
     """
+
+    data_len = 0
+    offest = 0
+
     def __init__(self, stick, data, offset = 0):
         data = pyhsm.util.input_validate_str(data, 'data', max_len = pyhsm.defines.YSM_DATA_BUF_SIZE)
         self.data_len = len(data)
@@ -37,7 +47,14 @@ class YHSM_Cmd_Buffer_Load(YHSM_Cmd):
         YHSM_Cmd.__init__(self, stick, pyhsm.defines.YSM_BUFFER_LOAD, packed)
 
     def parse_result(self, data):
-        """ Return the number of bytes now in the YubiHSM internal buffer. """
+        """
+        Parse result of L{pyhsm.defines.YSM_BUFFER_LOAD} command.
+
+        @return: Number of bytes now in the YubiHSM internal buffer.
+        @rtype: integer
+
+        @raise pyhsm.exception.YHSM_Error: Unexpected number of bytes were loaded
+        """
         # typedef struct {
         #   uint8_t numBytes;                   // Number of bytes in buffer now
         # } YSM_BUFFER_LOAD_RESP;

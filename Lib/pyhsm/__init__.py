@@ -28,7 +28,7 @@
 """
 the pyhsm package
 
-Basic usage :
+Basic usage ::
 
   import pyhsm
 
@@ -38,10 +38,14 @@ Basic usage :
   except pyhsm.exception.YHSM_Error, e:
       print "ERROR: %s" % e
 
-See help(pyhsm.base) for more information.
+See help(pyhsm.base) (L{pyhsm.base.YHSM}) for more information.
 """
 
 __version__ = '0.9.8c'
+__copyright__ = 'Yubico AB'
+__organization__ = 'Yubico'
+__license__ = 'BSD'
+__authors__ = ['Fredrik Thulin']
 
 __all__ = ["base",
            "cmd",

@@ -55,7 +55,7 @@ import pyhsm.validate_cmd
 
 class YHSM():
     """
-    Base class for accessing YubiHSM
+    Base class for accessing a YubiHSM.
     """
 
     def __init__(self, device, debug=False, timeout=1):
@@ -73,7 +73,12 @@ class YHSM():
             )
 
     def reset(self):
-        """ Perform stream resynchronization. Return True if successful. """
+        """
+        Perform stream resynchronization.
+
+        @return: True if successful
+        @rtype: bool
+        """
         pyhsm.cmd.reset(self.stick)
         # Now verify we are in sync
         data = 'ekoeko'
@@ -84,9 +89,13 @@ class YHSM():
 
     def set_debug(self, new):
         """
-        Set debug mode (boolean).
+        Set debug mode.
 
-        Returns old setting.
+        @param new: new value
+        @type new: bool
+
+        @return: old value
+        @rtype: bool
         """
         if type(new) is not bool:
             raise pyhsm.exception.YHSM_WrongInputType(
@@ -103,19 +112,37 @@ class YHSM():
         """
         Echo test.
 
-        `data' is a string.
+        @type data: string
+        @return: data read from YubiHSM -- should equal `data'
+        @rtype: string
+
+        @see: L{pyhsm.basic_cmd.YHSM_Cmd_Echo.parse_result}
         """
         return pyhsm.basic_cmd.YHSM_Cmd_Echo(self.stick, data).execute()
 
     def info(self):
-        """ Get firmware version and unique ID from YubiHSM. """
+        """ Get firmware version and unique ID from YubiHSM.
+
+        @return: System information
+        @rtype: L{YHSM_Cmd_System_Info}
+
+        @see: L{pyhsm.basic_cmd.YHSM_Cmd_System_Info.parse_result}
+        """
         return pyhsm.basic_cmd.YHSM_Cmd_System_Info(self.stick).execute()
 
     def random(self, num_bytes):
         """
         Get random bytes from YubiHSM.
 
-        `num_bytes' is an integer.
+        The random data is DRBG_CTR seeded on each startup by a hardware TRNG,
+        so it should be of very good quality.
+
+        @type num_bytes: integer
+
+        @return: Bytes with random data
+        @rtype: string
+
+        @see: L{pyhsm.basic_cmd.YHSM_Cmd_Random.parse_result}
         """
         return pyhsm.basic_cmd.YHSM_Cmd_Random(self.stick, num_bytes).execute()
 
@@ -123,7 +150,8 @@ class YHSM():
         """
         Provide YubiHSM DRBG_CTR with a new seed.
 
-        `seed' is a string of length 32.
+        @param seed: new seed -- must be exactly 32 bytes
+        @type seed: string
         """
         return pyhsm.basic_cmd.YHSM_Cmd_Random_Reseed(self.stick, seed).execute()
 
@@ -131,21 +159,43 @@ class YHSM():
         """
         Get current nonce from YubiHSM.
 
-        `increment' is an optional integer (default: 1).
-        """
+        Use increment 0 to just fetch the value without incrementing it.
+
+        @keyword increment: requested increment (optional)
+
+        @return: nonce value _before_ increment
+        @rtype: L{YHSM_NonceResponse}
+
+        @see: L{pyhsm.basic_cmd.YHSM_Cmd_Nonce_Get.parse_result}
+       """
         return pyhsm.basic_cmd.YHSM_Cmd_Nonce_Get(self.stick, increment).execute()
 
     def load_temp_key(self, nonce, key_handle, aead):
         """
-        Load an AEAD into the phantom key handle 0xffffffff.
+        Load the contents of an AEAD into the phantom key handle 0xffffffff.
 
-        The `aead' is either a YHSM_GeneratedAEAD, or a string.
+        @param nonce: The nonce used when creating the AEAD
+        @param key_handle: The key handle that can decrypt the AEAD
+        @param aead: AEAD containing the cryptographic key and permission flags
+        @type nonce: string
+        @type key_handle: integer or string
+        @type aead: L{YHSM_GeneratedAEAD} or string
+
+        @see: L{pyhsm.basic_cmd.YHSM_Cmd_Temp_Key_Load.parse_result}
         """
         return pyhsm.basic_cmd.YHSM_Cmd_Temp_Key_Load(self.stick, nonce, key_handle, aead).execute()
 
     def key_storage_unlock(self, password):
         """
         Have the YubiHSM unlock it's key storage using the HSM password.
+
+        @param password: The HSM password set during YubiHSM configuration
+        @type password: string
+
+        @returns: Only returns (True) on success
+        @rtype: bool
+
+        @see: L{pyhsm.basic_cmd.YHSM_Cmd_Key_Storage_Unlock.parse_result}
         """
         return pyhsm.basic_cmd.YHSM_Cmd_Key_Storage_Unlock(self.stick, password).execute()
 
@@ -156,9 +206,17 @@ class YHSM():
         """
         Ask YubiHSM to load a pre-existing YubiKey secret.
 
-        The result is stored internally in the YubiHSM in temporary memory -
-        this operation would be followed by one or more generate_aead()
+        The data is stored internally in the YubiHSM in temporary memory -
+        this operation would typically be followed by one or more L{generate_aead}
         commands to actually retreive the generated secret (in encrypted form).
+
+        @param secret: YubiKey secret to load
+        @type secret: L{pyhsm.aead_cmd.YHSM_YubiKeySecret} or string
+
+        @returns: Number of bytes in YubiHSM internal buffer after load
+        @rtype: integer
+
+        @see: L{pyhsm.buffer_cmd.YHSM_Cmd_Buffer_Load.parse_result}
         """
         if isinstance(secret, pyhsm.aead_cmd.YHSM_YubiKeySecret):
             secret = secret.pack()
@@ -166,17 +224,40 @@ class YHSM():
 
     def load_data(self, data, offset):
         """
-        Ask YubiHSM to load specific data into the internal buffer at a specific offset.
+        Ask YubiHSM to load arbitrary data into it's internal buffer, at any offset.
+
+        The data is stored internally in the YubiHSM in temporary memory -
+        this operation would typically be followed by one or more L{generate_aead}
+        commands to actually retreive the generated secret (in encrypted form).
+
+        Load data to offset 0 to reset the buffer.
+
+        @param data: arbitrary data to load
+        @type data: string
+
+        @returns: Number of bytes in YubiHSM internal buffer after load
+        @rtype: integer
+
+        @see: L{pyhsm.buffer_cmd.YHSM_Cmd_Buffer_Load.parse_result}
         """
         return pyhsm.buffer_cmd.YHSM_Cmd_Buffer_Load(self.stick, data, offset).execute()
 
     def load_random(self, num_bytes, offset = 0):
         """
-        Ask YubiHSM to load random data into the internal buffer.
+        Ask YubiHSM to generate a number of random bytes to any offset of it's internal
+        buffer.
 
-        The result is stored internally in the YubiHSM in temporary memory -
-        this operation would be followed by one or more generate_aead()
+        The data is stored internally in the YubiHSM in temporary memory -
+        this operation would typically be followed by one or more L{generate_aead}
         commands to actually retreive the generated secret (in encrypted form).
+
+        @param num_bytes: Number of bytes to generate
+        @type num_bytes: integer
+
+        @returns: Number of bytes in YubiHSM internal buffer after load
+        @rtype: integer
+
+        @see: L{pyhsm.buffer_cmd.YHSM_Cmd_Buffer_Random_Load.parse_result}
         """
         return pyhsm.buffer_cmd.YHSM_Cmd_Buffer_Random_Load(self.stick, num_bytes, offset).execute()
 
@@ -185,24 +266,56 @@ class YHSM():
         Generate AEAD block from data for a specific key in a single step
         (without using the YubiHSM internal buffer).
 
-        `data' is either a string, or a YHSM_YubiKeySecret.
+        @param nonce: The nonce to use when creating the AEAD
+        @param key_handle: The key handle that can encrypt data into an AEAD
+        @param data: Data to put inside the AEAD
+        @type nonce: string
+        @type key_handle: integer or string
+        @type data: string
+
+        @returns: The generated AEAD on success.
+        @rtype: L{YHSM_GeneratedAEAD}
+
+        @see: L{pyhsm.aead_cmd.YHSM_Cmd_AEAD_Generate.parse_result}
         """
         return pyhsm.aead_cmd.YHSM_Cmd_AEAD_Generate(self.stick, nonce, key_handle, data).execute()
 
     def generate_aead_random(self, nonce, key_handle, num_bytes):
         """
-        Generate a random AEAD block using the YubiHSM internal TRNG.
+        Generate a random AEAD block using the YubiHSM internal DRBG_CTR random generator.
 
         To generate a secret for a YubiKey, use public_id as nonce.
+
+        @param nonce: The nonce to use when creating the AEAD
+        @param key_handle: The key handle that can encrypt the random data into an AEAD
+        @param num_bytes: Number of random data bytes to put inside the AEAD
+        @type nonce: string
+        @type key_handle: integer or string
+        @type num_bytes: integer
+
+        @returns: The generated AEAD on success.
+        @rtype: L{YHSM_GeneratedAEAD}
+
+        @see: L{pyhsm.aead_cmd.YHSM_Cmd_AEAD_Random_Generate.parse_result}
         """
         return pyhsm.aead_cmd.YHSM_Cmd_AEAD_Random_Generate(self.stick, nonce, key_handle, num_bytes).execute()
 
     def generate_aead(self, nonce, key_handle):
         """
-        Ask YubiHSM to return the previously generated secret
-        (see load_secret()) encrypted with the specified key_handle.
+        Ask YubiHSM to return an AEAD made of the contents of it's internal buffer
+        (see L{load_secret}, L{load_data} and L{load_random}) encrypted with the specified key_handle.
 
         For a YubiKey secret, the nonce should be the public_id.
+
+        @param nonce: The nonce to use when creating the AEAD
+        @param key_handle: The key handle that can create an AEAD
+        @type nonce: string
+        @type key_handle: integer or string
+
+        @returns: The generated AEAD on success.
+        @rtype: L{YHSM_GeneratedAEAD}
+
+        @see: L{pyhsm.aead_cmd.YHSM_Cmd_AEAD_Buffer_Generate.parse_result}
         """
         return pyhsm.aead_cmd.YHSM_Cmd_AEAD_Buffer_Generate(self.stick, nonce, key_handle).execute()
 

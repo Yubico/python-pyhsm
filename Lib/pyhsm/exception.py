@@ -22,9 +22,11 @@ class YHSM_Error(Exception):
     """
     Base class for YHSM exceptions in this package.
 
-    Attributes:
-        reason -- explanation of the error
+    @ivar reason: explanation of the error
+    @type reason: string
     """
+
+    reason = None
 
     def __init__(self, reason):
         Exception.__init__(self)

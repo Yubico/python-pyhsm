@@ -49,15 +49,24 @@ class YHSM_Cmd_Echo(YHSM_Cmd):
 
 class YHSM_Cmd_System_Info(YHSM_Cmd):
     """
-    Request system information from the stick.
+    Request system information from the YubiHSM.
+
+    @ivar version_major: Major firmware version
+    @ivar version_minor: Minor firmware version
+    @ivar version_build: Firmware build version
+    @ivar protocol_ver: Communication protocol version
+    @ivar system_uid: Unique identifier for YubiHSM
+    @type system_uid: string
     """
+
+    version_major = 0
+    version_minor = 0
+    version_build = 0
+    protocol_ver = 0
+    system_uid = None
+
     def __init__(self, stick):
         YHSM_Cmd.__init__(self, stick, pyhsm.defines.YSM_SYSTEM_INFO_QUERY)
-        self.version_major = 0
-        self.version_minor = 0
-        self.version_build = 0
-        self.protocol_ver = 0
-        self.system_uid = None
 
     def __repr__(self):
         if self.executed:
@@ -159,7 +168,8 @@ class YHSM_Cmd_Temp_Key_Load(YHSM_Cmd):
         # typedef struct {
         #   uint8_t nonce[YSM_AEAD_NONCE_SIZE]; // Nonce
         #   uint32_t keyHandle;                 // Key handle to unlock AEAD
-        #   uint8_t numBytes;                   // Number of bytes (explicit key size 16, 20, 24 or 32 bytes + flags + hash)
+        #   uint8_t numBytes;                   // Number of bytes (explicit key size
+        #                                       //   16, 20, 24 or 32 bytes + flags + hash)
         #   uint8_t aead[YSM_MAX_KEY_SIZE + sizeof(uint32_t) + YSM_AEAD_MAC_SIZE]; // AEAD block
         # } YSM_TEMP_KEY_LOAD_REQ;
         fmt = "< %is I B %is" % (pyhsm.defines.YSM_AEAD_NONCE_SIZE, len(aead))
@@ -167,6 +177,14 @@ class YHSM_Cmd_Temp_Key_Load(YHSM_Cmd):
         YHSM_Cmd.__init__(self, stick, pyhsm.defines.YSM_TEMP_KEY_LOAD, packed)
 
     def parse_result(self, data):
+        """
+        Parse result of L{pyhsm.defines.YSM_TEMP_KEY_LOAD} command.
+
+        @return: Only returns (True) on successful load
+        @rtype: bool
+
+        @raise pyhsm.exception.YHSM_CommandFailed: YubiHSM failed to load key
+        """
         # typedef struct {
         #   uint8_t nonce[YSM_AEAD_NONCE_SIZE]; // Nonce
         #   uint32_t keyHandle;                 // Key handle
@@ -219,16 +237,33 @@ class YHSM_Cmd_Nonce_Get(YHSM_Cmd):
 class YHSM_Cmd_Key_Storage_Unlock(YHSM_Cmd):
     """
     Have the YubiHSM unlock it's key storage using the HSM password.
+
+    If an incorrect password is given when the key storage is unlocked,
+    it will be locked again.
+
+    @ivar status: The result of the unlock operation
+    @type status: integer
     """
+
+    status = None
+
     def __init__(self, stick, password=''):
         payload = pyhsm.util.input_validate_str(password, 'password', max_len = pyhsm.defines.YSM_BLOCK_SIZE)
         # typedef struct {
         #   uint8_t password[YSM_BLOCK_SIZE];  // Unlock password
         # } YSM_KEY_STORAGE_UNLOCK_REQ;
-        packed = password.ljust(pyhsm.defines.YSM_BLOCK_SIZE, chr(0x0))
+        packed = payload.ljust(pyhsm.defines.YSM_BLOCK_SIZE, chr(0x0))
         YHSM_Cmd.__init__(self, stick, pyhsm.defines.YSM_KEY_STORAGE_UNLOCK, packed)
 
     def parse_result(self, data):
+        """
+        Parse result of L{pyhsm.defines.YSM_KEY_STORAGE_UNLOCK} command.
+
+        @return: Only returns (True) on successful unlock
+        @rtype: bool
+
+        @raise pyhsm.exception.YHSM_CommandFailed: YubiHSM failed to unlock key storage
+        """
         # typedef struct {
         #   YSM_STATUS status;                  // Unlock status
         # } YSM_KEY_STORAGE_UNLOCK_RESP;
@@ -241,7 +276,23 @@ class YHSM_Cmd_Key_Storage_Unlock(YHSM_Cmd):
             raise pyhsm.exception.YHSM_CommandFailed(pyhsm.defines.cmd2str(self.command), self.status)
 
 class YHSM_NonceResponse():
-    """ Small class to hold response of Nonce_Get command. """
+    """ Small class to hold response of Nonce_Get command.
+
+    @ivar volatile: Volatile part of nonce
+    @ivar pu_count: Power-up count -- persistent part of nonce
+    @ivar nonce_int: Current nonce
+    @ivar nonce: Current nonce
+
+    @type volatile: integer
+    @type pu_count: integer
+    @type nonce_int: long
+    @type nonce: string
+    """
+    volatile = 0
+    pu_count = 0
+    nonce_int = 0
+    nonce = None
+
     def __init__(self, nonce):
         # The power-up count can be deduced from the nonce =)
         self.volatile = struct.unpack("<L", nonce[0:4])[0]

@@ -29,9 +29,13 @@ class YHSM_Cmd():
         """
         The base class for all YSM_ commands.
 
-        `stick' is a pyhsm.stick.YHSM_Stick() - a YubiHSM communication class
-        `command' is a YSM_xxx command defined in pyhsm.defines.
-        `payload' is a packed C struct, represented as a Python string
+        @param stick: Reference to a YubiHSM
+        @param command: The YSM_xxx command defined in pyhsm.defines.
+        @param payload: a packed C struct, represented as a Python string
+
+        @type stick: L{pyhsm.stick.YHSM_Stick}
+        @type command: integer
+        @type payload: string
         """
         self.stick = stick
         self.command = command
@@ -64,6 +68,11 @@ class YHSM_Cmd():
     def _read_response(self):
         """
         After writing a command, read response.
+
+        @returns: Result of parse_data()
+
+        @raises pyhsm.exception.YHSM_Error: On failure to read a response to the
+            command we sent in a timely fashion.
         """
         # // Up- and downlink packet
         # typedef struct {
