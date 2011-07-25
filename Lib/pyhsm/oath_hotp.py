@@ -46,7 +46,7 @@ def search_for_oath_code(hsm, key_handle, nonce, aead, counter, user_code, look_
 def truncate(hmac_result, length=6):
     """ Perform the truncating. """
     assert(len(hmac_result) == 20)
-    offset   =  ord(hmac_result[19]) & 0xf ;
+    offset   =  ord(hmac_result[19]) & 0xf
     bin_code = (ord(hmac_result[offset]) & 0x7f) << 24 \
         | (ord(hmac_result[offset+1]) & 0xff) << 16 \
         | (ord(hmac_result[offset+2]) & 0xff) <<  8 \
