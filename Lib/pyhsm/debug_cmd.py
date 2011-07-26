@@ -19,7 +19,7 @@ from pyhsm.cmd import YHSM_Cmd
 
 class YHSM_Cmd_Monitor_Exit(YHSM_Cmd):
     """
-    Send magics to stick in debug mode, and get it to exit to configuration mode again.
+    Send magics to YubiHSM in debug mode, and get it to exit to configuration mode again.
     """
     def __init__(self, stick, payload=''):
         #define YHSM_MONITOR_EXIT        0x7f    // Exit to monitor (no response sent)
