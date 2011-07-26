@@ -70,7 +70,7 @@ class YHSM_Cmd_AES_ECB_Encrypt(YHSM_Cmd_AES_ECB):
     Have the YubiHSM AES ECB encrypt something using the key of a key handle.
     """
     def __init__(self, stick, key_handle, plaintext):
-        pyhsm.util.input_validate_str(plaintext, name='plaintext')
+        pyhsm.util.input_validate_str(plaintext, name='plaintext', max_len = pyhsm.defines.YSM_BLOCK_SIZE)
         self.key_handle = pyhsm.util.input_validate_key_handle(key_handle)
         # typedef struct {
         #   uint32_t keyHandle;                 // Key handle
@@ -87,7 +87,7 @@ class YHSM_Cmd_AES_ECB_Decrypt(YHSM_Cmd_AES_ECB):
     """
     def __init__(self, stick, key_handle, ciphertext):
         self.key_handle = pyhsm.util.input_validate_key_handle(key_handle)
-        pyhsm.util.input_validate_str(ciphertext, name='ciphertext')
+        pyhsm.util.input_validate_str(ciphertext, name='ciphertext', exact_len = pyhsm.defines.YSM_BLOCK_SIZE)
         # #define YHSM_BLOCK_SIZE          16    // Size of block operations
         # typedef struct {
         #   uint32_t keyHandle;                  // Key handle
