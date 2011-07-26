@@ -321,8 +321,25 @@ class YHSM():
 
     def validate_aead(self, nonce, key_handle, aead, cleartext):
         """
-        Validate an AEAD using the YubiHSM. The cleartext should be of the same length as
-        the AEAD minus the size of the MAC (8 bytes).
+        Validate the contents of an AEAD using the YubiHSM. The matching is done
+        inside the YubiHSM so the contents of the AEAD is never exposed (well,
+        except indirectionally when the cleartext does match).
+
+        The cleartext should naturally be of the same length as the AEAD minus
+        the size of the MAC (8 bytes).
+
+        @param nonce: The nonce used when creating the AEAD
+        @param key_handle: The key handle that can decrypt the AEAD
+        @param aead: AEAD containing the cryptographic key and permission flags
+        @param cleartext: The presumed cleartext of the AEAD
+        @type nonce: string
+        @type key_handle: integer or string
+        @type aead: L{YHSM_GeneratedAEAD} or string
+        @type cleartext: string
+
+        @returns: Whether or not the cleartext matches the contents of the AEAD.
+
+        @see: L{pyhsm.aead_cmd.YHSM_Cmd_AEAD_Decrypt_Cmp.parse_result}
         """
         return pyhsm.aead_cmd.YHSM_Cmd_AEAD_Decrypt_Cmp(self.stick, nonce, key_handle, aead, cleartext).execute()
 
@@ -330,6 +347,17 @@ class YHSM():
         """
         Ask YubiHSM to validate a YubiKey OTP using an AEAD and a key_handle to
         decrypt the AEAD.
+
+        @param public_id: The six bytes public id of the YubiKey
+        @param otp: The one time password (OTP) to validate
+        @param key_handle: The key handle that can decrypt the AEAD
+        @param aead: AEAD containing the cryptographic key and permission flags
+        @type public_id: string
+        @type otp: string
+        @type key_handle: integer or string
+        @type aead: L{YHSM_GeneratedAEAD} or string
+
+        @see: L{pyhsm.validate_cmd.YHSM_Cmd_AEAD_Validate_OTP.parse_result}
         """
         if type(public_id) is not str:
             assert()
@@ -348,6 +376,10 @@ class YHSM():
     def monitor_exit(self):
         """
         Ask YubiHSM to exit to configuration mode (requires 'debug' mode enabled).
+
+        @returns: None
+
+        @see: L{pyhsm.debug_cmd.YHSM_Cmd_Monitor_Exit}
         """
         return pyhsm.debug_cmd.YHSM_Cmd_Monitor_Exit(self.stick).execute(read_response=False)
 
@@ -369,6 +401,18 @@ class YHSM():
     def aes_ecb_encrypt(self, key_handle, plaintext):
         """
         AES ECB encrypt using a key handle.
+
+        @warning: Please be aware of the known limitations of AES ECB mode before using it!
+
+        @param key_handle: Key handle to use for AES ECB encryption
+        @param plaintext: Data to encrypt
+        @type key_handle: integer or string
+        @type plaintext: string
+
+        @returns: Ciphertext
+        @rtype: string
+
+        @see: L{pyhsm.aes_ecb_cmd.YHSM_Cmd_AES_ECB_Encrypt}
         """
         return pyhsm.aes_ecb_cmd.YHSM_Cmd_AES_ECB_Encrypt( \
             self.stick, key_handle, plaintext).execute()
@@ -376,6 +420,18 @@ class YHSM():
     def aes_ecb_decrypt(self, key_handle, ciphertext):
         """
         AES ECB decrypt using a key handle.
+
+        @warning: Please be aware of the known limitations of AES ECB mode before using it!
+
+        @param key_handle: Key handle to use for AES ECB decryption
+        @param ciphertext: Data to decrypt
+        @type key_handle: integer or string
+        @type ciphertext: string
+
+        @returns: Plaintext
+        @rtype: string
+
+        @see: L{pyhsm.aes_ecb_cmd.YHSM_Cmd_AES_ECB_Decrypt}
         """
         return pyhsm.aes_ecb_cmd.YHSM_Cmd_AES_ECB_Decrypt( \
             self.stick, key_handle, ciphertext).execute()
@@ -383,6 +439,21 @@ class YHSM():
     def aes_ecb_compare(self, key_handle, ciphertext, plaintext):
         """
         AES ECB decrypt and then compare using a key handle.
+
+        The comparison is done inside the YubiHSM so the plaintext is never exposed (well,
+        except indirectionally when the provided plaintext does match).
+
+        @warning: Please be aware of the known limitations of AES ECB mode before using it!
+
+        @param key_handle: Key handle to use for AES ECB decryption
+        @param plaintext: Data to decrypt
+        @type key_handle: integer or string
+        @type plaintext: string
+
+        @returns: Match result
+        @rtype: bool
+
+        @see: L{pyhsm.aes_ecb_cmd.YHSM_Cmd_AES_ECB_Compare.parse_result}
         """
         return pyhsm.aes_ecb_cmd.YHSM_Cmd_AES_ECB_Compare( \
             self.stick, key_handle, ciphertext, plaintext).execute()
@@ -393,6 +464,26 @@ class YHSM():
     def hmac_sha1(self, key_handle, data, flags = None, final = True, to_buffer = False):
         """
         Have the YubiHSM generate a HMAC SHA1 of 'data' using a key handle.
+
+        Use the L{pyhsm.hmac_cmd.YHSM_Cmd_HMAC_SHA1_Write.next} to add more input (until
+        'final' has been set to True).
+
+        Use the L{pyhsm.hmac_cmd.YHSM_Cmd_HMAC_SHA1_Write.get_hash} to get the hash result
+        this far.
+
+        @param key_handle: Key handle to use when generating HMAC SHA1
+        @param data: what to calculate the HMAC SHA1 checksum of
+        @keyword flags: bit-flags, overrides 'final' and 'to_buffer'
+        @keyword final: True when there is no more data, False if there is more
+        @keyword to_buffer: Should the final result be stored in the YubiHSM internal buffer or not
+        @type key_handle: integer or string
+        @type data: string
+        @type flags: None or integer
+
+        @returns: HMAC-SHA1 instance
+        @rtype: YHSM_Cmd_HMAC_SHA1_Write
+
+        @see: L{pyhsm.hmac_cmd.YHSM_Cmd_HMAC_SHA1_Write.parse_result}
         """
         return pyhsm.hmac_cmd.YHSM_Cmd_HMAC_SHA1_Write( \
             self.stick, key_handle, data, flags = flags, final = final, to_buffer = to_buffer).execute()
@@ -405,7 +496,20 @@ class YHSM():
         """
         Ask YubiHSM to store data about a YubiKey in the internal database (not buffer).
 
-        The input is an AEAD, perhaps previously created using generate_aead().
+        The input is an AEAD with the secrets of a YubiKey, perhaps previously created
+        using L{load_secret}.
+
+        @param public_id: The six bytes public id of the YubiKey
+        @param key_handle: Key handle that can decrypt the YubiKey AEAD
+        @param aead: AEAD of an L{pyhsm.aead_cmd.YHSM_YubiKeySecret}
+        @type public_id: string
+        @type key_handle: integer or string
+        @type aead: L{YHSM_GeneratedAEAD} or string
+
+        @return: True on success
+        @rtype: bool
+
+        @see: L{pyhsm.db_cmd.YHSM_Cmd_DB_YubiKey_Store.parse_result}
         """
         return pyhsm.db_cmd.YHSM_Cmd_DB_YubiKey_Store( \
             self.stick, public_id, key_handle, aead).execute()
@@ -414,6 +518,13 @@ class YHSM():
         """
         Request the YubiHSM to validate an OTP for a YubiKey stored
         in the internal database.
+
+        @param public_id: The six bytes public id of the YubiKey
+        @param otp: The OTP from a YubiKey in binary form (16 bytes)
+        @type public_id: string
+        @type otp: string
+
+        @see: L{pyhsm.db_cmd.YHSM_Cmd_DB_Validate_OTP.parse_result}
         """
         return pyhsm.db_cmd.YHSM_Cmd_DB_Validate_OTP( \
             self.stick, public_id, otp).execute()
