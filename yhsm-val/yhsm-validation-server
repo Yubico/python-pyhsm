@@ -71,6 +71,7 @@ default_dir = "/dev/shm/yubico/secrets"
 default_serve_url = "/yhsm/validate?"
 default_db_file = "/var/yubico/yhsm-validation-server.db"
 default_hotp_window = 5
+default_pid_file = None
 
 ykotp_valid_input = re.compile('^[cbdefghijklnrtuv]{32,48}$')
 hotp_valid_input = re.compile('^[cbdefghijklnrtuv0-9]{6,20}$')
@@ -349,6 +350,12 @@ def parse_args():
                         default = default_hotp_window,
                         help='Number of OATH-HOTP codes to search (default: %i).' % default_hotp_window
                         )
+    parser.add_argument('--pid-file',
+                        dest='pid_file',
+                        default=default_pid_file,
+                        required=False,
+                        help='PID file (default : %s).' % default_pid_file,
+                        )
 
     return parser.parse_args()
 
@@ -358,6 +365,16 @@ def args_fixup(args):
 
     args.key_handle = pyhsm.util.key_handle_to_int(args.hmac_kh)
 
+def write_pid_file(fn):
+    """ Create a file with our PID. """
+    if not fn:
+        return None
+    if fn == '' or fn == "''":
+        # work around argument passings in init-scripts
+        return None
+    f = open(fn, "w")
+    f.write("%s\n" % (os.getpid()))
+    f.close()
 
 def run(args):
     server_address = (args.listen_addr, args.listen_port)
@@ -388,6 +405,8 @@ def main():
     except serial.SerialException, e:
         my_log_message(args, syslog.LOG_ERR, 'Failed opening YubiHSM device "%s" : %s' %(args.device, e))
         sys.exit(1)
+
+    write_pid_file(args.pid_file)
 
     try:
         run(args)
