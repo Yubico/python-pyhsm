@@ -152,6 +152,11 @@ class YHSM():
 
         @param seed: new seed -- must be exactly 32 bytes
         @type seed: string
+
+        @returns: True on success
+        @rtype: bool
+
+        @see: L{pyhsm.basic_cmd.YHSM_Cmd_Random_Reseed.parse_result}
         """
         return pyhsm.basic_cmd.YHSM_Cmd_Random_Reseed(self.stick, seed).execute()
 
@@ -180,6 +185,9 @@ class YHSM():
         @type nonce: string
         @type key_handle: integer or string
         @type aead: L{YHSM_GeneratedAEAD} or string
+
+        @returns: True on success
+        @rtype: bool
 
         @see: L{pyhsm.basic_cmd.YHSM_Cmd_Temp_Key_Load.parse_result}
         """
@@ -338,6 +346,7 @@ class YHSM():
         @type cleartext: string
 
         @returns: Whether or not the cleartext matches the contents of the AEAD.
+        @rtype: bool
 
         @see: L{pyhsm.aead_cmd.YHSM_Cmd_AEAD_Decrypt_Cmp.parse_result}
         """
@@ -356,6 +365,9 @@ class YHSM():
         @type otp: string
         @type key_handle: integer or string
         @type aead: L{YHSM_GeneratedAEAD} or string
+
+        @returns: validation response
+        @rtype: L{YHSM_ValidationResult}
 
         @see: L{pyhsm.validate_cmd.YHSM_Cmd_AEAD_Validate_OTP.parse_result}
         """
@@ -378,6 +390,7 @@ class YHSM():
         Ask YubiHSM to exit to configuration mode (requires 'debug' mode enabled).
 
         @returns: None
+        @rtype: NoneType
 
         @see: L{pyhsm.debug_cmd.YHSM_Cmd_Monitor_Exit}
         """
@@ -386,12 +399,18 @@ class YHSM():
     def get_raw_device(self):
         """
         Get the raw device. Only intended for test code/debugging!
+
+        @returns: serial device
+        @rtype: Serial
         """
         return self.stick.raw_device()
 
     def drain(self):
         """
         Read until there is nothing more to be read. Only intended for test code/debugging!
+
+        @returns: True on success
+        @rtype: bool
         """
         return self.stick.drain()
 
@@ -481,7 +500,7 @@ class YHSM():
         @type flags: None or integer
 
         @returns: HMAC-SHA1 instance
-        @rtype: YHSM_Cmd_HMAC_SHA1_Write
+        @rtype: L{YHSM_Cmd_HMAC_SHA1_Write}
 
         @see: L{pyhsm.hmac_cmd.YHSM_Cmd_HMAC_SHA1_Write.parse_result}
         """
@@ -523,6 +542,9 @@ class YHSM():
         @param otp: The OTP from a YubiKey in binary form (16 bytes)
         @type public_id: string
         @type otp: string
+
+        @returns: validation response
+        @rtype: L{YHSM_ValidationResult}
 
         @see: L{pyhsm.db_cmd.YHSM_Cmd_DB_Validate_OTP.parse_result}
         """

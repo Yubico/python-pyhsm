@@ -80,7 +80,21 @@ class YHSM_ValidationResult():
     The result of a Validate operation.
 
     Contains the counters and timestamps decrypted from the OTP.
+
+    @ivar public_id: The six bytes public ID of the YubiKey that produced the OTP
+    @ivar use_ctr: The 16-bit power-on non-volatile counter of the YubiKey
+    @ivar session_ctr: The 8-bit volatile session counter of the YubiKey
+    @ivar ts_high: The high 8 bits of the 24-bit 8 hz timer since power-on of the YubiKey
+    @ivar ts_low: The low 16 bits of the 24-bit 8 hz timer since power-on of the YubiKey
+    @type public_id: string
+    @type use_ctr: integer
+    @type session_ctr: integer
+    @type ts_high: integer
+    @type ts_low: integer
     """
+
+    public_id = use_ctr = session_ctr = ts_high = ts_low = None
+
     def __init__(self, public_id, use_ctr, session_ctr, ts_high, ts_low):
         self.public_id = public_id
         self.use_ctr = use_ctr
