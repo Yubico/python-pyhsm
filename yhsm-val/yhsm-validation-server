@@ -281,80 +281,80 @@ def parse_args():
     global default_serve_url
 
     parser = argparse.ArgumentParser(description = "Validate secrets using YubiHSM",
-                                     add_help=True
+                                     add_help=True,
+                                     formatter_class=argparse.ArgumentDefaultsHelpFormatter,
                                      )
     parser.add_argument('-D', '--device',
                         dest='device',
                         default=default_device,
                         required=False,
-                        help='YubiHSM device (default : "%s").' % default_device
+                        help='YubiHSM device',
                         )
     parser.add_argument('-U', '--serve-url',
                         dest='serve_url',
                         default=default_serve_url,
                         required=False,
-                        help='Base URL for decrypt web service (default : "%s").' % default_serve_url
+                        help='Base URL for decrypt web service',
                         )
     parser.add_argument('-v', '--verbose',
                         dest='verbose',
                         action='store_true', default=False,
-                        help='Enable verbose operation.'
+                        help='Enable verbose operation',
                         )
     parser.add_argument('--debug',
                         dest='debug',
                         action='store_true', default=False,
-                        help='Enable debug operation.'
+                        help='Enable debug operation',
                         )
     parser.add_argument('--port',
                         dest='listen_port',
                         type=int, default=8003,
                         required=False,
-                        help='Port to listen on.'
+                        help='Port to listen on',
                         )
     parser.add_argument('--addr',
                         dest='listen_addr',
                         default="127.0.0.1",
                         required=False,
-                        help='Address to bind to.'
+                        help='Address to bind to',
                         )
     parser.add_argument('--hmac-kh',
                         dest='hmac_kh',
                         required=False, default=0,
-                        help='Key handle to use for creating HMAC-SHA1 hashes.'
+                        help='Key handle to use for creating HMAC-SHA1 hashes',
                         )
     parser.add_argument('--otp',
                         dest='mode_otp',
                         action='store_true', default=False,
-                        help='Enable YubiKey OTP validation.'
+                        help='Enable YubiKey OTP validation',
                         )
     parser.add_argument('--hotp',
                         dest='mode_hotp',
                         action='store_true', default=False,
-                        help='Enable OATH-HOTP validation.'
+                        help='Enable OATH-HOTP validation',
                         )
     parser.add_argument('--pwhash',
                         dest='mode_pwhash',
                         action='store_true', default=False,
-                        help='Enable password hash validation.'
+                        help='Enable password hash validation',
                         )
     parser.add_argument('--db-file',
                         dest='db_file',
                         default=default_db_file,
                         required=False,
-                        help='DB file for storing AEAD\'s etc. for --pwhash and --hotp (default : "%s").' \
-                            % default_db_file
+                        help='DB file for storing AEAD\'s etc. for --pwhash and --hotp',
                         )
     parser.add_argument('--hotp-window',
                         dest='look_ahead',
                         type=int, required=False,
                         default = default_hotp_window,
-                        help='Number of OATH-HOTP codes to search (default: %i).' % default_hotp_window
+                        help='Number of OATH-HOTP codes to search',
                         )
     parser.add_argument('--pid-file',
                         dest='pid_file',
                         default=default_pid_file,
                         required=False,
-                        help='PID file (default : %s).' % default_pid_file,
+                        help='PID file',
                         )
 
     return parser.parse_args()
