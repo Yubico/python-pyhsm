@@ -51,6 +51,7 @@ default_listen_addr = "127.0.0.1"
 default_port = 8002
 default_reqtimeout = 5
 default_public_id_chars = 12
+default_pid_file = None
 
 valid_input_from_key = re.compile('^[cbdefghijklnrtuv]{32,48}$')
 
@@ -231,6 +232,13 @@ def parse_args():
                         required=True,
                         help='Key handle to use to decrypt aeads on the YHSM.'
                         )
+    parser.add_argument('--pid-file',
+                        dest='pid_file',
+                        default=default_pid_file,
+                        required=False,
+                        help='PID file',
+                        metavar='FILENAME',
+                        )
 
     return parser.parse_args()
 
@@ -250,6 +258,16 @@ def args_fixup(my_args):
         res.append((kh, kh_int,))
     my_args.key_handles = res
 
+def write_pid_file(fn):
+    """ Create a file with our PID. """
+    if not fn:
+        return None
+    if fn == '' or fn == "''":
+        # work around argument passings in init-scripts
+        return None
+    f = open(fn, "w")
+    f.write("%s\n" % (os.getpid()))
+    f.close()
 
 def run(args):
     """
@@ -288,6 +306,8 @@ def main():
     except serial.SerialException, e:
         my_log_message(args, syslog.LOG_ERR, 'Failed opening YubiHSM device "%s" : %s' %(args.device, e))
         sys.exit(1)
+
+    write_pid_file(args.pid_file)
 
     try:
         run(args)
