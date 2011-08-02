@@ -61,13 +61,11 @@ import sqlite3
 import argparse
 import urlparse
 import BaseHTTPServer
-sys.path.append('Lib');
+sys.path.append('Lib')
 import pyhsm
-import pyhsm.oath_hotp
 import pyhsm.yubikey
 
 default_device = "/dev/ttyACM0"
-default_dir = "/dev/shm/yubico/secrets"
 default_serve_url = "/yhsm/validate?"
 default_db_file = "/var/yubico/yhsm-validation-server.db"
 default_hotp_window = 5
@@ -81,9 +79,17 @@ args = None
 saved_key_handle = None
 
 class YHSM_KSMRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
+    """
+    Handle HTTP GET requests according to configuration in global variable `args'.
+    """
 
     def do_GET(self):
-        global args
+        """
+        Process validation GET requests.
+
+        All modes of validation (OTP, OATH and PWHASH) must be explicitly
+        enabled in `args' to be allowed.
+        """
         if self.path.startswith(args.serve_url):
             res = None
             mode = None
@@ -125,16 +131,14 @@ class YHSM_KSMRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             self.send_response(403, 'Forbidden')
             self.end_headers()
 
-    def log_error(self, format, *fmt_args):
+    def log_error(self, fmt, *fmt_args):
         """ Log to syslog. """
-        global args
-        msg = self.my_address_string() + " - - " + format % fmt_args
+        msg = self.my_address_string() + " - - " + fmt % fmt_args
         my_log_message(args, syslog.LOG_ERR, msg)
 
-    def log_message(self, format, *fmt_args):
+    def log_message(self, fmt, *fmt_args):
         """ Log to syslog. """
-        global args
-        msg = self.my_address_string() + " - - " + format % fmt_args
+        msg = self.my_address_string() + " - - " + fmt % fmt_args
         my_log_message(args, syslog.LOG_INFO, msg)
 
     def my_address_string(self):
@@ -146,11 +150,9 @@ def validate_yubikey_otp(self, params):
     Validate YubiKey OTP using YubiHSM internal database.
     """
     from_key = params["otp"][0]
-    global ykotp_valid_input
     if not re.match(ykotp_valid_input, from_key):
         self.log_error("IN: %s, Invalid OTP" % (from_key))
         return "ERR Invalid OTP"
-    global hsm
     try:
         res = pyhsm.yubikey.validate_otp(hsm, from_key)
         return "OK counter=%04x low=%04x high=%02x use=%02x" % \
@@ -163,9 +165,7 @@ def validate_oath_hotp(self, params):
     Validate OATH-HOTP code using YubiHSM HMAC-SHA1 hashing with token keys
     secured in AEAD's that we have stored in an SQLite3 database.
     """
-    global args
     from_key = params["hotp"][0]
-    global hotp_valid_input
     if not re.match(hotp_valid_input, from_key):
         self.log_error("IN: %s, Invalid OATH-HOTP OTP" % (params))
         return "ERR Invalid OATH-HOTP OTP"
@@ -185,15 +185,15 @@ def validate_oath_hotp(self, params):
         return "ERR Internal error"
 
     # Check for correct OATH-HOTP OTP
-    global hsm
     nonce = entry.data["nonce"].decode('hex')
     aead = entry.data["aead"].decode('hex')
     new_counter = pyhsm.oath_hotp.search_for_oath_code(hsm, entry.data["key_handle"], nonce, aead, \
                                                            entry.data["oath_c"], otp, args.look_ahead)
     if args.debug:
-        print "OATH-HOTP %i..%i -> new C == %s" % (entry.data["oath_c"], entry.data["oath_c"] + args.look_ahead, new_counter)
+        print "OATH-HOTP %i..%i -> new C == %s" \
+            % (entry.data["oath_c"], entry.data["oath_c"] + args.look_ahead, new_counter)
     if type(new_counter) != int:
-        # XXX increase 'throttling parameter'
+        # XXX increase 'throttling parameter' to make brute forcing harder/impossible
         return "ERR Could not validate OATH-HOTP OTP"
     try:
         # Must successfully store new_counter before we return OK
@@ -205,7 +205,7 @@ def validate_oath_hotp(self, params):
         self.log_error("IN: %s, database error updating counter : %s" % (params, e))
         return "ERR Internal error"
 
-def validate_pwhash(self, params):
+def validate_pwhash(_self, params):
     """
     Validate password hash using YubiHSM.
     """
@@ -277,9 +277,6 @@ def parse_args():
     """
     Parse the command line arguments
     """
-    global default_device
-    global default_serve_url
-
     parser = argparse.ArgumentParser(description = "Validate secrets using YubiHSM",
                                      add_help=True,
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter,
@@ -359,7 +356,10 @@ def parse_args():
 
     return parser.parse_args()
 
-def args_fixup(args):
+def args_fixup():
+    """
+    Various cleanups/initializations based on result of parse_args().
+    """
     global saved_key_handle
     saved_key_handle = args.hmac_kh
 
@@ -376,20 +376,28 @@ def write_pid_file(fn):
     f.write("%s\n" % (os.getpid()))
     f.close()
 
-def run(args):
+def run():
+    """
+    Start the BaseHTTPServer and serve requests forever.
+    """
     server_address = (args.listen_addr, args.listen_port)
     httpd = BaseHTTPServer.HTTPServer(server_address, YHSM_KSMRequestHandler)
-    global saved_key_handle
     my_log_message(args, syslog.LOG_INFO, "Serving requests to 'http://%s:%s%s' (YubiHSM: '%s')" \
                        % (args.listen_addr, args.listen_port, args.serve_url, args.device))
     httpd.serve_forever()
 
-def my_log_message(args, prio, msg):
+def my_log_message(my_args, prio, msg):
+    """
+    Log msg to syslog, and possibly also output to stderr.
+    """
     syslog.syslog(prio, msg)
-    if args.debug or args.verbose or prio == syslog.LOG_ERR:
+    if my_args.debug or my_args.verbose or prio == syslog.LOG_ERR:
         sys.stderr.write("%s\n" % (msg))
 
 def main():
+    """
+    The main function that will be executed when running this as a stand alone script.
+    """
     my_name = os.path.basename(sys.argv[0])
     if not my_name:
         my_name = "yhsm-validation-server"
@@ -397,7 +405,7 @@ def main():
 
     global args
     args = parse_args()
-    args_fixup(args)
+    args_fixup()
 
     global hsm
     try:
@@ -409,7 +417,7 @@ def main():
     write_pid_file(args.pid_file)
 
     try:
-        run(args)
+        run()
     except KeyboardInterrupt:
         print ""
         print "Shutting down"
