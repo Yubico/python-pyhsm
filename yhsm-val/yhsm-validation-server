@@ -308,17 +308,20 @@ def parse_args():
                         type=int, default=8003,
                         required=False,
                         help='Port to listen on',
+                        metavar='PORT',
                         )
     parser.add_argument('--addr',
                         dest='listen_addr',
                         default="127.0.0.1",
                         required=False,
                         help='Address to bind to',
+                        metavar='ADDR',
                         )
     parser.add_argument('--hmac-kh',
                         dest='hmac_kh',
                         required=False, default=0,
                         help='Key handle to use for creating HMAC-SHA1 hashes',
+                        metavar='KEY_HANDLE',
                         )
     parser.add_argument('--otp',
                         dest='mode_otp',
@@ -340,18 +343,21 @@ def parse_args():
                         default=default_db_file,
                         required=False,
                         help='DB file for storing AEAD\'s etc. for --pwhash and --hotp',
+                        metavar='FILENAME',
                         )
     parser.add_argument('--hotp-window',
                         dest='look_ahead',
                         type=int, required=False,
                         default = default_hotp_window,
                         help='Number of OATH-HOTP codes to search',
+                        metavar='NUM',
                         )
     parser.add_argument('--pid-file',
                         dest='pid_file',
                         default=default_pid_file,
                         required=False,
                         help='PID file',
+                        metavar='FILENAME',
                         )
 
     return parser.parse_args()
