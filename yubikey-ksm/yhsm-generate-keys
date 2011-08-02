@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Tool to generate YubiKey secret keys using YubiHSM
+""" Tool to generate YubiKey secret keys using YubiHSM """
 #
 # Copyright (c) 2011, Yubico AB
 # All rights reserved.
@@ -8,63 +8,61 @@
 
 import os
 import sys
-import struct
 import argparse
-sys.path.append('Lib');
+sys.path.append('Lib')
 import pyhsm
 import pyhsm.yubikey
 
-#default_device = "/dev/serial/by-id/usb-Yubico_Yubico_ServerOnStick_498F517E3932-if00"
 default_device = "/dev/ttyACM0"
+default_dir = "/var/cache/yubikey-ksm/aeads"
 
 def parse_args():
     """
     Parse the command line arguments
     """
-    global default_device
-
-    parser = argparse.ArgumentParser(description = "Generate secrets using YubiHSM",
-                                     add_help=True
+    parser = argparse.ArgumentParser(description = "Generate secrets for YubiKeys using YubiHSM",
+                                     add_help=True,
+                                     formatter_class = argparse.ArgumentDefaultsHelpFormatter,
                                      )
     parser.add_argument('-D', '--device',
                         dest='device',
                         default=default_device,
                         required=False,
-                        help='YubiHSM device (default : %s).' % default_device
+                        help='YubiHSM device',
                         )
-    parser.add_argument('-O', '--output-dir',
+    parser.add_argument('-O', '--output-dir', '--aead-dir',
                         dest='output_dir',
-                        default="/dev/shm/yubico/secrets",
+                        default=default_dir,
                         required=False,
-                        help='Output directory.'
+                        help='Output directory (AEAD base dir)',
                         )
     parser.add_argument('-c', '--count',
                         dest='count',
                         type=int, default=1,
                         required=False,
-                        help='Number of secrets to generate.'
+                        help='Number of secrets to generate',
                         )
     parser.add_argument('-v', '--verbose',
                         dest='verbose',
                         action='store_true', default=False,
-                        help='Enable verbose operation.'
+                        help='Enable verbose operation',
                         )
     parser.add_argument('--public-id-chars',
                         dest='public_id_chars',
                         type=int, default=12,
                         required=False,
-                        help='Number of chars in generated public ids.'
+                        help='Number of chars in generated public ids',
                         )
     parser.add_argument('--key-handles',
                         dest='key_handles',
                         nargs='+',
                         required=True,
-                        help='Key handles to encrypt the generated secrets with.'
+                        help='Key handles to encrypt the generated secrets with',
                         )
     parser.add_argument('--start-public-id',
                         dest='start_id',
                         required=True,
-                        help='Key handles to encrypt the generated secrets with.'
+                        help='The first public id to generate AEAD for',
                         )
 
     return parser.parse_args()
@@ -139,6 +137,7 @@ def gen_keys(hsm, args):
     print "\nDone\n"
 
 def shorten_aead(aead):
+    """ Produce pretty-printable version of long AEAD. """
     head = aead.data[:4].encode('hex')
     tail = aead.data[-4:].encode('hex')
     return "%s...%s" % (head, tail)

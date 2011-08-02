@@ -45,7 +45,7 @@ import pyhsm.yubikey
 import serial
 
 default_device = "/dev/ttyACM0"
-default_dir = "/dev/shm/yubico/secrets"
+default_dir = "/var/cache/yubikey-ksm/aeads"
 default_serve_url = "/wsapi/decrypt?otp="
 default_listen_addr = "127.0.0.1"
 default_port = 8002
