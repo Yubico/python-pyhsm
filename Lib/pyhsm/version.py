@@ -53,3 +53,9 @@ class YHSM_Version():
         'keycommit' was introduced in 1.0.
         """
         return self.ver > (1, 0,)
+
+    def have_YSM_BUFFER_LOAD(self):
+        """
+        This is a key handle permission flag that was introduced in 0.9.9.
+        """
+        return self.ver > (0, 9, 9,)
