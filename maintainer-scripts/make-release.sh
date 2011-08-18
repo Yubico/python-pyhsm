@@ -18,9 +18,24 @@ if [ ! -d "$tmpdir" ]; then
     exit 1
 fi
 
+
 set -e
 
 gitdesc=$(git describe $gitref)
+
+setup_ver=$(grep version setup.py | awk -F \' '{print $2}')
+if [ "x$setup_ver" != "x$gitdesc" ]; then
+    echo ""
+    echo "setup.py version mismatch! ($setup_ver != $gitdesc) Press enter to ignore."
+    read foo
+fi
+
+init_ver=$(grep __version__ Lib/pyhsm/__init__.py | awk -F \' '{print $2}')
+if [ "x$init_ver" != "x$gitdesc" ]; then
+    echo ""
+    echo "Lib/pyhsm/__init__.py version mismatch! ($init_ver != $gitdesc) Press enter to ignore."
+    read foo
+fi
 
 releasedir="pyhsm-$gitdesc"
 tarfile="$tmpdir/$releasedir.tar"
