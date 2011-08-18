@@ -1,0 +1,41 @@
+This is the documentation directory of pyhsm.
+
+----
+API documentation
+----
+
+In doc/html/ you will find API documentation generated from pydoc in the
+source tree at the time of release.
+
+If you have checked out the source code from the repository rather than
+downloaded an official release, you can generate the HTML API documentation
+yourself by installing 'epydoc' (package 'python-epydoc' in Debian/Ubuntu)
+and then executing the ./maintainer-scripts/generate_html.sh script.
+
+----
+Assorted usage documentation
+----
+
+All pages that were available in the project Wiki (currently located at
+https://github.com/Yubico/python-pyhsm/wiki ) are included as-is in the
+releases.
+
+Please note that there might be more updated documentation available online.
+
+If you want to update the contents of the doc/wiki/ directory with what is
+currently available online, execute the following commands :
+
+----
+$ cd $top_srcdir
+$ git submodule update --init
+----
+
+
+----
+Low level documentation
+----
+The reference manual is available from
+
+    http://www.yubico.com/yubihsm/
+
+The file doc/YubiHSM_if.h details all the available commands of the YubiHSM.
