@@ -206,7 +206,7 @@ class YHSM():
         """
         return pyhsm.basic_cmd.YHSM_Cmd_Temp_Key_Load(self.stick, nonce, key_handle, aead).execute()
 
-    def key_storage_unlock(self, password, otp = None):
+    def unlock(self, password = None, otp = None):
         """
         Unlock the YubiHSM using the master key and/or a YubiKey OTP.
 
@@ -240,9 +240,18 @@ class YHSM():
                 res = pyhsm.basic_cmd.YHSM_Cmd_Key_Store_Decrypt(self.stick, password).execute()
             else:
                 raise pyhsm.exception.YHSM_Error("Don't know how to unlock your YubiHSM.")
+        else:
+            res = True
         if res and otp is not None:
-            return pyhsm.basic_cmd.YHSM_Cmd_Unlock(self.stick, otp).execute()
+            return pyhsm.basic_cmd.YHSM_Cmd_HSM_Unlock(self.stick, otp).execute()
         return res
+
+    def key_storage_unlock(self, password):
+        """
+        @deprecated: Too specific (and hard to remember) name.
+        @see: L{unlock}
+        """
+        return self.unlock(password = password)
 
     #
     # AEAD related commands
