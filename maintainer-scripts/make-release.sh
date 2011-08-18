@@ -48,7 +48,7 @@ rm -rf doc/html
 # update documentation from wiki
 git submodule update
 
-rsync -a --delete doc/ $tmpdir/$releasedir/doc
+rsync -a --exclude .git --delete doc/ $tmpdir/$releasedir/doc
 
 echo "path : $tmpdir/$releasedir"
 
