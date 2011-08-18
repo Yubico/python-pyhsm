@@ -18,4 +18,4 @@ if [ ! -d "doc/html/" ]; then
 fi
 
 
-epydoc --graph all -n pyhsm --no-private --no-sourcecode -v -o doc/html Lib/pyhsm/
+epydoc -n pyhsm --no-private --no-sourcecode -v -o doc/html Lib/pyhsm/
