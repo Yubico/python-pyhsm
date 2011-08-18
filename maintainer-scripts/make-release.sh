@@ -44,11 +44,13 @@ git archive --format=tar --prefix=${releasedir}/ ${gitref} | (cd $tmpdir && tar 
 # update API documentation
 rm -rf doc/html
 ./maintainer-scripts/generate_html.sh
+rsync -a --delete doc/html/ $tmpdir/$releasedir/doc/html
 
 # update documentation from wiki
 git submodule update
 
-rsync -a --exclude .git --delete doc/ $tmpdir/$releasedir/doc
+test -d "$tmpdir/$releasedir/doc/wiki/" && rm -rf "$tmpdir/$releasedir/doc/wiki/"
+(cd doc/wiki/ && git archive --format=tar --prefix=${releasedir}/doc/wiki/ HEAD) | (cd $tmpdir && tar xf -)
 
 echo "path : $tmpdir/$releasedir"
 

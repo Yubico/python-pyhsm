@@ -1,1 +1,2 @@
 maintainer-scripts	export-ignore
+.git*			export-ignore
