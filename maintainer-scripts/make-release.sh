@@ -58,8 +58,7 @@ ls -l $tmpdir/$releasedir
 (cd ${tmpdir} && tar zcf pyhsm-${gitdesc}.tar.gz ${releasedir})
 
 # run all unit tests
-cd $tmpdir/$releasedir
-PYTHONPATH="Lib" ./Tests/run.sh
+(cd $tmpdir/$releasedir && PYTHONPATH="Lib" ./Tests/run.sh)
 
 # sign the release
 mkdir -p ../releases
