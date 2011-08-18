@@ -7,7 +7,7 @@ import sys
 sys.path.append('Tests');
 
 setup(name		= 'pyhsm',
-      version		= '0.9.8e',
+      version		= '1.0.2',
       description	= 'Python code for talking to a YubiHSM',
       author		= 'Fredrik Thulin',
       author_email	= 'fredrik@yubico.com',
