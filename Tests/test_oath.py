@@ -40,7 +40,8 @@ class TestOath(test_common.YHSM_TestCase):
                         (6, "bc9cd28561042c83f219324d3c607256c03272ae", 287922,),
                         (7, "a4fb960c0bc06e1eabb804e5b397cdc4b45596fa", 162583,),
                         (8, "1b3c89f65e6c9e883012052823443f048b4332db", 399871,),
-                        (9, "1637409809a679dc698207310c8c7fc07290d9e5", 520489,)
+                        (9, "1637409809a679dc698207310c8c7fc07290d9e5", 520489,),
+                        (30, "543c61f8f9aeb35f6dbc3a6847c3fe288cc0ee4c", 26920,),
                         ]
 
         for c, expected, code in test_vectors:
@@ -59,3 +60,4 @@ class TestOath(test_common.YHSM_TestCase):
         self.assertEqual(4,	oath(0, 969429, 4))
         self.assertEqual(None,	oath(0, 969429, 3))
         self.assertEqual(10,	oath(9, 520489, 3))
+        self.assertEqual(31,    oath(30, 26920, 1))

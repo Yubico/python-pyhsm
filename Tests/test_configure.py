@@ -10,6 +10,7 @@ import pyhsm.util
 import test_common
 
 from StringIO import StringIO
+from test_common import CfgPassphrase, AdminYubiKeys, HsmPassphrase
 
 class ConfigureYubiHSMforTest(test_common.YHSM_TestCase):
 
@@ -27,16 +28,34 @@ class ConfigureYubiHSMforTest(test_common.YHSM_TestCase):
         #self.assertTrue(self.hsm.monitor_exit())
         self.hsm.monitor_exit()
 
-        # clear memory and configure as HSM - has a few prompts we have to get past
-        self.config_do("hsm ffffffff\r\r\ryes")
+        # get the first prompt without sending anything
+        self.config_do("", add_cr = False)
 
         self.config_do("sysinfo")
+
+        self.config_do("help")
+
+        # clear memory and configure as HSM - has a few prompts we have to get past
+        #
+        if not self.hsm.version.have_key_store_decrypt():
+            self.config_do ("hsm ffffffff\r%s\r%s\ryes" % (CfgPassphrase, HsmPassphrase))
+        else:
+            # HSM> < hsm ffffffff
+            # Enabled flags ffffffff = ...
+            # Enter cfg password (g to generate)
+            # Enter admin Yubikey public id (enter when done)
+            # Enter master key (g to generate) yes
+            # Confirm current config being erased (type yes)
+            self.config_do ("hsm ffffffff\r%s\r%s\r%s\ryes" % (CfgPassphrase, AdminYubiKeys, HsmPassphrase))
 
         self.hsm.drain()
         self.add_keys(xrange(31))
         self.hsm.drain()
 
         self.config_do("keylist")
+
+        if self.hsm.version.have_key_store_decrypt():
+            self.config_do("keycommit")
 
         # get back into HSM mode
         sys.stderr.write("exit")
@@ -45,6 +64,10 @@ class ConfigureYubiHSMforTest(test_common.YHSM_TestCase):
         self.hsm.drain()
 
         self.hsm.reset()
+
+    def test_zzz_unlock(self):
+        """ Test unlock of keystore after reconfiguration. """
+        self.assertTrue(self.hsm.key_storage_unlock(HsmPassphrase.decode("hex")))
 
     def test_zzz_echo(self):
         """ Test echo after reconfiguration. """
@@ -96,10 +119,21 @@ class ConfigureYubiHSMforTest(test_common.YHSM_TestCase):
         key = "1001" * 16
         self.add_key(flags, 0x1001, key)
 
+        # Key allowed to generate AEAD from known data (loaded into buffer)
+        flags = 0x4 | 0x40000000
+        key = "1002" * 16
+        self.add_key(flags, 0x1002, key)
+
         # Key with everything enabled at once
         flags = 0xffffffff
         key = "2000" * 16
         self.add_key(flags, 0x2000, key)
+
+        # Key with everything enabled at once, and then revoked
+        flags = 0xffffffff
+        key = "2001" * 16
+        self.add_key(flags, 0x2001, key)
+        self.config_do("keydis 2001")
 
         # Key with NIST test vector for HMAC SHA1
         # Enabled flags 00010000 = YSM_HMAC_SHA1_GENERATE

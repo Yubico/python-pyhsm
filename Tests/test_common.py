@@ -5,6 +5,11 @@ import sys
 import unittest
 import pyhsm
 
+# configuration parameters
+CfgPassphrase = ""
+HsmPassphrase = "bada" * 2
+AdminYubiKeys = ""
+
 class YHSM_TestCase(unittest.TestCase):
 
     hsm = None
@@ -15,20 +20,25 @@ class YHSM_TestCase(unittest.TestCase):
         YubiHSM in self.hsm.
         """
         self.hsm = pyhsm.base.YHSM(device = device, debug = debug)
-
-        # Check that this is a device we know how to talk to
-        assert(self.hsm.info().protocol_ver == pyhsm.defines.YSM_PROTOCOL_VERSION)
+        # unlock keystore if our test configuration contains a passphrase
+        if HsmPassphrase is not None and HsmPassphrase != "":
+            try:
+                self.hsm.key_storage_unlock(HsmPassphrase.decode("hex"))
+            except pyhsm.exception.YHSM_CommandFailed, e:
+                # ignore errors from this one, in case our test configuration
+                # hasn't been loaded into the YubiHSM yet
+                pass
 
     def tearDown(self):
         # get destructor called properly
         self.hsm = None
 
-    def who_can(self, what, expected = []):
+    def who_can(self, what, expected = [], extra_khs = []):
         """
         Try the lambda what() with all key handles between 1 and 32, except the expected one.
         Fail on anything but YSM_FUNCTION_DISABLED.
         """
-        for kh in xrange(1, 32):
+        for kh in list(xrange(1, 32)) + extra_khs:
             if kh in expected:
                 continue
             res = None

@@ -241,6 +241,8 @@ class YHSM_Cmd_Key_Storage_Unlock(YHSM_Cmd):
     If an incorrect password is given when the key storage is unlocked,
     it will be locked again.
 
+    This command was replaced by YHSM_Cmd_Key_Store_Decrypt in YubiHSM 1.0.
+
     @ivar status: The result of the unlock operation
     @type status: integer
     """
@@ -267,6 +269,47 @@ class YHSM_Cmd_Key_Storage_Unlock(YHSM_Cmd):
         # typedef struct {
         #   YSM_STATUS status;                  // Unlock status
         # } YSM_KEY_STORAGE_UNLOCK_RESP;
+        fmt = "B"
+        self.status, = struct.unpack(fmt, data)
+
+        if self.status == pyhsm.defines.YSM_STATUS_OK:
+            return True
+        else:
+            raise pyhsm.exception.YHSM_CommandFailed(pyhsm.defines.cmd2str(self.command), self.status)
+
+class YHSM_Cmd_Key_Store_Decrypt(YHSM_Cmd):
+    """
+    Have the YubiHSM decrypt it's key store using the master key.
+
+    If an incorrect master key is given, the key store will become unavailable
+    (cleared from RAM in YubiHSM).
+
+    @ivar status: The result of the unlock operation
+    @type status: integer
+    """
+
+    status = None
+
+    def __init__(self, stick, key=''):
+        payload = pyhsm.util.input_validate_str(key, 'key', max_len = pyhsm.defines.YSM_MAX_KEY_SIZE)
+        # typedef struct {
+        #   uint8_t key[YSM_MAX_KEY_SIZE];      // Key store decryption key
+        # } YSM_KEY_STORE_DECRYPT_REQ;
+        packed = payload.ljust(pyhsm.defines.YSM_MAX_KEY_SIZE, chr(0x0))
+        YHSM_Cmd.__init__(self, stick, pyhsm.defines.YSM_KEY_STORE_DECRYPT, packed)
+
+    def parse_result(self, data):
+        """
+        Parse result of L{pyhsm.defines.YSM_KEY_STORE_DECRYPT} command.
+
+        @return: Only returns (True) on successful unlock
+        @rtype: bool
+
+        @raise pyhsm.exception.YHSM_CommandFailed: YubiHSM failed to unlock key store
+        """
+        # typedef struct {
+        #   YSM_STATUS status;                  // Unlock status
+        # } YSM_KEY_STORE_DECRYPT_RESP;
         fmt = "B"
         self.status, = struct.unpack(fmt, data)
 

@@ -80,14 +80,14 @@ class TestAEAD(test_common.YHSM_TestCase):
         # Enabled flags 00000008 = YSM_RANDOM_AEAD_GENERATE
         # 00000004 - stored ok
         this = lambda kh: self.hsm.generate_aead_random(self.nonce, kh, 10)
-        self.who_can(this, expected = [0x04])
+        self.who_can(this, expected = [0x04], extra_khs = [0x1002])
 
     def test_who_can_generate_simple(self):
         """ Test what key handles can generate a simple AEAD. """
         # Enabled flags 00000002 = YSM_AEAD_GENERATE
         # 00000002 - stored ok
         this = lambda kh: self.hsm.generate_aead_simple(self.nonce, kh, self.secret)
-        self.who_can(this, expected = [0x02])
+        self.who_can(this, expected = [0x02], extra_khs = [0x1002])
 
     def test_who_can_validate(self):
         """ Test what key handles can validate an AEAD. """

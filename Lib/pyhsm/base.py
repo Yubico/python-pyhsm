@@ -43,6 +43,7 @@ __all__ = [
 import pyhsm.cmd
 import pyhsm.stick
 import pyhsm.exception
+import pyhsm.version
 
 import pyhsm.aead_cmd
 import pyhsm.aes_ecb_cmd
@@ -61,8 +62,14 @@ class YHSM():
     def __init__(self, device, debug=False, timeout=1):
         self.debug = debug
         self.stick = pyhsm.stick.YHSM_Stick(device, debug = self.debug, timeout = timeout)
-        if not self.reset():
+        if not self.reset(test_sync = False):
             raise pyhsm.exception.YHSM_Error("Initialization of YubiHSM failed")
+        self.version = pyhsm.version.YHSM_Version(self.info())
+        # Check that this is a device we know how to talk to
+        if self.version.sysinfo.protocol_ver != pyhsm.defines.YSM_PROTOCOL_VERSION:
+            raise pyhsm.exception.YHSM_Error("Unknown YubiHSM protocol version (%i, I speak %i)" % \
+                                                 (self.version.sysinfo.protocol_ver, \
+                                                      pyhsm.defines.YSM_PROTOCOL_VERSION))
         return None
 
     def __repr__(self):
@@ -72,20 +79,26 @@ class YHSM():
             self.stick.device
             )
 
-    def reset(self):
+    def reset(self, test_sync = True):
         """
         Perform stream resynchronization.
+
+        @param test_sync: Verify sync with YubiHSM after reset
+        @type test_sync: bool
 
         @return: True if successful
         @rtype: bool
         """
         pyhsm.cmd.reset(self.stick)
-        # Now verify we are in sync
-        data = 'ekoeko'
-        echo = self.echo(data)
-        # XXX analyze 'echo' to see if we are in config mode, and produce a
-        # nice exception if we are.
-        return data == echo
+        if test_sync:
+            # Now verify we are in sync
+            data = 'ekoeko'
+            echo = self.echo(data)
+            # XXX analyze 'echo' to see if we are in config mode, and produce a
+            # nice exception if we are.
+            return data == echo
+        else:
+            return True
 
     def set_debug(self, new):
         """
@@ -193,19 +206,43 @@ class YHSM():
         """
         return pyhsm.basic_cmd.YHSM_Cmd_Temp_Key_Load(self.stick, nonce, key_handle, aead).execute()
 
-    def key_storage_unlock(self, password):
+    def key_storage_unlock(self, password, otp = None):
         """
-        Have the YubiHSM unlock it's key storage using the HSM password.
+        Unlock the YubiHSM using the master key and/or a YubiKey OTP.
 
-        @param password: The HSM password set during YubiHSM configuration
-        @type password: string
+        If the master key is given during configuration, all key handles will be
+        encrypted (with AES-256) using that passphrase.
+
+        If one or more admin Yubikey public id's are given during configuration,
+        an OTP from one of these must be provided to the YubiHSM for it to start
+        responding to cryptographic requests. The admin YubiKeys must be present
+        in the internal database for this validation to work.
+
+        @param password: The 'master key' set during YubiHSM configuration
+        @type password: NoneType or string
+        @param otp: A YubiKey OTP from an 'admin' YubiKey, to unlock YubiHSM.
+        @type otp: NoneType or string
 
         @returns: Only returns (True) on success
         @rtype: bool
 
         @see: L{pyhsm.basic_cmd.YHSM_Cmd_Key_Storage_Unlock.parse_result}
         """
-        return pyhsm.basic_cmd.YHSM_Cmd_Key_Storage_Unlock(self.stick, password).execute()
+        if otp is not None and not self.version.have_unlock():
+            # only in 1.0
+            raise pyhsm.exception.YHSM_Error("Your YubiHSM does not support OTP unlocking.")
+        if password is not None:
+            if self.version.have_key_storage_unlock():
+                # 0.9.x
+                res = pyhsm.basic_cmd.YHSM_Cmd_Key_Storage_Unlock(self.stick, password).execute()
+            elif self.version.have_key_store_decrypt():
+                # 1.0
+                res = pyhsm.basic_cmd.YHSM_Cmd_Key_Store_Decrypt(self.stick, password).execute()
+            else:
+                raise pyhsm.exception.YHSM_Error("Don't know how to unlock your YubiHSM.")
+        if res and otp is not None:
+            return pyhsm.basic_cmd.YHSM_Cmd_Unlock(self.stick, otp).execute()
+        return res
 
     #
     # AEAD related commands

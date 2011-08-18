@@ -53,6 +53,7 @@ __all__ = ["base",
            "exception",
            "stick",
            "util",
+           "version",
            "yubikey",
            #
            "aead_cmd",

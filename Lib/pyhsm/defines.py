@@ -151,7 +151,9 @@ YSM_ECHO			= 0x23
 YSM_RANDOM_GENERATE		= 0x24
 YSM_RANDOM_RESEED		= 0x25
 YSM_SYSTEM_INFO_QUERY		= 0x26
-YSM_KEY_STORAGE_UNLOCK		= 0x27
+YSM_KEY_STORAGE_UNLOCK		= 0x27	# Deprecated in 1.0
+YSM_HSM_UNLOCK			= 0x28
+YSM_KEY_STORE_DECRYPT		= 0x29
 YSM_MONITOR_EXIT		= 0x7f
 
 def cmd2str(cmd):
@@ -177,6 +179,8 @@ def cmd2str(cmd):
              0x25: 'YSM_RANDOM_RESEED',
              0x26: 'YSM_SYSTEM_INFO_QUERY',
              0x27: 'YSM_KEY_STORAGE_UNLOCK',
+             0x28: 'YSM_HSM_UNLOCK',
+             0x29: 'YSM_KEY_STORE_DECRYPT',
              0x7f: 'YSM_MONITOR_EXIT',
              }
     if cmd in known:

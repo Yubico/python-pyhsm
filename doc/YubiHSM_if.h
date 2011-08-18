@@ -1,12 +1,13 @@
 /*************************************************************************
 **                                                                      **
-**      YubiHSM - HSM mode interface declarations                       **
+**      YubiHSM_if - HSM mode interface declarations                    **
 **                                                                      **
 **      Copyright 2011 - Yubico AB                                      **
 **                                                                      **
 **      Date   / Sig / Rev  / History                                   **
 **      110205 / J E / 0.00 / Main                                      **
-**      110406 / J E / 0.98 / Release changes                           **
+**      110412 / J E / 0.98 / Release changes                           **
+**      110809 / J E / 1.01 / Release changes                           **
 **                                                                      **
 *************************************************************************/
 
@@ -42,7 +43,7 @@ typedef unsigned long uint32_t;
 
 typedef struct {
     uint8_t key[KEY_SIZE];              // AES key
-	uint8_t uid[UID_SIZE];		        // Unique (secret) ID
+    uint8_t uid[UID_SIZE];              // Unique (secret) ID
 } YSM_YUBIKEY_SECRETS;
 
 // AES CCM nonce
@@ -219,14 +220,14 @@ typedef struct {
 // Validate OTP using interal store
 ////////////////////////////////////
 
-#define YSM_DB_OTP_VALIDATE             0x07
+#define YSM_DB_YUBIKEY_OTP_VALIDATE     0x07
 
 typedef struct {
     uint8_t publicId[YSM_PUBLIC_ID_SIZE]; // Public id
     uint8_t otp[YSM_OTP_SIZE];          // OTP
-} YSM_DB_OTP_VALIDATE_REQ;
+} YSM_DB_YUBIKEY_OTP_VALIDATE_REQ;
 
-#define YSM_DB_OTP_VALIDATED   (YSM_DB_OTP_VALIDATE | YSM_RESPONSE)
+#define YSM_DB_YUBIKEY_OTP_VALIDATED    (YSM_DB_YUBIKEY_OTP_VALIDATE | YSM_RESPONSE)
 
 typedef struct {
     uint8_t publicId[YSM_PUBLIC_ID_SIZE];  // Public id
@@ -235,7 +236,7 @@ typedef struct {
     uint8_t tstph;				        // Timestamp (high part)
     uint16_t tstpl;				        // Timestamp (low part)
     YSM_STATUS status;                  // Validation status
-} YSM_DB_OTP_VALIDATE_RESP;
+} YSM_DB_YUBIKEY_OTP_VALIDATE_RESP;
 
 ////////////////////////////////////
 // AES ECB block encrypt request
@@ -463,7 +464,7 @@ typedef struct {
 } YSM_SYSTEM_INFO_RESP;
 
 ////////////////////////////////////
-// Unlock key handle based operations
+// Unlock key handle based operations (version 0.x)
 ////////////////////////////////////
 
 #define YSM_KEY_STORAGE_UNLOCK          0x27
@@ -479,16 +480,52 @@ typedef struct {
 } YSM_KEY_STORAGE_UNLOCK_RESP;
 
 ////////////////////////////////////
-// Exit HSM mode (debug only)
+// Unlock HSM mode of operation (version 1.x)
+////////////////////////////////////
+
+#define YSM_HSM_UNLOCK                  0x28
+
+typedef struct {
+    uint8_t publicId[YSM_PUBLIC_ID_SIZE]; // Public id
+    uint8_t otp[YSM_OTP_SIZE];          // OTP
+} YSM_HSM_UNLOCK_REQ;
+
+#define YSM_HSM_UNLOCKED    (YSM_HSM_UNLOCK | YSM_RESPONSE)
+
+typedef struct {
+    YSM_STATUS status;                  // Unlock status
+} YSM_HSM_UNLOCK_RESP;
+
+////////////////////////////////////
+// Decrypt key store
+////////////////////////////////////
+
+#define YSM_KEY_STORE_DECRYPT           0x29
+
+typedef struct {
+    uint8_t key[YSM_MAX_KEY_SIZE];      // Key store decryption key
+} YSM_KEY_STORE_DECRYPT_REQ;
+
+#define YSM_KEY_STORE_DECRYPTED     (YSM_KEY_STORE_DECRYPT | YSM_RESPONSE)
+
+typedef struct {
+    YSM_STATUS status;                  // Unlock status
+} YSM_KEY_STORE_DECRYPT_RESP;
+
+////////////////////////////////////
+// Exit HSM mode (debug mode only)
 ////////////////////////////////////
 
 #define YSM_MONITOR_EXIT                0x7f    // Exit to monitor (no response sent)
 
-#define YSM_MONITOR_EXIT_MAGIC  0xbaadbeef
+#define YSM_MONITOR_EXIT_MAGIC          0xbaadbeef
 
 typedef struct {
     uint32_t magic;                     // Magic number for trigger
     uint32_t magicInv;                  // 1st complement of magic
 } YSM_MONITOR_EXIT_REQ;
+
+#define YSM_EXTENDED_CMD_FIRST          0x60
+#define YSM_EXTENDED_CMD_LAST           0x6f
 
 #endif  // __YUBIHSM_H_INCLUDED

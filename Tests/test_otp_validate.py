@@ -36,10 +36,10 @@ class TestOtpValidate(test_common.YHSM_TestCase):
         key = "A" * 16
         uid = '\x4d\x01\x4d\x02'
         public_id = 'f1f2f3f4f5f6'.decode('hex')
-        # Enabled flags 00000004 = YSM_BUFFER_AEAD_GENERATE
-        # HSM> < keyload - Load key data now using flags 00000004. Press ESC to quit
-        # 00000003 - stored ok
-        key_handle = 3
+        # Enabled flags 40000004 = YSM_BUFFER_AEAD_GENERATE,YSM_BUFFER_LOAD
+        # HSM> < keyload - Load key data now using flags 40000004. Press ESC to quit
+        # 00001002 - stored ok
+        key_handle = 0x1002
 
         secret = pyhsm.aead_cmd.YHSM_YubiKeySecret(key, uid)
         self.hsm.load_secret(secret)

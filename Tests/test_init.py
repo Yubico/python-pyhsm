@@ -17,6 +17,7 @@ import test_otp_validate
 import test_stick
 import test_util
 import test_yubikey_validate
+import test_misc
 
 test_modules = [test_aead,
                 test_aes_ecb,
@@ -29,6 +30,7 @@ test_modules = [test_aead,
                 test_stick,
                 test_util,
                 test_yubikey_validate,
+                test_misc,
                 ]
 
 # special, should not be addded to test_modules
