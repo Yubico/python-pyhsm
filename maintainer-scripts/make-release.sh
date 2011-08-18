@@ -37,7 +37,7 @@ if [ "x$init_ver" != "x$gitdesc" ]; then
     read foo
 fi
 
-releasedir="pyhsm-$gitdesc"
+releasedir="python-pyhsm-$gitdesc"
 tarfile="$tmpdir/$releasedir.tar"
 git archive --format=tar --prefix=${releasedir}/ ${gitref} | (cd $tmpdir && tar xf -)
 
