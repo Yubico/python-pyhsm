@@ -10,7 +10,7 @@ import pyhsm.util
 import test_common
 
 from StringIO import StringIO
-from test_common import CfgPassphrase, AdminYubiKeys, HsmPassphrase
+from test_common import CfgPassphrase, AdminYubiKeys, HsmPassphrase, PrimaryAdminYubiKey
 
 class ConfigureYubiHSMforTest(test_common.YHSM_TestCase):
 
@@ -46,7 +46,9 @@ class ConfigureYubiHSMforTest(test_common.YHSM_TestCase):
             # Enter admin Yubikey public id (enter when done)
             # Enter master key (g to generate) yes
             # Confirm current config being erased (type yes)
-            self.config_do ("hsm ffffffff\r%s\r%s\r%s\ryes" % (CfgPassphrase, AdminYubiKeys, HsmPassphrase))
+            AdminYubiKeysStr = '\r'.join(AdminYubiKeys)
+            AdminYubiKeysStr += '\r'
+            self.config_do ("hsm ffffffff\r%s\r%s\r%s\ryes" % (CfgPassphrase, AdminYubiKeysStr, HsmPassphrase))
 
         self.hsm.drain()
         self.add_keys(xrange(31))
@@ -56,6 +58,12 @@ class ConfigureYubiHSMforTest(test_common.YHSM_TestCase):
 
         if self.hsm.version.have_key_store_decrypt():
             self.config_do("keycommit")
+
+        # load a YubiKey (the first Admin YubiKey) into the internal database
+        escape_char = chr(27)
+        self.config_do("dbload\r00001,%s,%s,%s\r" % (PrimaryAdminYubiKey) + escape_char, add_cr = False)
+
+        self.config_do("dblist")
 
         # get back into HSM mode
         sys.stderr.write("exit")
@@ -67,7 +75,24 @@ class ConfigureYubiHSMforTest(test_common.YHSM_TestCase):
 
     def test_zzz_unlock(self):
         """ Test unlock of keystore after reconfiguration. """
-        self.assertTrue(self.hsm.key_storage_unlock(HsmPassphrase.decode("hex")))
+        Params = PrimaryAdminYubiKey
+        YK = test_common.FakeYubiKey(pyhsm.yubikey.modhex_decode(Params[0]).decode('hex'),
+                                     Params[1].decode('hex'), Params[2].decode('hex')
+                                     )
+        # After reconfigure, we know the counter values for PrimaryAdminYubiKey is zero
+        # in the internal db. However, the test suite initialization will unlock the keystore
+        # (in test_common.YHSM_TestCase.setUp) so a value of 0/1 should result in a replayed OTP.
+        YK.use_ctr = 0
+        YK.session_ctr = 1
+        # first verify counters 1/0 gives the expected YSM_OTP_REPLAY
+        try:
+            self.hsm.unlock(otp = YK.from_key())
+        except pyhsm.exception.YHSM_CommandFailed, e:
+            if e.status != pyhsm.defines.YSM_OTP_REPLAY:
+                raise
+        # now do real unlock with values 1/1
+        YK.use_ctr = 1
+        self.assertTrue(self.hsm.unlock(password = HsmPassphrase.decode("hex"), otp = YK.from_key()))
 
     def test_zzz_echo(self):
         """ Test echo after reconfiguration. """

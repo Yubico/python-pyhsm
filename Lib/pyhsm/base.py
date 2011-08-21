@@ -54,6 +54,8 @@ import pyhsm.debug_cmd
 import pyhsm.hmac_cmd
 import pyhsm.validate_cmd
 
+import pyhsm.yubikey
+
 class YHSM():
     """
     Base class for accessing a YubiHSM.
@@ -220,13 +222,14 @@ class YHSM():
 
         @param password: The 'master key' set during YubiHSM configuration
         @type password: NoneType or string
-        @param otp: A YubiKey OTP from an 'admin' YubiKey, to unlock YubiHSM.
+        @param otp: A YubiKey OTP from an 'admin' YubiKey (modhex), to unlock YubiHSM.
         @type otp: NoneType or string
 
         @returns: Only returns (True) on success
         @rtype: bool
 
         @see: L{pyhsm.basic_cmd.YHSM_Cmd_Key_Storage_Unlock.parse_result}
+        @see: L{pyhsm.basic_cmd.YHSM_Cmd_HSM_Unlock.parse_result}
         """
         if otp is not None and not self.version.have_unlock():
             # only in 1.0
@@ -243,7 +246,10 @@ class YHSM():
         else:
             res = True
         if res and otp is not None:
-            return pyhsm.basic_cmd.YHSM_Cmd_HSM_Unlock(self.stick, otp).execute()
+            (public_id, otp,) = pyhsm.yubikey.split_id_otp(otp)
+            public_id = pyhsm.yubikey.modhex_decode(public_id).decode('hex')
+            otp = pyhsm.yubikey.modhex_decode(otp).decode('hex')
+            return pyhsm.basic_cmd.YHSM_Cmd_HSM_Unlock(self.stick, public_id, otp).execute()
         return res
 
     def key_storage_unlock(self, password):

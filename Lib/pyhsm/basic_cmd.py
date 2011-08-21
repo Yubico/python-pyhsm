@@ -18,6 +18,8 @@ __all__ = [
     'YHSM_Cmd_Temp_Key_Load',
     'YHSM_Cmd_Nonce_Get',
     'YHSM_Cmd_Key_Storage_Unlock',
+    'YHSM_Cmd_Key_Store_Decrypt',
+    'YHSM_Cmd_HSM_Unlock',
     'YHSM_NonceResponse',
 ]
 
@@ -310,6 +312,54 @@ class YHSM_Cmd_Key_Store_Decrypt(YHSM_Cmd):
         # typedef struct {
         #   YSM_STATUS status;                  // Unlock status
         # } YSM_KEY_STORE_DECRYPT_RESP;
+        fmt = "B"
+        self.status, = struct.unpack(fmt, data)
+
+        if self.status == pyhsm.defines.YSM_STATUS_OK:
+            return True
+        else:
+            raise pyhsm.exception.YHSM_CommandFailed(pyhsm.defines.cmd2str(self.command), self.status)
+
+class YHSM_Cmd_HSM_Unlock(YHSM_Cmd):
+    """
+    Have the YubiHSM unlock the HSM operations (those involving the keystore) with a YubiKey OTP.
+
+    Admin YubiKeys public id's are entered during initial configuration. These must then be made
+    available in the internal database.
+
+    @ivar status: The result of the unlock operation
+    @type status: integer
+    """
+
+    status = None
+
+    def __init__(self, stick, public_id, otp):
+        self.public_id = pyhsm.util.input_validate_nonce(public_id, pad = True)
+        self.otp = pyhsm.util.input_validate_str(otp, 'otp', exact_len = pyhsm.defines.YSM_OTP_SIZE)
+        # typedef struct {
+        #   uint8_t publicId[YSM_PUBLIC_ID_SIZE]; // Public id
+        #   uint8_t otp[YSM_OTP_SIZE];          // OTP
+        # } YSM_HSM_UNLOCK_REQ;
+        fmt = "< %is %is" % (pyhsm.defines.YSM_AEAD_NONCE_SIZE, \
+                                       pyhsm.defines.YSM_OTP_SIZE, \
+                                 )
+        packed = struct.pack(fmt, self.public_id, \
+                                 self.otp,
+                             )
+        YHSM_Cmd.__init__(self, stick, pyhsm.defines.YSM_HSM_UNLOCK, packed)
+
+    def parse_result(self, data):
+        """
+        Parse result of L{pyhsm.defines.YSM_HSM_UNLOCK} command.
+
+        @return: Only returns (True) on successful unlock
+        @rtype: bool
+
+        @raise pyhsm.exception.YHSM_CommandFailed: YubiHSM failed to unlock key store
+        """
+        # typedef struct {
+        #   YSM_STATUS status;                  // Unlock status
+        # } YSM_HSM_UNLOCK_RESP;
         fmt = "B"
         self.status, = struct.unpack(fmt, data)
 

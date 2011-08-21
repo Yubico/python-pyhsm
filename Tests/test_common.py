@@ -10,7 +10,8 @@ import struct
 # configuration parameters
 CfgPassphrase = ""
 HsmPassphrase = "bada" * 2
-AdminYubiKeys = ""
+PrimaryAdminYubiKey = ('ftftftfteeee', 'f0f1f2f3f4f5', '4d' * 16,)
+AdminYubiKeys = [PrimaryAdminYubiKey[0]]
 
 class YHSM_TestCase(unittest.TestCase):
 
@@ -22,14 +23,16 @@ class YHSM_TestCase(unittest.TestCase):
         YubiHSM in self.hsm.
         """
         self.hsm = pyhsm.base.YHSM(device = device, debug = debug)
-        # unlock keystore if our test configuration contains a passphrase
-        if HsmPassphrase is not None and HsmPassphrase != "":
-            try:
-                self.hsm.key_storage_unlock(HsmPassphrase.decode("hex"))
-            except pyhsm.exception.YHSM_CommandFailed, e:
-                # ignore errors from this one, in case our test configuration
-                # hasn't been loaded into the YubiHSM yet
-                pass
+        # unlock keystore if our test configuration contains a passphrase, and keystore is locked
+        if self.keystore_is_locked():
+            if HsmPassphrase is not None and HsmPassphrase != "":
+                try:
+                    self.hsm.unlock(password = HsmPassphrase.decode("hex"))
+                except pyhsm.exception.YHSM_CommandFailed, e:
+                    # ignore errors from this one, in case our test configuration
+                    # hasn't been loaded into the YubiHSM yet
+                    pass
+            self.otp_unlock()
 
     def tearDown(self):
         # get destructor called properly
@@ -51,6 +54,49 @@ class YHSM_TestCase(unittest.TestCase):
                 if e.status != pyhsm.defines.YSM_FUNCTION_DISABLED:
                     self.fail("Expected YSM_FUNCTION_DISABLED for key handle 0x%0x, got %s" \
                                   % (kh, e.status_str))
+
+    def keystore_is_locked(self):
+        """
+        Check if YubiHSM's key store is locked or not.
+
+        @return: Locked or not
+        @rtype: bool
+        """
+        try:
+            res = self.hsm.aes_ecb_encrypt(0x2000, "is_locked???")
+            return False
+        except pyhsm.exception.YHSM_CommandFailed, e:
+            if e.status == pyhsm.defines.YSM_KEY_STORAGE_LOCKED:
+                return True
+            raise
+
+    def otp_unlock(self):
+        """
+        Do OTP unlock of the YubiHSM keystore.
+
+        Since we don't always reprogram the YubiHSM, we might need to hunt for an unused OTP.
+        """
+        Params = PrimaryAdminYubiKey
+        YK = FakeYubiKey(pyhsm.yubikey.modhex_decode(Params[0]).decode('hex'),
+                         Params[1].decode('hex'), Params[2].decode('hex')
+                         )
+        YK.session_ctr = 0
+        use_ctr = 1	# the 16 bit power-up counter of the YubiKey
+        while use_ctr < 0xffff:
+            YK.use_ctr = use_ctr
+            otp = YK.from_key()
+            try:
+                res = self.hsm.unlock(otp = otp)
+                self.assertTrue(res)
+                # OK - if we got here we've got a successful response for this OTP
+                break
+            except pyhsm.exception.YHSM_CommandFailed, e:
+                if e.status != pyhsm.defines.YSM_OTP_REPLAY:
+                    raise
+            # don't bother with the session_ctr - test run 5 would mean we first have to
+            # exhaust 4 * 256 session_ctr increases before the YubiHSM would pass our OTP
+            use_ctr += 1
+
 def crc16(data):
     """
     Calculate an ISO13239 CRC checksum of the input buffer.
@@ -136,3 +182,22 @@ class YubiKeyRnd(YubiKeyEmu):
     def __init__(self, user_id):
         timestamp, session_counter, session_use = struct.unpack('IHB', os.urandom(7))
         YubiKeyEmu.__init__(self, user_id, session_counter, timestamp, session_use)
+
+class FakeYubiKey(YubiKeyEmu):
+    """
+    A complete fake YubiKey.
+    """
+
+    def __init__(self, public_id, user_id, key):
+        use_ctr, timestamp, session_ctr, = (0, 0, 0,)
+        YubiKeyEmu.__init__(self, user_id, use_ctr, timestamp, session_ctr)
+        self.public_id = public_id
+        self.key = key
+
+    def get_otp(self, key = None):
+        if key is None:
+            key = self.key
+        return YubiKeyEmu.get_otp(self, key)
+
+    def from_key(self):
+        return YubiKeyEmu.from_key(self, self.public_id, self.key)

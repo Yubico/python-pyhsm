@@ -49,6 +49,19 @@ def suite():
 
     global test_modules
 
+    # Check if we have a YubiHSM present, and start with locking it's keystore
+    # XXX produce a better error message than 'error: None' when initializing fails
+    hsm = pyhsm.YHSM(device = "/dev/ttyACM0")
+    try:
+        hsm.unlock("BADPASSPHRASE99")
+    except pyhsm.exception.YHSM_CommandFailed, e:
+        if hsm.version.have_key_store_decrypt():
+            if e.status != pyhsm.defines.YSM_MISMATCH:
+                raise
+        else:
+            if e.status != pyhsm.defines.YSM_KEY_STORAGE_LOCKED:
+                raise
+
     zap = []
     if 'YHSM_ZAP' in os.environ:
         if os.environ['YHSM_ZAP']:
