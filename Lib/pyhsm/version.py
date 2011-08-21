@@ -58,4 +58,4 @@ class YHSM_Version():
         """
         This is a key handle permission flag that was introduced in 0.9.9.
         """
-        return self.ver > (0, 9, 9,)
+        return self.ver >= (0, 9, 9,)
