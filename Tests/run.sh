@@ -17,5 +17,5 @@ if [ "x$1" = "x--cover" ]; then
     fi
     nosetests --with-coverage $exclude . ../Tests/
 else
-    $PYTHON $mydir/../setup.py test $*
+    PYTHONPATH="Lib" $PYTHON $mydir/../setup.py test $*
 fi
