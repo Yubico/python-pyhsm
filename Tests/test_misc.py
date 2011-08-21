@@ -14,6 +14,8 @@ class TestUtil(test_common.YHSM_TestCase):
 
     def test_using_disabled_keyhandle(self):
         """ Test using a disabled key handle. """
+        if not self.hsm.version.have_keydisable():
+            return None
         # HSM> < keyload - Load key data now using flags ffffffff. Press ESC to quit
         # 00002001 - stored ok
         # HSM> < keydis 2001

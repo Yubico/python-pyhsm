@@ -68,6 +68,9 @@ class YHSM_TestCase(unittest.TestCase):
         except pyhsm.exception.YHSM_CommandFailed, e:
             if e.status == pyhsm.defines.YSM_KEY_STORAGE_LOCKED:
                 return True
+            if e.status == pyhsm.defines.YSM_KEY_HANDLE_INVALID:
+                # unconfigured, assume it is not locked
+                return False
             raise
 
     def otp_unlock(self):
@@ -76,6 +79,8 @@ class YHSM_TestCase(unittest.TestCase):
 
         Since we don't always reprogram the YubiHSM, we might need to hunt for an unused OTP.
         """
+        if not self.hsm.version.have_unlock():
+            return None
         Params = PrimaryAdminYubiKey
         YK = FakeYubiKey(pyhsm.yubikey.modhex_decode(Params[0]).decode('hex'),
                          Params[1].decode('hex'), Params[2].decode('hex')

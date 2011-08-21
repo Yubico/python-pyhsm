@@ -37,14 +37,14 @@ class YHSM_Version():
 
     def have_key_store_decrypt(self):
         """ YSM_KEY_STORE_DECRYPT was introduced in 1.0, replacing YSM_KEY_STORAGE_UNLOCK. """
-        return self.ver > (1, 0,)
+        return self.ver >= (1, 0, 0)
 
     def have_unlock(self):
         """
         YSM_HSM_UNLOCK, featuring YubiKey OTP unlocking of operations,
         was introduced in 1.0.
         """
-        return self.ver > (1, 0,)
+        return self.ver >= (1, 0, 0)
 
     def have_keycommit(self):
         """
@@ -52,7 +52,15 @@ class YHSM_Version():
 
         'keycommit' was introduced in 1.0.
         """
-        return self.ver > (1, 0,)
+        return self.ver >= (1, 0, 0)
+
+    def have_keydisable(self):
+        """
+        YubiHSM have the 'keydis'(able) command in configuration mode.
+
+        'keydis' was introduced in 1.0.
+        """
+        return self.ver >= (1, 0, 1)
 
     def have_YSM_BUFFER_LOAD(self):
         """
