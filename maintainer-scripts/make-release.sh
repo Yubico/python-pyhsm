@@ -57,18 +57,18 @@ echo "path : $tmpdir/$releasedir"
 ls -l $tmpdir/$releasedir
 
 # tar it up to not accidentally get junk in there while running tests etc.
-(cd ${tmpdir} && tar zcf pyhsm-${gitdesc}.tar.gz ${releasedir})
+(cd ${tmpdir} && tar zcf python-pyhsm-${gitdesc}.tar.gz ${releasedir})
 
 # run all unit tests
 (cd $tmpdir/$releasedir && PYTHONPATH="Lib" ./Tests/run.sh)
 
 # sign the release
 mkdir -p ../releases
-cp ${tmpdir}/pyhsm-${gitdesc}.tar.gz ../releases
-gpg --detach-sign ../releases/pyhsm-${gitdesc}.tar.gz
-gpg --verify ../releases/pyhsm-${gitdesc}.tar.gz.sig
+cp ${tmpdir}/python-pyhsm-${gitdesc}.tar.gz ../releases
+gpg --detach-sign ../releases/python-pyhsm-${gitdesc}.tar.gz
+gpg --verify ../releases/python-pyhsm-${gitdesc}.tar.gz.sig
 
 echo ""
 echo "Finished"
 echo ""
-ls -l ../releases/pyhsm-${gitdesc}.tar.gz*
+ls -l ../releases/python-pyhsm-${gitdesc}.tar.gz*
