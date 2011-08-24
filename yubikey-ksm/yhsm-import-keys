@@ -70,7 +70,7 @@ def parse_args():
                         dest='key_handles',
                         nargs='+',
                         required=True,
-                        help='Key handles to encrypt the imported secrets with',
+                        help='Comma separated list of key handles to encrypt the imported secrets with',
                         )
     parser.add_argument('--internal-db',
                         dest='internal_db',
