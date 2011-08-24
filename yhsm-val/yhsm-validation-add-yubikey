@@ -79,6 +79,9 @@ def parse_args():
     except ValueError:
         hexstr = pyhsm.yubikey.modhex_decode(args.public_id)
         n = int(hexstr, 16)
+    if n > 0x0000ffffffffffff:
+        sys.stderr.write("Public ID too large (won't fit in 6 bytes)\n")
+        return None
     args.public_id = n
 
     args.key_handle = pyhsm.util.key_handle_to_int(args.key_handle)
@@ -116,7 +119,7 @@ def program_slot(will_use, slot, public_id, args, YK):
     # someone wants to get secrets into multiple YubiHSM:s (like for
     # programming admin-YubiKeys into a bunch of YubiHSM:s)
     hsm = pyhsm.YHSM(device = args.device, debug=args.debug)
-    nonce = struct.pack('>I', public_id).rjust(pyhsm.defines.YSM_PUBLIC_ID_SIZE, chr(0x0))
+    nonce = struct.pack('>Q', public_id).rjust(pyhsm.defines.YSM_PUBLIC_ID_SIZE, chr(0x0))[2:8]
 
     # Get random data from YubiHSM
     rnd = hsm.random(pyhsm.defines.YSM_PUBLIC_ID_SIZE + pyhsm.defines.YSM_OTP_SIZE)
@@ -174,6 +177,8 @@ def print_slot(will_use, slot, public_id):
 
 def main():
     args = parse_args()
+    if not args:
+        sys.exit(1)
 
     if not args.slot_1 and not args.slot_2:
         sys.stderr.write("Error: No slot(s) selected. Either -1, -2 or both must be supplied.\n")
