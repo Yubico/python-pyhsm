@@ -28,11 +28,11 @@ class YHSM_TestCase(unittest.TestCase):
             if HsmPassphrase is not None and HsmPassphrase != "":
                 try:
                     self.hsm.unlock(password = HsmPassphrase.decode("hex"))
+                    self.otp_unlock()
                 except pyhsm.exception.YHSM_CommandFailed, e:
-                    # ignore errors from this one, in case our test configuration
+                    # ignore errors from the unlock function, in case our test configuration
                     # hasn't been loaded into the YubiHSM yet
                     pass
-            self.otp_unlock()
 
     def tearDown(self):
         # get destructor called properly
