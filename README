@@ -1,8 +1,12 @@
-This is the Python package to talk to YubiHSM's.
+This is the Python package to talk to a YubiHSM.
 
-YubiHSM's are Yubico's take on an easy and affordable HSM.
+The YubiHSM is Yubico's take on the Hardware Security Module (HSM),
+designed for protecting secrets on authentication servers, including
+cryptographic keys and passwords, at unmatched simplicity and low
+cost.
 
-See the files in examples/ to get an idea of how to use this code.
+See the files in utils/, examples/ yhsm-val/, and yubikey-ksm/ to get
+an idea of how to use this code.
 
 Copyright (c) 2011 Yubico AB
 All rights reserved.
@@ -24,7 +28,7 @@ In addition to the YubiHSM communication library, pyhsm also contains
 some applications utilizing the YubiHSM :
 
   * yhsm-val    - a simple validation server supporting validation of
-                  YubiKey OTP's, OATH codes and password hashes.
+                  YubiKey OTPs, OATH codes and password hashes.
   * yubikey-ksm - ykval YubiKey OTP decryption backend using the
                   YubiHSM.
 
