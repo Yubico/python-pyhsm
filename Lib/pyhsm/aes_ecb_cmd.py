@@ -1,8 +1,9 @@
 """
 implementations of AES ECB block cipher commands to execute on a YubiHSM
 """
-# Copyright (c) 2011, Yubico AB
-# All rights reserved.
+
+# Copyright (c) 2011 Yubico AB
+# See the file COPYING for licence statement.
 
 import struct
 

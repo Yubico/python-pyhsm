@@ -2,8 +2,8 @@
 #
 # Tool to add an OATH token to the yhsm-validation-server.py database.
 #
-# Copyright (c) 2011, Yubico AB
-# All rights reserved.
+# Copyright (c) 2011 Yubico AB
+# See the file COPYING for licence statement.
 #
 
 import sys

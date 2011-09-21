@@ -14,8 +14,8 @@ will be done inside the YubiHSM. The internal database is currently
 limited to 1024 entrys.
 """
 #
-# Copyright (c) 2011, Yubico AB
-# All rights reserved.
+# Copyright (c) 2011 Yubico AB
+# See the file COPYING for licence statement.
 #
 
 import os

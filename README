@@ -5,9 +5,8 @@ YubiHSM's are Yubico's take on an easy and affordable HSM.
 See the files in examples/ to get an idea of how to use this code.
 
 Copyright (c) 2011 Yubico AB
-All rights reserved.
+See the file COPYING for licence statement.
 
-See the file COPYING for complete license information.
 
 ================
   Introduction

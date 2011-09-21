@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 #
-# Copyright (c) 2011, Yubico AB
-# All rights reserved.
+# Copyright (c) 2011 Yubico AB
+# See the file COPYING for licence statement.
 #
 # Get random data from TRNG on YubiHSM and insert it into host
 # entropy pool. Probably only works on Linux since the ioctl()

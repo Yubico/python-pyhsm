@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, Yubico AB
+# Copyright (c) 2011 Yubico AB
 # All rights reserved.
 #
 #   Redistribution and use in source and binary forms, with or
@@ -29,8 +29,6 @@
 """
 module for accessing a YubiHSM
 """
-# Copyright (c) 2011, Yubico AB
-# All rights reserved.
 
 __all__ = [
     # constants

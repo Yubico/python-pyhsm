@@ -3,8 +3,8 @@
 # Utility to generate an AEAD (encrypted block) from a password,
 # that can later on be validated securely.
 #
-# Copyright (c) 2011, Yubico AB
-# All rights reserved.
+# Copyright (c) 2011 Yubico AB
+# See the file COPYING for licence statement.
 #
 # If you only have a single YubiHSM, you have to have one key handle
 # that can both ENCRYPT and COMPARE AES ECB blocks.
