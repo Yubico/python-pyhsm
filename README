@@ -1,8 +1,12 @@
-This is the Python package to talk to YubiHSM's.
+This is the Python package to talk to a YubiHSM.
 
-YubiHSM's are Yubico's take on an easy and affordable HSM.
+The YubiHSM is Yubico's take on the Hardware Security Module (HSM),
+designed for protecting secrets on authentication servers, including
+cryptographic keys and passwords, at unmatched simplicity and low
+cost.
 
-See the files in examples/ to get an idea of how to use this code.
+See the files in utils/, examples/ yhsm-val/, and yubikey-ksm/ to get
+an idea of how to use this code.
 
 Copyright (c) 2011 Yubico AB
 See the file COPYING for licence statement.
@@ -23,22 +27,21 @@ In addition to the YubiHSM communication library, pyhsm also contains
 some applications utilizing the YubiHSM :
 
   * yhsm-val    - a simple validation server supporting validation of
-                  YubiKey OTP's, OATH codes and password hashes.
+                  YubiKey OTPs, OATH codes and password hashes.
   * yubikey-ksm - ykval YubiKey OTP decryption backend using the
                   YubiHSM.
 
-and some smaller examples in the examples/ directory, that might still
-be directly useful though.
+and some smaller scripts in the utils/ and examples/ directory :
 
+  * yhsm-linux-add-entropy
+                - Feed Linux kernel with random entropy from the TRNG
+		  on the YubiHSM.
+  * yhsm-keystore-unlock
+		- Unlock the key storage in the YubiHSM with your HSM
+		  password. Use with incorrect password to lock it again.
   * yhsm-sysinfo.py
 		- Print basic system information about the connected
 		  YubiHSM.
-  * yhsm-linux-add-entropy.py
-                - Feed Linux kernel with random entropy from the TRNG
-		  on the YubiHSM.
-  * yhsm-storage-unlock.py
-		- Unlock the key storage in the YubiHSM with your HSM
-		  password. Use with incorrect password to lock it again.
   * yhsm-monitor-exit.py
 		- Get a YubiHSM *in debug mode* to enter configuration
 		  mode again, without having to press the little button
