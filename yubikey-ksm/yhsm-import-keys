@@ -12,6 +12,15 @@ If --internal-db is used, the YubiKey secret will be stored inside
 the YubiHSM, and complete validation (including counter management)
 will be done inside the YubiHSM. The internal database is currently
 limited to 1024 entrys.
+
+The input is supposed to be a comma-separated list of entrys like this
+
+  # ykksm 1
+  123456,ftftftcccc,534543524554,fcacd309a20ce1809c2db257f0e8d6ea,000000000000,,,
+
+  (seqno, public id, private uid, AES key, dunno,,,)
+
+This is also the format of a database export from a traditional YK-KSM.
 """
 #
 # Copyright (c) 2011 Yubico AB
@@ -112,6 +121,7 @@ def import_keys(hsm, args):
     """
     The main stdin iteration loop.
     """
+    res = True
 
     # ykksm 1
     #123456,ftftftcccc,534543524554,fcacd309a20ce1809c2db257f0e8d6ea,000000000000,,,
@@ -135,7 +145,8 @@ def import_keys(hsm, args):
         for kh in args.key_handles.keys():
             aead = hsm.generate_aead(public_id.decode('hex'), kh)
             if args.internal_db:
-                store_in_internal_db(args, hsm, modhex_id, public_id, kh, aead)
+                if not store_in_internal_db(args, hsm, modhex_id, public_id, kh, aead):
+                    res = False
                 continue
 
             filename = output_filename(args.output_dir, args.key_handles[kh], padded_id)
@@ -149,7 +160,11 @@ def import_keys(hsm, args):
         if args.verbose:
             print ""
 
-    print "\nDone\n"
+    if res:
+        print "\nDone\n"
+    else:
+        print "\nDone (one or more entrys rejected)"
+    return res
 
 def store_in_internal_db(args, hsm, modhex_id, public_id, kh, aead):
     """ Store record (AEAD) in YubiHSM internal DB """
@@ -165,6 +180,8 @@ def store_in_internal_db(args, hsm, modhex_id, public_id, kh, aead):
             print "%s" % (pyhsm.defines.status2str(e.status))
         else:
             print "Storing ID %s FAILED: %s" % (modhex_id, pyhsm.defines.status2str(e.status))
+        return False
+    return True
 
 def shorten_aead(aead):
     """ Produce pretty-printable version of long AEAD. """
@@ -201,8 +218,7 @@ def main():
 
     hsm = pyhsm.YHSM(device = args.device, debug=args.debug)
 
-    import_keys(hsm, args)
-
+    return not import_keys(hsm, args)
 
 if __name__ == '__main__':
-    main()
+    sys.exit(main())
