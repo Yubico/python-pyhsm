@@ -55,8 +55,11 @@
 import re
 import os
 import sys
+import time
+import hmac
 import syslog
 import serial
+import base64
 import sqlite3
 import argparse
 import urlparse
@@ -78,6 +81,9 @@ hsm = None
 args = None
 saved_key_handle = None
 
+client_ids = {"4711": "xyz",
+              }
+
 class YHSM_KSMRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     """
     Handle HTTP GET requests according to configuration in global variable `args'.
@@ -95,12 +101,20 @@ class YHSM_KSMRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             mode = None
             params = urlparse.parse_qs(self.path[len(args.serve_url):])
             if "otp" in params:
-                if args.mode_otp:
+                if args.mode_short_otp:
                     # YubiKey OTP
+                    mode = 'YubiKey OTP (short)'
+                    res = validate_yubikey_otp_short(self, params)
+                elif args.mode_otp:
+                    # YubiKey OTP validation 2.0
                     mode = 'YubiKey OTP'
                     res = validate_yubikey_otp(self, params)
+                    print "RESULT: %s" % (res.split('\n'))
+                    status = [x for x in res.split('\n') if res.startswith("status=")]
+                    if len(status) == 1:
+                        res = status
                 else:
-                    res = "ERR 'otp' disabled"
+                    res = "ERR 'otp/otp2' disabled"
             elif "hotp" in params:
                 if args.mode_hotp:
                     mode = 'OATH-HOTP'
@@ -145,7 +159,7 @@ class YHSM_KSMRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         """ For logging client host without resolving. """
         return self.client_address[0]
 
-def validate_yubikey_otp(self, params):
+def validate_yubikey_otp_short(self, params):
     """
     Validate YubiKey OTP using YubiHSM internal database.
     """
@@ -159,6 +173,82 @@ def validate_yubikey_otp(self, params):
             (res.use_ctr, res.ts_low, res.ts_high, res.session_ctr)
     except pyhsm.exception.YHSM_CommandFailed, e:
         return "ERR %s" % (pyhsm.defines.status2str(e.status))
+
+def validate_yubikey_otp(self, params):
+    """
+    Validate YubiKey OTP using YubiHSM internal database.
+    """
+    from_key = params["otp"][0]
+    if not re.match(ykotp_valid_input, from_key):
+        self.log_error("IN: %s, Invalid OTP" % (from_key))
+        return "ERR Invalid OTP"
+    if not "nonce" in params:
+        self.log_error("IN: %s, no nonce" % (from_key))
+        return "ERR no nonce in request"
+    nonce = params["nonce"][0]
+    if len(nonce) < 16 or len(nonce) > 40:
+        return "ERR bad nonce"
+    if "sl" in params and not (params["sl"] == "100" or params["sl"] == "secure"):
+        return "ERR sync level not supported"
+    sig, client_key, = check_signature(params)
+    if sig != True:
+        self.log_error("Signature validation error")
+        return sig
+    try:
+        res = pyhsm.yubikey.validate_otp(hsm, from_key)
+        vres = {"otp": from_key,
+                "nonce": nonce,
+                "status": "OK",
+                "sessioncounter": str(res.use_ctr), # known confusion
+                "sessionuse": str(res.session_ctr), # known confusion
+                "timestamp": str((res.ts_high << 16 | res.ts_low) / 8)
+                }
+        if "sl" in params:
+            vres["sl"] = "100"
+        if "timestamp" in params:
+            vres["t"] = time.strftime("%FT%TZ0000", time.gmtime())
+        return make_otp_response(params, vres, client_key)
+    except pyhsm.exception.YHSM_CommandFailed, e:
+        return "ERR %s" % (pyhsm.defines.status2str(e.status))
+
+def make_otp_response(params, vres, client_key):
+    """
+    Create validation response (signed, if the request had an `id' parameter).
+    """
+    if 'id' in params and client_key:
+        sig = make_signature(params, client_key)
+        vres['h'] = sig
+    l = []
+    for key in sorted(vres.keys()):
+        l.append(key + "=" + vres[key])
+    return '\n'.join(l)
+
+def check_signature(params):
+    """ XXX implement checking of HMAC-SHA-1 signatures """
+    if 'id' in params:
+        key = client_ids.get(params['id'][0])
+        if key:
+            if 'h' in params:
+                good_sig = make_signature(params, key)
+                if params['h'][0] == good_sig:
+                    print "SIGNATURE %s VERIFIED" % (good_sig)
+                    return True, key
+            else:
+                return True, key
+        else:
+            my_log_message(args, syslog.LOG_INFO, "Unknown client id '%s'" % (params['id'][0]))
+            return False, None
+    return True, None
+
+def make_signature(params, hmac_key):
+    l = []
+    for key in sorted(params.keys()):
+        if key != "h":
+            l.append(key + "=" + ''.join(params[key]))
+    l_str = '&'.join(l)
+    sha = hmac.new(hmac_key)
+    sha.update(l_str)
+    return base64.b64encode(sha.digest())
 
 def validate_oath_hotp(self, params):
     """
@@ -246,7 +336,6 @@ class ValOathDb():
         self.conn = sqlite3.connect(self.filename)
         self.conn.row_factory = sqlite3.Row
 
-
     def get(self, key):
         """ Fetch entry from database. """
         c = self.conn.cursor()
@@ -323,10 +412,15 @@ def parse_args():
                         help='Key handle to use for creating HMAC-SHA1 hashes',
                         metavar='KEY_HANDLE',
                         )
+    parser.add_argument('--short-otp',
+                        dest='mode_short_otp',
+                        action='store_true', default=False,
+                        help='Enable YubiKey OTP validation (KSM style response)',
+                        )
     parser.add_argument('--otp',
                         dest='mode_otp',
                         action='store_true', default=False,
-                        help='Enable YubiKey OTP validation',
+                        help='Enable YubiKey OTP validation 2.0',
                         )
     parser.add_argument('--hotp',
                         dest='mode_hotp',
@@ -370,6 +464,10 @@ def args_fixup():
     saved_key_handle = args.hmac_kh
 
     args.key_handle = pyhsm.util.key_handle_to_int(args.hmac_kh)
+
+    if not (args.mode_otp or args.mode_short_otp or args.mode_hotp or args.mode_pwhash):
+        my_log_message(args, syslog.LOG_ERR, 'No validation mode enabled')
+        sys.exit(1)
 
 def write_pid_file(fn):
     """ Create a file with our PID. """
