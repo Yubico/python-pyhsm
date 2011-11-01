@@ -124,7 +124,7 @@ class YHSM_Cmd():
         res2 = self.stick.read(50) # expect a timeout
         lines = res2.split('\n')
         for this in lines:
-            if re.match('^(NO_CFG|WS_API|HSM).*> .*', this):
+            if re.match('^(NO_CFG|WSAPI|HSM).*> .*', this):
                 raise pyhsm.exception.YHSM_Error('YubiHSM is in configuration mode')
         raise pyhsm.exception.YHSM_Error('Unknown response from serial device %s : "%s"' \
                                              % (self.stick.device, res.encode('hex')))
