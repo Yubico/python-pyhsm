@@ -1,6 +1,7 @@
 # Copyright (c) 2011 Yubico AB
 # See the file COPYING for licence statement.
 
+import re
 import sys
 import time
 import unittest
@@ -61,7 +62,7 @@ class ConfigureYubiHSMforTest(test_common.YHSM_TestCase):
 
         # load a YubiKey (the first Admin YubiKey) into the internal database
         escape_char = chr(27)
-        self.config_do("dbload\r00001,%s,%s,%s\r" % (PrimaryAdminYubiKey) + escape_char, add_cr = False)
+        self.config_do("dbload\r00001,%s,%s,%s,\r" % (PrimaryAdminYubiKey) + escape_char, add_cr = False)
 
         self.config_do("dblist")
 
@@ -121,9 +122,8 @@ class ConfigureYubiHSMforTest(test_common.YHSM_TestCase):
             sys.stderr.write(b)
 
             recv += b
-            if recv.endswith("NO_CFG> "):
-                break
-            if recv.endswith("HSM> "):
+            lines = recv.split('\n')
+            if re.match('^(NO_CFG|WSAPI|HSM).*> .*', lines[-1]):
                 break
         return recv
 
