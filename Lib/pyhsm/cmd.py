@@ -5,6 +5,7 @@ module for accessing a YubiHSM
 # Copyright (c) 2011 Yubico AB
 # See the file COPYING for licence statement.
 
+import re
 import struct
 
 __all__ = [
@@ -84,10 +85,8 @@ class YHSM_Cmd():
 
         # read YSM_PKT.bcnt and YSM_PKT.cmd
         res = self.stick.read(2, 'response length + response status')
-        if not res:
-            reset(self.stick)
-            raise pyhsm.exception.YHSM_Error('YubiHSM did not respond to command %s' \
-                                                 % (pyhsm.defines.cmd2str(self.command)) )
+        if len(res) != 2:
+            self._handle_invalid_read_response(res, 2)
         response_len, response_status = struct.unpack('BB', res)
         response_len -= 1 # the status byte has been read already
         debug_info = None
@@ -107,6 +106,28 @@ class YHSM_Cmd():
                 raise pyhsm.exception.YHSM_Error('YubiHSM responded to wrong command')
         else:
             raise pyhsm.exception.YHSM_Error('YubiHSM did not respond')
+
+    def _handle_invalid_read_response(self, res, expected_len):
+        """
+        This function is called when we do not get the expected frame header in
+        response to a command. Probable reason is that we are not talking to a
+        YubiHSM in HSM mode (might be a modem, or a YubiHSM in configuration mode).
+
+        Throws a hopefully helpful exception.
+        """
+        if not res:
+            reset(self.stick)
+            raise pyhsm.exception.YHSM_Error('YubiHSM did not respond to command %s' \
+                                                 % (pyhsm.defines.cmd2str(self.command)) )
+        # try to check if it is a YubiHSM in configuration mode
+        self.stick.write('\r\r\r', '(mode test)')
+        res2 = self.stick.read(50) # expect a timeout
+        lines = res2.split('\n')
+        for this in lines:
+            if re.match('^(NO_CFG|WS_API|HSM).*> .*', this):
+                raise pyhsm.exception.YHSM_Error('YubiHSM is in configuration mode')
+        raise pyhsm.exception.YHSM_Error('Unknown response from serial device %s : "%s"' \
+                                             % (self.stick.device, res.encode('hex')))
 
     def parse_result(self, data):
         """
