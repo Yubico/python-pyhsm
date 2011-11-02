@@ -60,6 +60,7 @@ import hmac
 import syslog
 import serial
 import base64
+import hashlib
 import sqlite3
 import argparse
 import urlparse
@@ -71,6 +72,7 @@ import pyhsm.yubikey
 default_device = "/dev/ttyACM0"
 default_serve_url = "/yhsm/validate?"
 default_db_file = "/var/yubico/yhsm-validation-server.db"
+default_clients_file = "/var/yubico/yhsm-validation-server_client-id.conf"
 default_hotp_window = 5
 default_pid_file = None
 
@@ -81,8 +83,7 @@ hsm = None
 args = None
 saved_key_handle = None
 
-client_ids = {"4711": "xyz",
-              }
+client_ids = {}
 
 class YHSM_KSMRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     """
@@ -102,11 +103,11 @@ class YHSM_KSMRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             params = urlparse.parse_qs(self.path[len(args.serve_url):])
             if "otp" in params:
                 if args.mode_short_otp:
-                    # YubiKey OTP
+                    # YubiKey internal db OTP in KSM mode
                     mode = 'YubiKey OTP (short)'
                     res = validate_yubikey_otp_short(self, params)
                 elif args.mode_otp:
-                    # YubiKey OTP validation 2.0
+                    # YubiKey internal db OTP validation 2.0
                     mode = 'YubiKey OTP'
                     res = validate_yubikey_otp(self, params)
                     print "RESULT: %s" % (res.split('\n'))
@@ -193,7 +194,7 @@ def validate_yubikey_otp(self, params):
     sig, client_key, = check_signature(params)
     if sig != True:
         self.log_error("Signature validation error")
-        return sig
+        return "ERR bad signature"
     try:
         res = pyhsm.yubikey.validate_otp(hsm, from_key)
         vres = {"otp": from_key,
@@ -224,30 +225,46 @@ def make_otp_response(params, vres, client_key):
     return '\n'.join(l)
 
 def check_signature(params):
-    """ XXX implement checking of HMAC-SHA-1 signatures """
+    """
+    Verify the signature of the parameters in an OTP v2.0 verify request.
+
+    Returns ValResultBool, Key
+    """
     if 'id' in params:
-        key = client_ids.get(params['id'][0])
+        try:
+            id_int = int(params['id'][0])
+        except:
+            my_log_message(args, syslog.LOG_INFO, "Non-numerical client id (%s) in request." % (params['id'][0]))
+            return False, None
+        key = client_ids.get(id_int)
         if key:
             if 'h' in params:
+                sig = params['h'][0]
                 good_sig = make_signature(params, key)
-                if params['h'][0] == good_sig:
-                    print "SIGNATURE %s VERIFIED" % (good_sig)
+                if sig == good_sig:
+                    my_log_message(args, syslog.LOG_DEBUG, "Good signature (client id '%i')" % id_int)
                     return True, key
+                else:
+                    my_log_message(args, syslog.LOG_INFO, "Bad signature from client id '%i' (%s, expected %s)." \
+                                       % (id_int, sig, good_sig))
             else:
-                return True, key
+                my_log_message(args, syslog.LOG_INFO, "Client id (%i) but no HMAC in request." % (id_int))
+                return False, key
         else:
-            my_log_message(args, syslog.LOG_INFO, "Unknown client id '%s'" % (params['id'][0]))
+            my_log_message(args, syslog.LOG_INFO, "Unknown client id '%i'" % (id_int))
             return False, None
     return True, None
 
 def make_signature(params, hmac_key):
+    """
+    Calculate a HMAC-SHA-1 (using hmac_key) of all the params except "h=".
+    """
     l = []
     for key in sorted(params.keys()):
         if key != "h":
             l.append(key + "=" + ''.join(params[key]))
     l_str = '&'.join(l)
-    sha = hmac.new(hmac_key)
-    sha.update(l_str)
+    sha = hmac.new(hmac_key, l_str, hashlib.sha1)
     return base64.b64encode(sha.digest())
 
 def validate_oath_hotp(self, params):
@@ -439,6 +456,13 @@ def parse_args():
                         help='DB file for storing AEAD\'s etc. for --pwhash and --hotp',
                         metavar='FILENAME',
                         )
+    parser.add_argument('--clients-file',
+                        dest='clients_file',
+                        default=None,
+                        required=False,
+                        help='File with OTP validation clients shared secrets. for --otp. Default : %s' % (default_clients_file),
+                        metavar='FILENAME',
+                        )
     parser.add_argument('--hotp-window',
                         dest='look_ahead',
                         type=int, required=False,
@@ -468,6 +492,63 @@ def args_fixup():
     if not (args.mode_otp or args.mode_short_otp or args.mode_hotp or args.mode_pwhash):
         my_log_message(args, syslog.LOG_ERR, 'No validation mode enabled')
         sys.exit(1)
+
+    global client_ids
+    if args.clients_file != None:
+        if not args.mode_otp:
+            my_log_message(args, syslog.LOG_ERR, 'Clients file should only be used with --otp.')
+            sys.exit(1)
+        client_ids = load_clients_file(args.clients_file)
+        if not client_ids:
+            my_log_message(args, syslog.LOG_ERR, 'Failed loading clients file "%s"' % (args.clients_file))
+            sys.exit(1)
+    else:
+        # we accept failure to load this file when the default is used
+        loaded_client_ids = load_clients_file(default_clients_file)
+        if loaded_client_ids:
+            args.clients_file = default_clients_file
+            client_ids = loaded_client_ids
+
+def load_clients_file(filename):
+    """
+    Load a list of base64 encoded shared secrets for numerical client ids.
+
+    Returns a dict.
+
+    Format of file is expected to be
+
+        # This is a comment. Blank lines are OK.
+
+        123,c2hhcmVkIHNlY3JldA==
+        456,MTIzNDU2Nzg5MDEyMw==
+    """
+    res = {}
+    content = []
+    try:
+        fhandle = file(filename)
+        content = fhandle.readlines()
+        fhandle.close()
+    except IOError:
+        return None
+    linenum = 0
+    for line in content:
+        linenum += 1
+        while line.endswith("\r") or line.endswith("\n"):
+            line = line[:-1]
+        if re.match("(^\s*#|^\s*$)", line):
+            # skip comments and empty lines
+            continue
+        parts = [x.strip() for x in line.split(',')]
+        try:
+            if len(parts) != 2:
+                raise Exception()
+            id_num = int(parts[0])
+            key = base64.b64decode(parts[1])
+            res[id_num] = key
+        except:
+            my_log_message(args, syslog.LOG_ERR, 'Bad data on line %i of clients file "%s" : "%s"' % (linenum, filename, line))
+            return None
+    return res
 
 def write_pid_file(fn):
     """ Create a file with our PID. """
