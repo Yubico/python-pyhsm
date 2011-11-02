@@ -188,22 +188,28 @@ def validate_yubikey_otp(self, params):
     if not re.match(ykotp_valid_input, from_key):
         self.log_error("IN: %s, Invalid OTP" % (from_key))
         vres["status"] = "BAD_OTP"
-    vres["otp"] = from_key
+    else:
+        vres["otp"] = from_key
     if not "nonce" in params:
         self.log_error("IN: %s, no nonce" % (from_key))
         vres["status"] = "MISSING_PARAMETER"
-    nonce = params["nonce"][0]
-    if len(nonce) < 16 or len(nonce) > 40:
-        self.log_error("IN: %s, bad nonce : %s" % (from_key, nonce))
-        vres["status"] = "MISSING_PARAMETER"
-    vres["nonce"] = nonce
+    else:
+        nonce = params["nonce"][0]
+        if len(nonce) < 16 or len(nonce) > 40:
+            self.log_error("IN: %s, bad nonce : %s" % (from_key, nonce))
+            vres["status"] = "MISSING_PARAMETER"
+        else:
+            vres["nonce"] = nonce
     if "sl" in params and not (params["sl"] == "100" or params["sl"] == "secure"):
         self.log_error("IN: %s, sync level unsupported" % (from_key))
         vres["status"] = "BACKEND_ERROR"
     sig, client_key, = check_signature(params)
     if sig != True:
         self.log_error("IN: %s, signature validation error" % (from_key))
-        vres["status"] = "BAD_SIGNATURE"
+        if client_key == None:
+            vres["status"] = "NO_SUCH_CLIENT"
+        else:
+            vres["status"] = "BAD_SIGNATURE"
     if "status" not in vres:
         try:
             res = pyhsm.yubikey.validate_otp(hsm, from_key)
