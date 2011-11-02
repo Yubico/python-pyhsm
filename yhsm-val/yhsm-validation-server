@@ -137,7 +137,7 @@ class YHSM_KSMRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
             if res != None:
                 self.send_response(200)
-                self.send_header('Content-type', 'text/html')
+                self.send_header('Content-type', 'text/plain')
                 self.end_headers()
                 self.wfile.write(res)
                 self.wfile.write("\n")
