@@ -99,6 +99,7 @@ class YHSM_KSMRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         """
         if self.path.startswith(args.serve_url):
             res = None
+            log_res = None
             mode = None
             params = urlparse.parse_qs(self.path[len(args.serve_url):])
             if "otp" in params:
@@ -110,10 +111,10 @@ class YHSM_KSMRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                     # YubiKey internal db OTP validation 2.0
                     mode = 'YubiKey OTP'
                     res = validate_yubikey_otp(self, params)
-                    print "RESULT: %s" % (res.split('\n'))
-                    status = [x for x in res.split('\n') if res.startswith("status=")]
-                    if len(status) == 1:
-                        res = status
+                    #status = [x for x in res.split('\n') if x.startswith("status=")]
+                    #if len(status) == 1:
+                    #    res = status[0][7:]
+                    log_res = '&'.join(res.split('\n'))
                 else:
                     res = "ERR 'otp/otp2' disabled"
             elif "hotp" in params:
@@ -129,7 +130,10 @@ class YHSM_KSMRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                 else:
                     res = "ERR 'pwhash' disabled"
 
-            self.log_message("%s validation result: %s -> %s", mode, self.path, res)
+            if not log_res:
+                log_res = res
+
+            self.log_message("%s validation result: %s -> %s", mode, self.path, log_res)
 
             if res != None:
                 self.send_response(200)
@@ -179,45 +183,59 @@ def validate_yubikey_otp(self, params):
     """
     Validate YubiKey OTP using YubiHSM internal database.
     """
+    vres = {}
     from_key = params["otp"][0]
     if not re.match(ykotp_valid_input, from_key):
         self.log_error("IN: %s, Invalid OTP" % (from_key))
-        return "ERR Invalid OTP"
+        vres["status"] = "BAD_OTP"
+    vres["otp"] = from_key
     if not "nonce" in params:
         self.log_error("IN: %s, no nonce" % (from_key))
-        return "ERR no nonce in request"
+        vres["status"] = "MISSING_PARAMETER"
     nonce = params["nonce"][0]
     if len(nonce) < 16 or len(nonce) > 40:
-        return "ERR bad nonce"
+        self.log_error("IN: %s, bad nonce : %s" % (from_key, nonce))
+        vres["status"] = "MISSING_PARAMETER"
+    vres["nonce"] = nonce
     if "sl" in params and not (params["sl"] == "100" or params["sl"] == "secure"):
-        return "ERR sync level not supported"
+        self.log_error("IN: %s, sync level unsupported" % (from_key))
+        vres["status"] = "BACKEND_ERROR"
     sig, client_key, = check_signature(params)
     if sig != True:
-        self.log_error("Signature validation error")
-        return "ERR bad signature"
-    try:
-        res = pyhsm.yubikey.validate_otp(hsm, from_key)
-        vres = {"otp": from_key,
-                "nonce": nonce,
-                "status": "OK",
-                "sessioncounter": str(res.use_ctr), # known confusion
-                "sessionuse": str(res.session_ctr), # known confusion
-                "timestamp": str((res.ts_high << 16 | res.ts_low) / 8)
-                }
-        if "sl" in params:
-            vres["sl"] = "100"
-        if "timestamp" in params:
-            vres["t"] = time.strftime("%FT%TZ0000", time.gmtime())
-        return make_otp_response(params, vres, client_key)
-    except pyhsm.exception.YHSM_CommandFailed, e:
-        return "ERR %s" % (pyhsm.defines.status2str(e.status))
+        self.log_error("IN: %s, signature validation error" % (from_key))
+        vres["status"] = "BAD_SIGNATURE"
+    if "status" not in vres:
+        try:
+            res = pyhsm.yubikey.validate_otp(hsm, from_key)
+            vres.update({"status": "OK",
+                         "sessioncounter": str(res.use_ctr), # known confusion
+                         "sessionuse": str(res.session_ctr), # known confusion
+                         "timestamp": str((res.ts_high << 16 | res.ts_low) / 8)
+                         }
+                        )
+            if "sl" in params:
+                vres["sl"] = "100"
+                if "timestamp" in params:
+                    vres["t"] = time.strftime("%FT%TZ0000", time.gmtime())
+        except pyhsm.exception.YHSM_CommandFailed, e:
+            if e.status == pyhsm.defines.YSM_ID_NOT_FOUND:
+                vres["status"] = "NO_SUCH_CLIENT"
+            elif e.status == pyhsm.defines.YSM_OTP_REPLAY:
+                vres["status"] = "REPLAYED_OTP"
+            elif e.status == pyhsm.defines.YSM_OTP_INVALID:
+                vres["status"] = "BAD_OTP"
+            else:
+                vres["status"] = "BACKEND_ERROR"
+            self.log_error("IN: %s, validation result %s (replying %s)" % (from_key, pyhsm.defines.status2str(e.status), vres["status"]))
 
-def make_otp_response(params, vres, client_key):
+    return make_otp_response(vres, client_key)
+
+def make_otp_response(vres, client_key):
     """
-    Create validation response (signed, if the request had an `id' parameter).
+    Create validation response (signed, if a client key is supplied).
     """
-    if 'id' in params and client_key:
-        sig = make_signature(params, client_key)
+    if client_key:
+        sig = make_signature(vres, client_key)
         vres['h'] = sig
     l = []
     for key in sorted(vres.keys()):
@@ -242,7 +260,7 @@ def check_signature(params):
                 sig = params['h'][0]
                 good_sig = make_signature(params, key)
                 if sig == good_sig:
-                    my_log_message(args, syslog.LOG_DEBUG, "Good signature (client id '%i')" % id_int)
+                    #my_log_message(args, syslog.LOG_DEBUG, "Good signature (client id '%i')" % id_int)
                     return True, key
                 else:
                     my_log_message(args, syslog.LOG_INFO, "Bad signature from client id '%i' (%s, expected %s)." \
