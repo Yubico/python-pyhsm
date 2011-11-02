@@ -208,6 +208,8 @@ def validate_yubikey_otp(self, params):
         self.log_error("IN: %s, signature validation error" % (from_key))
         if client_key == None:
             vres["status"] = "NO_SUCH_CLIENT"
+            # To be compatible with YK-VAL, we will sign this response using a null key
+            client_key = '00'.decode('hex')
         else:
             vres["status"] = "BAD_SIGNATURE"
     if "status" not in vres:
@@ -240,7 +242,7 @@ def make_otp_response(vres, client_key):
     """
     Create validation response (signed, if a client key is supplied).
     """
-    if client_key:
+    if client_key is not None:
         sig = make_signature(vres, client_key)
         vres['h'] = sig
     l = []
