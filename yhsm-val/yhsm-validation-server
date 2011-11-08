@@ -13,6 +13,10 @@
         validation - including storing seen counter values
         in an internal database.
 
+        There is an --otp mode available that tries to be
+        compatible with YK-VAL, and there is a --short-otp
+        mode that gives responses looking like YK-KSM.
+
   HOTP - OATH-HOTP validation using secrets stored on host
          computer (in secure AEADs only decryptable inside
          YubiHSM). The HMAC-SHA1 of the OATH counter value
@@ -209,7 +213,7 @@ def validate_yubikey_otp(self, params):
         if client_key == None:
             vres["status"] = "NO_SUCH_CLIENT"
             # To be compatible with YK-VAL, we will sign this response using a null key
-            client_key = '00'.decode('hex')
+            client_key = chr(0)
         else:
             vres["status"] = "BAD_SIGNATURE"
     if "status" not in vres:
@@ -227,7 +231,7 @@ def validate_yubikey_otp(self, params):
                     vres["t"] = time.strftime("%FT%TZ0000", time.gmtime())
         except pyhsm.exception.YHSM_CommandFailed, e:
             if e.status == pyhsm.defines.YSM_ID_NOT_FOUND:
-                vres["status"] = "NO_SUCH_CLIENT"
+                vres["status"] = "BAD_OTP"
             elif e.status == pyhsm.defines.YSM_OTP_REPLAY:
                 vres["status"] = "REPLAYED_OTP"
             elif e.status == pyhsm.defines.YSM_OTP_INVALID:
@@ -245,10 +249,9 @@ def make_otp_response(vres, client_key):
     if client_key is not None:
         sig = make_signature(vres, client_key)
         vres['h'] = sig
-    l = []
-    for key in sorted(vres.keys()):
-        l.append(key + "=" + vres[key])
-    return '\n'.join(l)
+    # produce "key=value" pairs from vres
+    pairs = [x + "=" + ''.join(vres[x]) for x in sorted(vres.keys())]
+    return '\n'.join(pairs)
 
 def check_signature(params):
     """
@@ -284,13 +287,12 @@ def check_signature(params):
 def make_signature(params, hmac_key):
     """
     Calculate a HMAC-SHA-1 (using hmac_key) of all the params except "h=".
+
+    Returns base64 encoded signature as string.
     """
-    l = []
-    for key in sorted(params.keys()):
-        if key != "h":
-            l.append(key + "=" + ''.join(params[key]))
-    l_str = '&'.join(l)
-    sha = hmac.new(hmac_key, l_str, hashlib.sha1)
+    # produce a list of "key=value" for all entrys in params except `h'
+    pairs = [x + "=" + ''.join(params[x]) for x in sorted(params.keys()) if x != "h"]
+    sha = hmac.new(hmac_key, '&'.join(pairs), hashlib.sha1)
     return base64.b64encode(sha.digest())
 
 def validate_oath_hotp(self, params):
