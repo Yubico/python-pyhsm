@@ -58,6 +58,10 @@ and some smaller scripts in the utils/ and examples/ directory :
 
 pyhsm is known to work with Python 2.6 and 2.7.
 
+NOTE: If you want to use any of the daemons (yhsm-validation-server,
+yhsm-yubikey-ksm) you will want to use Python 2.7 or later.
+SocketServer.py lacks critical timeout handling in Python 2.6.
+
 It is primarily tested using Debian/Ubuntu, but is of course
 meant to work on as many platforms as possible.
 
