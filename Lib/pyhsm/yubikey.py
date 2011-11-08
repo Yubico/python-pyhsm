@@ -14,6 +14,7 @@ __all__ = [
     'validate_yubikey_with_aead',
     'modhex_encode',
     'modhex_decode',
+    'split_id_otp',
     # classes
  ]
 
@@ -27,6 +28,19 @@ def validate_otp(hsm, from_key):
 
     `from_key' is the modhex encoded string emitted when you press the
     button on your YubiKey.
+
+    Will only return on succesfull validation. All failures will result
+    in an L{pyhsm.exception.YHSM_CommandFailed}.
+
+    @param hsm: The YHSM instance
+    @param from_key: The OTP from a YubiKey (in modhex)
+    @type hsm: L{pyhsm.YHSM}
+    @type from_key: string
+
+    @returns: validation response, if successful
+    @rtype: L{YHSM_ValidationResult}
+
+    @see: L{pyhsm.db_cmd.YHSM_Cmd_DB_Validate_OTP.parse_result}
     """
     public_id, otp = split_id_otp(from_key)
     return hsm.db_validate_yubikey_otp(modhex_decode(public_id).decode('hex'),
@@ -38,7 +52,25 @@ def validate_yubikey_with_aead(hsm, from_key, aead, key_handle):
     Try to validate an OTP from a YubiKey using the AEAD that can decrypt this YubiKey's
     internal secret, using the key_handle for the AEAD.
 
-    The parameter `aead' is either a string, or an instance of YHSM_GeneratedAEAD.
+    `from_key' is the modhex encoded string emitted when you press the
+    button on your YubiKey.
+
+    Will only return on succesfull validation. All failures will result
+    in an L{pyhsm.exception.YHSM_CommandFailed}.
+
+    @param hsm: The YHSM instance
+    @param from_key: The OTP from a YubiKey (in modhex)
+    @param aead: AEAD containing the cryptographic key and permission flags
+    @param key_handle: The key handle that can decrypt the AEAD
+    @type hsm: L{pyhsm.YHSM}
+    @type from_key: string
+    @type aead: L{YHSM_GeneratedAEAD} or string
+    @type key_handle: integer or string
+
+    @returns: validation response
+    @rtype: L{YHSM_ValidationResult}
+
+    @see: L{pyhsm.validate_cmd.YHSM_Cmd_AEAD_Validate_OTP.parse_result}
     """
 
     from_key = pyhsm.util.input_validate_str(from_key, 'from_key', max_len = 48)
@@ -53,17 +85,41 @@ def validate_yubikey_with_aead(hsm, from_key, aead, key_handle):
     return hsm.validate_aead_otp(public_id.decode('hex'), otp.decode('hex'), key_handle, aead)
 
 def modhex_decode(data):
-    """ Convert a modhex string to ordinary hex. """
+    """
+    Convert a modhex string to ordinary hex.
+
+    @param data: Modhex input
+    @type data: string
+
+    @returns: Hex
+    @rtype: string
+    """
     t_map = string.maketrans("cbdefghijklnrtuv", "0123456789abcdef")
     return data.translate(t_map)
 
 def modhex_encode(data):
-    """ Convert an ordinary hex string to modhex. """
+    """
+    Convert an ordinary hex string to modhex.
+
+    @param data: Hex input
+    @type data: string
+
+    @returns: Modhex
+    @rtype: string
+    """
     t_map = string.maketrans("0123456789abcdef", "cbdefghijklnrtuv")
     return data.translate(t_map)
 
 def split_id_otp(from_key):
-    """ Separate public id from OTP given a YubiKey OTP as input. """
+    """
+    Separate public id from OTP given a YubiKey OTP as input.
+
+    @param from_key: The OTP from a YubiKey (in modhex)
+    @type from_key: string
+
+    @returns: public_id and OTP
+    @rtype: tuple of string
+    """
     if len(from_key) > 32:
         public_id, otp = from_key[:-32], from_key[-32:]
     elif len(from_key) == 32:
