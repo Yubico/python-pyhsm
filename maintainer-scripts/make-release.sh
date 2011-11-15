@@ -52,6 +52,8 @@ git submodule update
 test -d "$tmpdir/$releasedir/doc/wiki/" && rm -rf "$tmpdir/$releasedir/doc/wiki/"
 (cd doc/wiki/ && git archive --format=tar --prefix=${releasedir}/doc/wiki/ HEAD) | (cd $tmpdir && tar xf -)
 
+git2cl > ChangeLog
+
 echo "path : $tmpdir/$releasedir"
 
 ls -l $tmpdir/$releasedir
