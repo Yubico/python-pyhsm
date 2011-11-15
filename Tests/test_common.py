@@ -23,16 +23,15 @@ class YHSM_TestCase(unittest.TestCase):
         YubiHSM in self.hsm.
         """
         self.hsm = pyhsm.base.YHSM(device = device, debug = debug)
-        # unlock keystore if our test configuration contains a passphrase, and keystore is locked
-        if self.keystore_is_locked():
-            if HsmPassphrase is not None and HsmPassphrase != "":
-                try:
-                    self.hsm.unlock(password = HsmPassphrase.decode("hex"))
-                    self.otp_unlock()
-                except pyhsm.exception.YHSM_CommandFailed, e:
-                    # ignore errors from the unlock function, in case our test configuration
-                    # hasn't been loaded into the YubiHSM yet
-                    pass
+        # unlock keystore if our test configuration contains a passphrase
+        if HsmPassphrase is not None and HsmPassphrase != "":
+            try:
+                self.hsm.unlock(password = HsmPassphrase.decode("hex"))
+                self.otp_unlock()
+            except pyhsm.exception.YHSM_CommandFailed, e:
+                # ignore errors from the unlock function, in case our test configuration
+                # hasn't been loaded into the YubiHSM yet
+                pass
 
     def tearDown(self):
         # get destructor called properly
@@ -54,24 +53,6 @@ class YHSM_TestCase(unittest.TestCase):
                 if e.status != pyhsm.defines.YSM_FUNCTION_DISABLED:
                     self.fail("Expected YSM_FUNCTION_DISABLED for key handle 0x%0x, got %s" \
                                   % (kh, e.status_str))
-
-    def keystore_is_locked(self):
-        """
-        Check if YubiHSM's key store is locked or not.
-
-        @return: Locked or not
-        @rtype: bool
-        """
-        try:
-            res = self.hsm.aes_ecb_encrypt(0x2000, "is_locked???")
-            return False
-        except pyhsm.exception.YHSM_CommandFailed, e:
-            if e.status == pyhsm.defines.YSM_KEY_STORAGE_LOCKED:
-                return True
-            if e.status == pyhsm.defines.YSM_KEY_HANDLE_INVALID:
-                # unconfigured, assume it is not locked
-                return False
-            raise
 
     def otp_unlock(self):
         """

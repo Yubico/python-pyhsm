@@ -27,8 +27,12 @@ class TestUtil(test_common.YHSM_TestCase):
 
     def test_keystore_unlock(self):
         """ Test locking and then unlocking keystore. """
+        if self.hsm.version.ver <= (0, 9, 8,):
+            print ("Test for known bug in 0.9.8 disabled.")
+            return None
         cleartext = "reference"
-        res_before = self.hsm.aes_ecb_encrypt(0x2000, cleartext)
+        nonce = '010203040506'.decode('hex')
+        res_before = self.hsm.generate_aead_simple(nonce, 0x2000, cleartext)
         # lock key store
         try:
             res = self.hsm.key_storage_unlock("A" * 8)
@@ -38,15 +42,15 @@ class TestUtil(test_common.YHSM_TestCase):
                 self.assertEquals(e.status, pyhsm.defines.YSM_MISMATCH)
             else:
                 self.assertEquals(e.status, pyhsm.defines.YSM_KEY_STORAGE_LOCKED)
-        # make sure we can't AES encrypt when keystore is locked
+        # make sure we can't generate AEADs when keystore is locked
         try:
-            res = self.hsm.aes_ecb_encrypt(0x2000, cleartext)
+            res = self.hsm.generate_aead_simple(nonce, 0x2000, cleartext)
             self.fail("Expected YSM_KEY_STORAGE_LOCKED, got %s (before lock: %s)" \
-                          % (res.encode("hex"), res_before.encode("hex")))
+                          % (res.data.encode('hex'), res_before.data.encode('hex')))
         except pyhsm.exception.YHSM_CommandFailed, e:
             self.assertEquals(e.status, pyhsm.defines.YSM_KEY_STORAGE_LOCKED)
         # unlock key store with correct passphrase
         self.assertTrue(self.hsm.key_storage_unlock(test_common.HsmPassphrase.decode("hex")))
         # make sure it is properly unlocked
-        res_after = self.hsm.aes_ecb_encrypt(0x2000, cleartext)
-        self.assertEquals(res_before, res_after)
+        res_after = self.hsm.generate_aead_simple(nonce, 0x2000, cleartext)
+        self.assertEquals(res_before.data, res_after.data)
