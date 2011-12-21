@@ -178,7 +178,8 @@ def parse_args():
                         dest='aead_dir',
                         default=default_dir,
                         required=False,
-                        help='AEAD directory - base directory of your AEADs'
+                        help='AEAD directory - base directory of your AEADs',
+                        metavar='DIR',
                         )
     parser.add_argument('-U', '--serve-url',
                         dest='serve_url',
@@ -222,7 +223,8 @@ def parse_args():
                         dest='key_handles',
                         nargs='+',
                         required=True,
-                        help='Key handle to use to decrypt aeads on the YHSM.'
+                        help='Key handle(s) to use to decrypt AEADs on the YHSM.',
+                        metavar='HANDLE',
                         )
     parser.add_argument('--pid-file',
                         dest='pid_file',
