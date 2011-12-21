@@ -38,6 +38,7 @@ import pyhsm.yubikey
 
 default_device = "/dev/ttyACM0"
 default_dir = "/var/cache/yubikey-ksm/aeads"
+default_public_id_chars = 12
 
 def parse_args():
     """
@@ -58,6 +59,7 @@ def parse_args():
                         default=default_dir,
                         required=False,
                         help='Output directory (AEAD base dir)',
+                        metavar='DIR',
                         )
     parser.add_argument('-v', '--verbose',
                         dest='verbose',
@@ -71,15 +73,17 @@ def parse_args():
                         )
     parser.add_argument('--public-id-chars',
                         dest='public_id_chars',
-                        type=int, default=12,
+                        type=int, default=default_public_id_chars,
                         required=False,
                         help='Number of chars in generated public ids',
+                        metavar='NUM',
                         )
     parser.add_argument('--key-handles',
                         dest='key_handles',
                         nargs='+',
                         required=True,
                         help='Key handle(s) to encrypt the imported secrets with',
+                        metavar='HANDLE',
                         )
     parser.add_argument('--internal-db',
                         dest='internal_db',
