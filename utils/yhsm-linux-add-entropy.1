@@ -1,0 +1,69 @@
+.\" Copyright (c) 2011 Yubico AB
+.\" See the file COPYING for license statement.
+.\"
+.de URL
+\\$2 \(laURL: \\$1 \(ra\\$3
+..
+.if \n[.g] .mso www.tmac
+.TH yhsm-linux-add-entropy "1" "December 2011" "python-pyhsm"
+
+.SH NAME
+yhsm-linux-add-entropy \(hy Seed the Linux entropy pool with data from YubiHSM TRNG
+
+.SH SYNOPSIS
+.B yhsm-linux-add-entropy
+[\fIoptions\fR]
+
+.SH DESCRIPTION
+The YubiHSM uses "Avalanche Noise" TRNG together with USB SOF jitter sampling
+to feed a DRBG_CTR algorithm (NIST publication SP800-90). The result has been
+verified as being random data of good quality by at least one third party
+cryptographer.
+.URL "http://sartryck.idg.se/Art/Yubihsm_1_TW072011.html"
+
+Use this program to add random data from the YubiHSM to the entropy pool of
+your Linux operating system. This is useful whenever lots of random data is needed,
+such as when generating chryptographic keys (GPG-keys), on a server terminating SSL
+sessions etc.
+
+You may run this script from cron, or in a while-loop. Make sure it does not run
+at the same time as something else accessing the YubiHSM though, or the two tasks
+may interrupt each other \(hy probably making both fail.
+
+.SH OPTIONS
+.PP
+.TP
+\fB\-D\fR, \fB\-\-device\fR
+device file name (default: /dev/ttyACM0).
+.TP
+\fB\-v\fR, \fB\-\-verbose\fR
+enable verbose operation.
+.TP
+\fB\-c\fR, \fB\-\-count\fR
+number of iterations to run (default: 100).
+.TP
+\fB\-r\fR, \fB\-\-ratio\fR
+bits per byte read to use. 8 is probably fine, but as a conservative default 2 is used.
+.TP
+\fB\-\-debug\fR
+enable debug printout, including all data sent to/from YubiHSM.
+
+.SH "EXIT STATUS"
+.IX Header "EXIT STATUS"
+.IP "\fB0\fR" 4
+.IX Item "0"
+Entropy added successfully
+.IP "\fB1\fR" 4
+.IX Item "1"
+Failure
+
+.SH BUGS
+Report python-pyhsm/yhsm-linux-add-entropy bugs in
+.URL "https://github.com/Yubico/python-pyhsm/issues/" "the issue tracker"
+
+.SH "SEE ALSO"
+The
+.URL "https://github.com/Yubico/python-pyhsm/" "python-yubico home page"
+.PP
+YubiHSMs can be obtained from
+.URL "http://www.yubico.com/" "Yubico" "."
