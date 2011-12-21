@@ -192,7 +192,8 @@ def store_oath_entry(args, nonce, aead, oath_c):
         db.add(entry)
     except sqlite3.IntegrityError, e:
         sys.stderr.write("ERROR: %s\n" % (e))
-        sys.exit(1)
+        return False
+    return True
 
 def main():
     args = parse_args()
@@ -207,7 +208,9 @@ def main():
 
     nonce, aead = generate_aead(hsm, args)
     oath_c = validate_oath_c(hsm, args, nonce, aead)
-    store_oath_entry(args, nonce, aead, oath_c)
+    return store_oath_entry(args, nonce, aead, oath_c)
 
 if __name__ == '__main__':
-    main()
+    if main():
+        sys.exit(0)
+    sys.exit(1)
