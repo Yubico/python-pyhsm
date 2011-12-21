@@ -1,6 +1,24 @@
 #!/usr/bin/env python
 #
-""" Tool to generate YubiKey secret keys using YubiHSM """
+"""
+Tool to generate YubiKey secret keys using YubiHSM.
+
+This tool is currently somewhat of a dead end. It generates secrets for
+one or more YubiHSMs, but that effectively means they are not available
+in clear text anywhere. One of the following pieces are missing :
+
+ 1) a "soft" YubiHSM that can decrypt the AEAD and program a YubiKey
+
+ 2) export to plain text file as well as AEADs, to then use the plain
+    text file to program the YubiKey(s)
+
+ 3) the ability for this script to also program attached YubiKeys,
+    either directly (through python-yubico) or by calling ykpersonalize
+    for example.
+
+Because of this, it is currently in the examples/ directory (although
+I can't really tell what it would be an example of).
+"""
 #
 # Copyright (c) 2011 Yubico AB
 # See the file COPYING for licence statement.
