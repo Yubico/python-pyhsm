@@ -425,7 +425,7 @@ def parse_args():
                         dest='serve_url',
                         default=default_serve_url,
                         required=False,
-                        help='Base URL for decrypt web service',
+                        help='Base URL for validation web service',
                         )
     parser.add_argument('-v', '--verbose',
                         dest='verbose',
@@ -484,6 +484,9 @@ def parse_args():
                         help='DB file for storing AEAD\'s etc. for --pwhash and --hotp',
                         metavar='FILENAME',
                         )
+    # XXX bad interaction with argparse.ArgumentDefaultsHelpFormatter here - we don't want to
+    # use default=default_clients_file since we need to know if this option was specified explicitly
+    # or not.
     parser.add_argument('--clients-file',
                         dest='clients_file',
                         default=None,
