@@ -3,24 +3,70 @@
 # Copyright (c) 2011 Yubico AB
 # See the file COPYING for licence statement.
 #
-# Get random data from TRNG on YubiHSM and insert it into host
-# entropy pool. Probably only works on Linux since the ioctl()
-# request value RNDADDENTROPY seems Linux specific.
-#
+"""
+Get random data from TRNG on YubiHSM and insert it into host
+entropy pool. Probably only works on Linux since the ioctl()
+request value RNDADDENTROPY seems Linux specific.
+"""
 
 import os
 import sys
 import fcntl
 import struct
-sys.path.append('Lib');
+import argparse
+sys.path.append('Lib')
 import pyhsm
 
-device = "/dev/ttyACM0"
-iterations = 100
-entropy_ratio = 2	     # number of bits of entropy per byte of random data
-RNDADDENTROPY = 1074287107   # from /usr/include/linux/random.h
+default_device = "/dev/ttyACM0"
+default_iterations = 100
+default_entropy_ratio = 2	# number of bits of entropy per byte of random data
+
+RNDADDENTROPY = 1074287107	# from /usr/include/linux/random.h
+
+def parse_args():
+    """
+    Parse the command line arguments
+    """
+    parser = argparse.ArgumentParser(description = "Add random data from YubiHSM to Linux entropy",
+                                     add_help = True,
+                                     formatter_class = argparse.ArgumentDefaultsHelpFormatter,
+                                     )
+    parser.add_argument('-D', '--device',
+                        dest='device',
+                        default=default_device,
+                        required=False,
+                        help='YubiHSM device',
+                        )
+    parser.add_argument('-v', '--verbose',
+                        dest='verbose',
+                        action='store_true', default=False,
+                        help='Enable verbose operation'
+                        )
+    parser.add_argument('--debug',
+                        dest='debug',
+                        action='store_true', default=False,
+                        help='Enable debug operation'
+                        )
+    parser.add_argument('-r', '--ratio',
+                        dest='ratio',
+                        type=int, default=default_entropy_ratio,
+                        help='Bits per byte of data read to use as entropy',
+                        )
+    parser.add_argument('-c', '--count',
+                        dest='iterations',
+                        type=int, default=default_iterations,
+                        help='Number of iterations to run',
+                        )
+
+    args = parser.parse_args()
+
+    return args
+
 
 def get_entropy(hsm, iterations, entropy_ratio):
+    """
+    Read entropy from YubiHSM and feed it to Linux as entropy using ioctl() syscall.
+    """
     fd = os.open("/dev/random", os.O_WRONLY)
     # struct rand_pool_info {
     #    int     entropy_count;
@@ -32,21 +78,21 @@ def get_entropy(hsm, iterations, entropy_ratio):
         rnd = hsm.random(pyhsm.defines.YSM_MAX_PKT_SIZE - 1)
         this = struct.pack(fmt, entropy_ratio * len(rnd), len(rnd), rnd)
         fcntl.ioctl(fd, RNDADDENTROPY, this)
+    os.close(fd)
 
-# simplified arguments parsing
-d_argv = dict.fromkeys(sys.argv)
-debug = d_argv.has_key('-v')
+def main():
+    """
+    What will be executed when running as a stand alone program.
+    """
+    args = parse_args()
 
-if d_argv.has_key('-h'):
-    sys.stderr.write("Syntax: %s [-v]\n" % (sys.argv[0]))
-    sys.exit(0)
+    try:
+        s = pyhsm.base.YHSM(device=args.device, debug=args.debug)
+        get_entropy(s, args.iterations, args.ratio)
+        return 0
+    except pyhsm.exception.YHSM_Error, e:
+        sys.stderr.write("ERROR: %s" % (e.reason))
+        return 1
 
-res = 0
-try:
-    s = pyhsm.base.YHSM(device=device, debug=debug)
-    get_entropy(s, iterations, entropy_ratio)
-except pyhsm.exception.YHSM_Error, e:
-    print "ERROR: %s" % e
-    res = 1
-
-sys.exit(res)
+if __name__ == '__main__':
+    sys.exit(main())
