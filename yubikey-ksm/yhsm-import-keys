@@ -79,7 +79,7 @@ def parse_args():
                         dest='key_handles',
                         nargs='+',
                         required=True,
-                        help='Comma separated list of key handles to encrypt the imported secrets with',
+                        help='Key handle(s) to encrypt the imported secrets with',
                         )
     parser.add_argument('--internal-db',
                         dest='internal_db',
@@ -110,9 +110,8 @@ def keyhandles_fixup(args):
     """
     new_handles = {}
     for val in args.key_handles:
-        for this in val.split(','):
-            n = pyhsm.util.key_handle_to_int(this)
-            new_handles[n] = this
+        n = pyhsm.util.key_handle_to_int(val)
+        new_handles[n] = val
 
     args.key_handles = new_handles
 
