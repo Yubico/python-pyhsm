@@ -1,0 +1,65 @@
+.\" Copyright (c) 2011 Yubico AB
+.\" See the file COPYING for license statement.
+.\"
+.de URL
+\\$2 \(laURL: \\$1 \(ra\\$3
+..
+.if \n[.g] .mso www.tmac
+.TH yhsm-validate-otp "1" "December 2011" "python-pyhsm"
+
+.SH NAME
+yhsm-validate-otp \(hy Validate an OTP using a YubiHSM.
+
+.SH SYNOPSIS
+.B yhsm-validate-otp
+\fImode\fR
+[\fIoptions\fR]
+
+.SH DESCRIPTION
+This tool allows simple validation of YubiKey OTP from shell scripts.
+
+.SH OPTIONS
+.PP
+.TP
+\fB\-D\fR, \fB\-\-device\fR
+device file name (default: /dev/ttyACM0).
+.TP
+\fB\-v\fR, \fB\-\-verbose\fR
+enable verbose operation.
+.TP
+\fB\-\-debug\fR
+enable debug printout, including all data sent to/from YubiHSM.
+
+.SH MODES
+\fB\-\-otp\fR
+Validate YubiKey OTP against entry in the YubiHSM internal database.
+
+.\"\fB\-\-oath\fR
+.\"\fBNot implemented yet.\fR
+.\"Validate an OATH code using HMAC-SHA-1 in the YubiHSM. The OATH counter
+.\"database must be initialized using \fIyhsm-init-oath-token\fR\|(1) first.
+
+
+
+.SH "EXIT STATUS"
+.IX Header "EXIT STATUS"
+.IP "\fB0\fR" 4
+.IX Item "0"
+YubiHSM keystore successfully unlocked
+.IP "\fB1\fR" 4
+.IX Item "1"
+Failed to unlock keystore
+.IP "\fB255\fR" 4
+.IX Item "255"
+Client ID not found in internal database
+
+.SH BUGS
+Report python-pyhsm/yhsm-validate-otp bugs in
+.URL "https://github.com/Yubico/python-pyhsm/issues/" "the issue tracker"
+
+.SH "SEE ALSO"
+The
+.URL "https://github.com/Yubico/python-pyhsm/" "python-yubico home page"
+.PP
+YubiHSMs can be obtained from
+.URL "http://www.yubico.com/" "Yubico" "."

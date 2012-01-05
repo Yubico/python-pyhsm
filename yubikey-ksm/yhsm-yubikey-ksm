@@ -29,8 +29,8 @@ the database) :
                      | DB  |
                      +-----+
 
-Copyright (c) 2011, Yubico AB
-All rights reserved.
+Copyright (c) 2011 Yubico AB
+See the file COPYING for licence statement.
 """
 
 import os
@@ -50,7 +50,6 @@ default_serve_url = "/wsapi/decrypt?otp="
 default_listen_addr = "127.0.0.1"
 default_port = 8002
 default_reqtimeout = 5
-default_public_id_chars = 12
 default_pid_file = None
 
 valid_input_from_key = re.compile('^[cbdefghijklnrtuv]{32,48}$')
@@ -179,7 +178,8 @@ def parse_args():
                         dest='aead_dir',
                         default=default_dir,
                         required=False,
-                        help='AEAD directory - base directory of your AEADs'
+                        help='AEAD directory - base directory of your AEADs',
+                        metavar='DIR',
                         )
     parser.add_argument('-U', '--serve-url',
                         dest='serve_url',
@@ -197,13 +197,6 @@ def parse_args():
                         dest='debug',
                         action='store_true', default=False,
                         help='Enable debug operation'
-                        )
-    parser.add_argument('--public-id-chars',
-                        dest='public_id_chars',
-                        type=int, default=default_public_id_chars,
-                        required=False,
-                        help='Number of chars in generated public ids',
-                        metavar='LEN',
                         )
     parser.add_argument('--port',
                         dest='listen_port',
@@ -230,7 +223,8 @@ def parse_args():
                         dest='key_handles',
                         nargs='+',
                         required=True,
-                        help='Key handle to use to decrypt aeads on the YHSM.'
+                        help='Key handle(s) to use to decrypt AEADs on the YHSM.',
+                        metavar='HANDLE',
                         )
     parser.add_argument('--pid-file',
                         dest='pid_file',

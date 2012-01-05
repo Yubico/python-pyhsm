@@ -2,8 +2,8 @@
 implementations of internal DB commands for YubiHSM
 """
 
-# Copyright (c) 2011, Yubico AB
-# All rights reserved.
+# Copyright (c) 2011 Yubico AB
+# See the file COPYING for licence statement.
 
 import struct
 

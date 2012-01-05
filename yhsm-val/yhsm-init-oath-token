@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 #
-# Tool to add an OATH token to the yhsm-validation-server.py database.
+# Tool to add an OATH token to the yhsm-validation-server database.
 #
-# Copyright (c) 2011, Yubico AB
-# All rights reserved.
+# Copyright (c) 2011 Yubico AB
+# See the file COPYING for licence statement.
 #
 
 import sys
@@ -23,68 +23,75 @@ def parse_args():
     """
     global default_device
 
-    parser = argparse.ArgumentParser(description = "Initialize OATH token for use with yhsm-validation-server.py",
-                                     add_help=True
+    parser = argparse.ArgumentParser(description = 'Initialize OATH token for use with yhsm-validation-server',
+                                     add_help=True,
+                                     formatter_class=argparse.ArgumentDefaultsHelpFormatter,
                                      )
     parser.add_argument('-D', '--device',
                         dest='device',
                         default=default_device,
                         required=False,
-                        help='YubiHSM device (default : %s).' % default_device
+                        help='YubiHSM device',
                         )
     parser.add_argument('-v', '--verbose',
                         dest='verbose',
                         action='store_true', default=False,
-                        help='Enable verbose operation.'
+                        help='Enable verbose operation',
                         )
     parser.add_argument('--debug',
                         dest='debug',
                         action='store_true', default=False,
-                        help='Enable debug operation.'
+                        help='Enable debug operation',
                         )
     parser.add_argument('--force',
                         dest='force',
                         action='store_true', default=False,
-                        help='Overwrite any present entry.'
+                        help='Overwrite any present entry',
                         )
     parser.add_argument('--key-handle',
                         dest='key_handle',
                         required=True,
-                        help='Key handle to create AEAD.'
+                        help='Key handle to create AEAD',
+                        metavar='HANDLE',
                         )
     parser.add_argument('--uid',
                         dest='uid',
                         required=True,
-                        help='User ID.'
+                        help='User ID',
+                        metavar='STR',
                         )
     parser.add_argument('--oath-c',
                         dest='oath_c',
                         required=False,
                         default = 0,
-                        help='Initial OATH counter value.'
+                        help='Initial OATH counter value',
+                        metavar='INT',
                         )
     parser.add_argument('--test-oath-window',
                         dest='look_ahead',
                         required=False,
                         default = 10,
-                        help='Number of codes to search with --test-code.'
+                        help='Number of codes to search with --test-code',
+                        metavar='INT',
                         )
     parser.add_argument('--test-code',
                         dest='test_code',
                         type=int, required=False,
-                        help='Optional OTP from token for verification.'
+                        help='Optional OTP from token for verification',
+                        metavar='INT',
                         )
     parser.add_argument('--oath-k',
                         dest='oath_k',
                         required=False,
-                        help='The secret key of the token, hex encoded.'
+                        help='The secret key of the token, hex encoded',
+                        metavar='HEXSTR',
                         )
     parser.add_argument('--db-file',
                         dest='db_file',
                         default=default_db_file,
                         required=False,
-                        help='DB file for storing AEAD\'s etc. for --pwhash and --oath (default : "%s").' \
-                            % default_db_file
+                        help='DB file for storing AEAD\'s for --pwhash and --oath in the yhsm-validation-server',
+                        metavar='FN',
                         )
 
     args = parser.parse_args()
@@ -192,7 +199,8 @@ def store_oath_entry(args, nonce, aead, oath_c):
         db.add(entry)
     except sqlite3.IntegrityError, e:
         sys.stderr.write("ERROR: %s\n" % (e))
-        sys.exit(1)
+        return False
+    return True
 
 def main():
     args = parse_args()
@@ -207,7 +215,9 @@ def main():
 
     nonce, aead = generate_aead(hsm, args)
     oath_c = validate_oath_c(hsm, args, nonce, aead)
-    store_oath_entry(args, nonce, aead, oath_c)
+    return store_oath_entry(args, nonce, aead, oath_c)
 
 if __name__ == '__main__':
-    main()
+    if main():
+        sys.exit(0)
+    sys.exit(1)

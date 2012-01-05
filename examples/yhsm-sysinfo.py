@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 #
-# Copyright (c) 2011, Yubico AB
-# All rights reserved.
+# Copyright (c) 2011 Yubico AB
+# See the file COPYING for licence statement.
 #
 # Utility to show system information of a YubiHSM.
 #

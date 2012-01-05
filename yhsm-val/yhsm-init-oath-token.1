@@ -1,0 +1,78 @@
+.\" Copyright (c) 2011 Yubico AB
+.\" See the file COPYING for license statement.
+.\"
+.de URL
+\\$2 \(laURL: \\$1 \(ra\\$3
+..
+.if \n[.g] .mso www.tmac
+.TH yhsm-init-oath-token "1" "December 2011" "python-pyhsm"
+
+.SH NAME
+yhsm-init-oath-token \(hy Tool to add an OATH token to the \fIyhsm-validation-server\fR\|(1) database.
+
+.SH SYNOPSIS
+.B yhsm-init-oath-token \fI--key-handle kh\fR \fI--uid name\fR
+[\fIoptions\fR]
+
+.SH DESCRIPTION
+Use this tool to add OATH token entrys to the \fIyhsm-validation-server\fR\|(1) database.
+
+.SH OPTIONS
+.PP
+.TP
+\fB\-D\fR, \fB\-\-device\fR
+device file name (default: /dev/ttyACM0)
+.TP
+\fB\-v\fR, \fB\-\-verbose\fR
+enable verbose operation
+.TP
+\fB\-\-debug\fR
+enable debug printout, including all data sent to/from YubiHSM
+.TP
+\fB\-\-force\fR
+overwrite any present entry
+.TP
+\fB\-\-key-handle\fR kh
+key handle to create AEAD. Examples : "1", "0xabcd".
+.TP
+\fB\-\-uid\fR name
+user id (lookup key in token database)
+.TP
+\fB\-\-oath-c\fR num
+initial OATH counter value (integer)
+.TP
+\fB\-\-test-oath-window\fR num
+number of codes to search with \-\-test-code
+.TP
+\fB\-\-test-code\fR digits
+optional OTP from token for verification
+.TP
+\fB\-\-oath-k\fR str
+secret HMAC-SHA-1 key of the token, hex encoded
+.TP
+\fB\-\-db-file\fR fn
+db file for storing AEADs for later use by the \fIyhsm-validation-server\fR\|(1) (default: /var/yubico/yhsm-validation-server.db)
+
+
+.SH "EXIT STATUS"
+.IX Header "EXIT STATUS"
+.IP "\fB0\fR" 4
+.IX Item "0"
+YubiHSM keystore successfully unlocked
+.IP "\fB1\fR" 4
+.IX Item "1"
+Failed to unlock keystore
+.IP "\fB255\fR" 4
+.IX Item "255"
+Client ID not found in internal database
+
+.SH BUGS
+Report python-pyhsm/yhsm-init-oath-token bugs in
+.URL "https://github.com/Yubico/python-pyhsm/issues/" "the issue tracker"
+
+.SH "SEE ALSO"
+The
+.URL "https://github.com/Yubico/python-pyhsm/" "python-yubico home page"
+.PP
+YubiHSMs can be obtained from
+.URL "http://www.yubico.com/" "Yubico" "."

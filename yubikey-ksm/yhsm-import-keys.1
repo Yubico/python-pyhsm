@@ -1,0 +1,83 @@
+.\" Copyright (c) 2011 Yubico AB
+.\" See the file COPYING for license statement.
+.\"
+.de URL
+\\$2 \(laURL: \\$1 \(ra\\$3
+..
+.if \n[.g] .mso www.tmac
+.TH yhsm-import-keys "1" "December 2011" "python-pyhsm"
+
+.SH NAME
+yhsm-import-keys \(hy import YubiKey secrets to YubiHSM
+
+.SH SYNOPSIS
+.B yhsm-import-keys \fI--key-handles\fR ...
+[\fIoptions\fR]
+
+.SH DESCRIPTION
+Read YubiKey token data from standard input, and store it in files or
+in the YubiHSM internal database.
+
+The default mode is to turn each YubiKey secret into an AEAD
+(Authenticated Encryption with Associated Data) block that is stored
+in a file on the host computer (one file per YubiKey). This enables
+validation of virtually unlimited numbers of YubiKey's OTPs.
+
+If \-\-internal-db is used, the YubiKey secret will be stored inside
+the YubiHSM, and complete validation (including counter management)
+will be done inside the YubiHSM. The internal database is currently
+limited to 1024 entrys.
+
+.SH OPTIONS
+.PP
+.TP
+\fB\-D\fR, \fB\-\-device\fR
+device file name (default: /dev/ttyACM0)
+.TP
+\fB\-v\fR, \fB\-\-verbose\fR
+enable verbose operation
+.TP
+\fB\-\-debug\fR
+enable debug printout, including all data sent to/from YubiHSM
+.TP
+\fB\-\-public_id_chars\fR num
+number of chars to pad public id to (default: 12)
+.TP
+\fB\-\-key-handles\fR kh
+key handles to use for decoding OTPs. Examples : "1", "0xabcd"
+.TP
+\fB\-\-output-dir\fR dir, \fB\-\-aead-dir\fR dir, \fB\-O\fR dir
+base directory for AEADs (default: /var/cache/yubikey-ksm/aeads)
+.TP
+\fB\-\-internal-db\fR
+add entrys to YubiHSM internal database, rather than creating AEAD files
+
+.SH "INPUT FORMAT"
+
+The format of the input matches the export format of various Yubico tools,
+notably the PHP based
+.URL "http://code.google.com/p/yubikey-ksm/" "soft KSM" "."
+
+An example file, with a single entry for id 4711 would be :
+.in +4n
+.nf
+
+# ykksm 1
+123456,ftftftcccc,534543524554,fcacd309a20ce1809c2db257f0e8d6ea,000000000000,,,
+.fi
+.in
+
+(seqno, public id, private uid, AES key, dunno,,,)
+
+The #ykksm 1 is a file marker, and has to be on the very first line of input.
+
+.SH "BUGS"
+Report python-pyhsm/yhsm-import-keys bugs in
+.URL "https://github.com/Yubico/python-pyhsm/issues/" "the issue tracker"
+
+.SH "SEE ALSO"
+The
+.URL "https://github.com/Yubico/python-pyhsm/" "python-yubico home page"
+.PP
+YubiHSMs can be obtained from
+.URL "http://www.yubico.com/" "Yubico" "."
