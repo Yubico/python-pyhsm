@@ -122,9 +122,9 @@ def program_slot(will_use, slot, public_id, args, YK):
     nonce = struct.pack('>Q', public_id).rjust(pyhsm.defines.YSM_PUBLIC_ID_SIZE, chr(0x0))[2:8]
 
     # Get random data from YubiHSM
-    rnd = hsm.random(pyhsm.defines.YSM_PUBLIC_ID_SIZE + pyhsm.defines.YSM_OTP_SIZE)
-    private_uid = rnd[:pyhsm.defines.YSM_PUBLIC_ID_SIZE]
-    aes_key = rnd[pyhsm.defines.YSM_PUBLIC_ID_SIZE:]
+    rnd = hsm.random(pyhsm.defines.UID_SIZE + pyhsm.defines.YSM_OTP_SIZE)
+    private_uid = rnd[:pyhsm.defines.UID_SIZE]
+    aes_key = rnd[pyhsm.defines.UID_SIZE:]
     secret = pyhsm.aead_cmd.YHSM_YubiKeySecret(aes_key, private_uid)
     # turn it into an AEAD
     aead = hsm.generate_aead_simple(nonce, args.key_handle, secret.pack())
