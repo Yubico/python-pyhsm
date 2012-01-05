@@ -92,8 +92,8 @@ class ConfigureYubiHSMforTest(test_common.YHSM_TestCase):
             except pyhsm.exception.YHSM_CommandFailed, e:
                 if e.status != pyhsm.defines.YSM_OTP_REPLAY:
                     raise
-            # now do real unlock with values 1/1
-            YK.use_ctr = 1
+            # now do real unlock with values 2/1 (there is an extra unlock done somewhere...)
+            YK.use_ctr = 2
             self.assertTrue(self.hsm.unlock(password = HsmPassphrase.decode("hex"), otp = YK.from_key()))
         else:
             self.assertTrue(self.hsm.unlock(password = HsmPassphrase.decode("hex")))
