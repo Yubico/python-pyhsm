@@ -62,8 +62,6 @@ def suite():
             if e.status != pyhsm.defines.YSM_KEY_STORAGE_LOCKED and \
                     e.status != pyhsm.defines.YSM_FUNCTION_DISABLED:
                 raise
-            if e.status != pyhsm.defines.YSM_KEY_STORAGE_LOCKED:
-                raise
 
     zap = []
     if 'YHSM_ZAP' in os.environ:
