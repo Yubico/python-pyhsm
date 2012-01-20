@@ -39,7 +39,7 @@ class TestAEAD(test_common.YHSM_TestCase):
         self.assertEquals(str, type(str(aead)))
 
     def test_generate_aead_simple_validates(self):
-        """ Test decrypt_cmp of generate_aead_simple result. """
+        """ Test validate_aead of generate_aead_simple result. """
         # To successfully decrypt the AEAD we have to generate and decrypt
         # with the same key handle. Key handle 0x2000 has all flags set.
         kh_gen = 0x2000
@@ -50,6 +50,22 @@ class TestAEAD(test_common.YHSM_TestCase):
         # test that the YubiHSM validates the generated AEAD
         # and confirms it contains our secret
         self.assertTrue(self.hsm.validate_aead(self.nonce, kh_val, \
+                                                   aead, cleartext = self.secret.pack()))
+
+    def test_generate_aead_simple_hsm_noncevalidates(self):
+        """ Test validate_aead of generate_aead_simple result with HSM nonce. """
+        # To successfully decrypt the AEAD we have to generate and decrypt
+        # with the same key handle. Key handle 0x2000 has all flags set.
+        kh_gen = 0x2000
+        kh_val = 0x2000
+
+        nonce = '000000000000'.decode('hex')
+
+        aead = self.hsm.generate_aead_simple(nonce, kh_gen, self.secret)
+
+        # test that the YubiHSM validates the generated AEAD
+        # and confirms it contains our secret
+        self.assertTrue(self.hsm.validate_aead(aead.nonce, kh_val, \
                                                    aead, cleartext = self.secret.pack()))
 
     def test_generate_aead_random(self):

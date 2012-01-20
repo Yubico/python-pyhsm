@@ -67,12 +67,10 @@ class YHSM_AEAD_Cmd(YHSM_Cmd):
             self.status, \
             num_bytes = struct.unpack_from("< %is I B B" % (pyhsm.defines.YSM_AEAD_NONCE_SIZE), data, 0)
 
-        pyhsm.util.validate_cmd_response_str('nonce', nonce, self.nonce)
         pyhsm.util.validate_cmd_response_hex('key_handle', key_handle, self.key_handle)
 
         if self.status == pyhsm.defines.YSM_STATUS_OK:
-            # struct.hash is not always of size YSM_SHA1_HASH_SIZE,
-            # it is really the size of numBytes
+            pyhsm.util.validate_cmd_response_nonce(nonce, self.nonce)
             offset = pyhsm.defines.YSM_AEAD_NONCE_SIZE + 6
             aead = data[offset:offset + num_bytes]
             self.response = YHSM_GeneratedAEAD(nonce, key_handle, aead)
