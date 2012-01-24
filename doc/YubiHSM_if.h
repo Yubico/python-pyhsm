@@ -172,13 +172,13 @@ typedef struct {
 } YSM_AEAD_DECRYPT_CMP_RESP;
 
 ////////////////////////////////////
-//  Store Yubikey specific AEAD block in internal store
+//  Store Yubikey specific AEAD block in internal store (nonce == public id)
 ////////////////////////////////////
 
 #define YSM_DB_YUBIKEY_AEAD_STORE          0x05
 
 typedef struct {
-    uint8_t publicId[YSM_PUBLIC_ID_SIZE]; // Public id (nonce)
+    uint8_t publicId[YSM_PUBLIC_ID_SIZE]; // Public id (and nonce in this case)
     uint32_t keyHandle;                  // Key handle
     uint8_t aead[YSM_YUBIKEY_AEAD_SIZE]; // AEAD block
 } YSM_DB_YUBIKEY_AEAD_STORE_REQ;
@@ -237,6 +237,27 @@ typedef struct {
     uint16_t tstpl;				        // Timestamp (low part)
     YSM_STATUS status;                  // Validation status
 } YSM_DB_YUBIKEY_OTP_VALIDATE_RESP;
+
+////////////////////////////////////
+//  Store Yubikey specific AEAD block in internal store (nonce != public id)
+////////////////////////////////////
+
+#define YSM_DB_YUBIKEY_AEAD_STORE2         0x08
+
+typedef struct {
+    uint8_t publicId[YSM_PUBLIC_ID_SIZE]; // Public id
+    uint32_t keyHandle;                  // Key handle
+    uint8_t aead[YSM_YUBIKEY_AEAD_SIZE]; // AEAD block
+    uint8_t nonce[YSM_AEAD_NONCE_SIZE];  // Nonce
+} YSM_DB_YUBIKEY_AEAD_STORE2_REQ;
+
+#define YSM_DB_YUBIKEY_AEAD_STORED2         (YSM_DB_YUBIKEY_AEAD_STORE2 | YSM_RESPONSE)
+
+typedef struct {
+    uint8_t publicId[YSM_PUBLIC_ID_SIZE]; // Public id
+    uint32_t keyHandle;                 // Key handle
+    YSM_STATUS status;                  // Validation status
+} YSM_DB_YUBIKEY_AEAD_STORE2_RESP;
 
 ////////////////////////////////////
 // AES ECB block encrypt request
