@@ -129,7 +129,7 @@ class YHSM():
         @return: data read from YubiHSM -- should equal `data'
         @rtype: string
 
-        @see: L{pyhsm.basic_cmd.YHSM_Cmd_Echo.parse_result}
+        @see: L{pyhsm.basic_cmd.YHSM_Cmd_Echo}
         """
         return pyhsm.basic_cmd.YHSM_Cmd_Echo(self.stick, data).execute()
 
@@ -139,7 +139,7 @@ class YHSM():
         @return: System information
         @rtype: L{YHSM_Cmd_System_Info}
 
-        @see: L{pyhsm.basic_cmd.YHSM_Cmd_System_Info.parse_result}
+        @see: L{pyhsm.basic_cmd.YHSM_Cmd_System_Info}
         """
         return pyhsm.basic_cmd.YHSM_Cmd_System_Info(self.stick).execute()
 
@@ -155,7 +155,7 @@ class YHSM():
         @return: Bytes with random data
         @rtype: string
 
-        @see: L{pyhsm.basic_cmd.YHSM_Cmd_Random.parse_result}
+        @see: L{pyhsm.basic_cmd.YHSM_Cmd_Random}
         """
         return pyhsm.basic_cmd.YHSM_Cmd_Random(self.stick, num_bytes).execute()
 
@@ -169,7 +169,7 @@ class YHSM():
         @returns: True on success
         @rtype: bool
 
-        @see: L{pyhsm.basic_cmd.YHSM_Cmd_Random_Reseed.parse_result}
+        @see: L{pyhsm.basic_cmd.YHSM_Cmd_Random_Reseed}
         """
         return pyhsm.basic_cmd.YHSM_Cmd_Random_Reseed(self.stick, seed).execute()
 
@@ -184,7 +184,7 @@ class YHSM():
         @return: nonce value _before_ increment
         @rtype: L{YHSM_NonceResponse}
 
-        @see: L{pyhsm.basic_cmd.YHSM_Cmd_Nonce_Get.parse_result}
+        @see: L{pyhsm.basic_cmd.YHSM_Cmd_Nonce_Get}
        """
         return pyhsm.basic_cmd.YHSM_Cmd_Nonce_Get(self.stick, increment).execute()
 
@@ -202,7 +202,7 @@ class YHSM():
         @returns: True on success
         @rtype: bool
 
-        @see: L{pyhsm.basic_cmd.YHSM_Cmd_Temp_Key_Load.parse_result}
+        @see: L{pyhsm.basic_cmd.YHSM_Cmd_Temp_Key_Load}
         """
         return pyhsm.basic_cmd.YHSM_Cmd_Temp_Key_Load(self.stick, nonce, key_handle, aead).execute()
 
@@ -226,8 +226,8 @@ class YHSM():
         @returns: Only returns (True) on success
         @rtype: bool
 
-        @see: L{pyhsm.basic_cmd.YHSM_Cmd_Key_Storage_Unlock.parse_result}
-        @see: L{pyhsm.basic_cmd.YHSM_Cmd_HSM_Unlock.parse_result}
+        @see: L{pyhsm.basic_cmd.YHSM_Cmd_Key_Storage_Unlock}
+        @see: L{pyhsm.basic_cmd.YHSM_Cmd_HSM_Unlock}
         """
         if otp is not None and not self.version.have_unlock():
             # only in 1.0
@@ -274,7 +274,7 @@ class YHSM():
         @returns: Number of bytes in YubiHSM internal buffer after load
         @rtype: integer
 
-        @see: L{pyhsm.buffer_cmd.YHSM_Cmd_Buffer_Load.parse_result}
+        @see: L{pyhsm.buffer_cmd.YHSM_Cmd_Buffer_Load}
         """
         if isinstance(secret, pyhsm.aead_cmd.YHSM_YubiKeySecret):
             secret = secret.pack()
@@ -296,7 +296,7 @@ class YHSM():
         @returns: Number of bytes in YubiHSM internal buffer after load
         @rtype: integer
 
-        @see: L{pyhsm.buffer_cmd.YHSM_Cmd_Buffer_Load.parse_result}
+        @see: L{pyhsm.buffer_cmd.YHSM_Cmd_Buffer_Load}
         """
         return pyhsm.buffer_cmd.YHSM_Cmd_Buffer_Load(self.stick, data, offset).execute()
 
@@ -315,7 +315,7 @@ class YHSM():
         @returns: Number of bytes in YubiHSM internal buffer after load
         @rtype: integer
 
-        @see: L{pyhsm.buffer_cmd.YHSM_Cmd_Buffer_Random_Load.parse_result}
+        @see: L{pyhsm.buffer_cmd.YHSM_Cmd_Buffer_Random_Load}
         """
         return pyhsm.buffer_cmd.YHSM_Cmd_Buffer_Random_Load(self.stick, num_bytes, offset).execute()
 
@@ -334,7 +334,7 @@ class YHSM():
         @returns: The generated AEAD on success.
         @rtype: L{YHSM_GeneratedAEAD}
 
-        @see: L{pyhsm.aead_cmd.YHSM_Cmd_AEAD_Generate.parse_result}
+        @see: L{pyhsm.aead_cmd.YHSM_Cmd_AEAD_Generate}
         """
         return pyhsm.aead_cmd.YHSM_Cmd_AEAD_Generate(self.stick, nonce, key_handle, data).execute()
 
@@ -354,7 +354,7 @@ class YHSM():
         @returns: The generated AEAD on success.
         @rtype: L{YHSM_GeneratedAEAD}
 
-        @see: L{pyhsm.aead_cmd.YHSM_Cmd_AEAD_Random_Generate.parse_result}
+        @see: L{pyhsm.aead_cmd.YHSM_Cmd_AEAD_Random_Generate}
         """
         return pyhsm.aead_cmd.YHSM_Cmd_AEAD_Random_Generate(self.stick, nonce, key_handle, num_bytes).execute()
 
@@ -373,7 +373,7 @@ class YHSM():
         @returns: The generated AEAD on success.
         @rtype: L{YHSM_GeneratedAEAD}
 
-        @see: L{pyhsm.aead_cmd.YHSM_Cmd_AEAD_Buffer_Generate.parse_result}
+        @see: L{pyhsm.aead_cmd.YHSM_Cmd_AEAD_Buffer_Generate}
         """
         return pyhsm.aead_cmd.YHSM_Cmd_AEAD_Buffer_Generate(self.stick, nonce, key_handle).execute()
 
@@ -398,7 +398,7 @@ class YHSM():
         @returns: Whether or not the cleartext matches the contents of the AEAD.
         @rtype: bool
 
-        @see: L{pyhsm.aead_cmd.YHSM_Cmd_AEAD_Decrypt_Cmp.parse_result}
+        @see: L{pyhsm.aead_cmd.YHSM_Cmd_AEAD_Decrypt_Cmp}
         """
         return pyhsm.aead_cmd.YHSM_Cmd_AEAD_Decrypt_Cmp(self.stick, nonce, key_handle, aead, cleartext).execute()
 
@@ -419,7 +419,7 @@ class YHSM():
         @returns: validation response
         @rtype: L{YHSM_ValidationResult}
 
-        @see: L{pyhsm.validate_cmd.YHSM_Cmd_AEAD_Validate_OTP.parse_result}
+        @see: L{pyhsm.validate_cmd.YHSM_Cmd_AEAD_Validate_OTP}
         """
         if type(public_id) is not str:
             assert()
@@ -522,7 +522,7 @@ class YHSM():
         @returns: Match result
         @rtype: bool
 
-        @see: L{pyhsm.aes_ecb_cmd.YHSM_Cmd_AES_ECB_Compare.parse_result}
+        @see: L{pyhsm.aes_ecb_cmd.YHSM_Cmd_AES_ECB_Compare}
         """
         return pyhsm.aes_ecb_cmd.YHSM_Cmd_AES_ECB_Compare( \
             self.stick, key_handle, ciphertext, plaintext).execute()
@@ -552,7 +552,7 @@ class YHSM():
         @returns: HMAC-SHA1 instance
         @rtype: L{YHSM_Cmd_HMAC_SHA1_Write}
 
-        @see: L{pyhsm.hmac_cmd.YHSM_Cmd_HMAC_SHA1_Write.parse_result}
+        @see: L{pyhsm.hmac_cmd.YHSM_Cmd_HMAC_SHA1_Write}
         """
         return pyhsm.hmac_cmd.YHSM_Cmd_HMAC_SHA1_Write( \
             self.stick, key_handle, data, flags = flags, final = final, to_buffer = to_buffer).execute()
@@ -578,7 +578,7 @@ class YHSM():
         @return: True on success
         @rtype: bool
 
-        @see: L{pyhsm.db_cmd.YHSM_Cmd_DB_YubiKey_Store.parse_result}
+        @see: L{pyhsm.db_cmd.YHSM_Cmd_DB_YubiKey_Store}
         """
         return pyhsm.db_cmd.YHSM_Cmd_DB_YubiKey_Store( \
             self.stick, public_id, key_handle, aead).execute()
@@ -596,7 +596,7 @@ class YHSM():
         @returns: validation response
         @rtype: L{YHSM_ValidationResult}
 
-        @see: L{pyhsm.db_cmd.YHSM_Cmd_DB_Validate_OTP.parse_result}
+        @see: L{pyhsm.db_cmd.YHSM_Cmd_DB_Validate_OTP}
         """
         return pyhsm.db_cmd.YHSM_Cmd_DB_Validate_OTP( \
             self.stick, public_id, otp).execute()

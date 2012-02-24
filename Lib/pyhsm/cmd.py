@@ -45,7 +45,12 @@ class YHSM_Cmd():
         return None
 
     def execute(self, read_response=True):
-        """ Write command to stick and read response. """
+        """
+        Write command to HSM and read response.
+
+        @param read_response: Whether to expect a response or not.
+        @type read_response: bool
+        """
         # // Up- and downlink packet
         # typedef struct {
         #   uint8_t bcnt;                       // Number of bytes (cmd + payload)

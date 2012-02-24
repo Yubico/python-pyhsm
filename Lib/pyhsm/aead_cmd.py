@@ -128,6 +128,10 @@ class YHSM_Cmd_AEAD_Buffer_Generate(YHSM_AEAD_Cmd):
 
     For example, to encrypt a YubiKey secrets to one or more Yubico KSM's that
     all have a YubiHSM attached to them.
+
+    Key handle (and system flags) permission flags required for this operation :
+        YSM_BUFFER_AEAD_GENERATE
+        YSM_BUFFER_LOAD if non-random data has been loaded into the internal buffer
     """
     def __init__(self, stick, nonce, key_handle):
         self.nonce = pyhsm.util.input_validate_nonce(nonce, pad = True)
