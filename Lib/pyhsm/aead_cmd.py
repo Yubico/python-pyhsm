@@ -9,6 +9,7 @@ import struct
 
 __all__ = [
     # constants
+    'YHSM_AEAD_File_Marker',
     # functions
     # classes
     'YHSM_AEAD_Cmd',
@@ -23,6 +24,8 @@ __all__ = [
 import pyhsm.defines
 import pyhsm.exception
 from pyhsm.cmd import YHSM_Cmd
+
+YHSM_AEAD_File_Marker = 'YubiHSM AEAD\n'
 
 class YHSM_AEAD_Cmd(YHSM_Cmd):
     """
@@ -195,24 +198,51 @@ class YHSM_GeneratedAEAD():
         self.data = aead
 
     def __repr__(self):
+        nonce_str = "None"
+        if self.nonce is not None:
+            nonce_str = self.nonce.encode('hex')
         return '<%s instance at %s: nonce=%s, key_handle=0x%x, data=%i bytes>' % (
             self.__class__.__name__,
             hex(id(self)),
-            self.nonce.encode('hex'),
+            nonce_str,
             self.key_handle,
             len(self.data)
             )
 
     def save(self, filename):
-        """ Store AEAD in a file. """
+        """
+        Store AEAD in a file.
+
+        @param filename: File to create/overwrite
+        @type filename: string
+        """
         aead_f = open(filename, "w")
-        aead_f.write(self.data)
+        fmt = "< B I %is %is" % (pyhsm.defines.YSM_AEAD_NONCE_SIZE, len(self.data))
+        version = 1
+        packed = struct.pack(fmt, version, self.key_handle, self.nonce, self.data)
+        aead_f.write(YHSM_AEAD_File_Marker + packed)
         aead_f.close()
 
     def load(self, filename):
-        """ Load AEAD from a file. """
+        """
+        Load AEAD from a file.
+
+        @param filename: File to read AEAD from
+        @type filename: string
+        """
         aead_f = open(filename, "r")
-        self.data = aead_f.read(pyhsm.defines.YSM_MAX_KEY_SIZE + pyhsm.defines.YSM_BLOCK_SIZE)
+        buf = aead_f.read(1024)
+        if buf.startswith(YHSM_AEAD_File_Marker):
+            if buf[len(YHSM_AEAD_File_Marker)] == chr(1):
+                # version 1 format
+                fmt = "< I %is" % (pyhsm.defines.YSM_AEAD_NONCE_SIZE)
+                self.key_handle, self.nonce = struct.unpack_from(fmt, buf, len(YHSM_AEAD_File_Marker) + 1)
+                self.data = buf[len(YHSM_AEAD_File_Marker) + 1 + struct.calcsize(fmt):]
+            else:
+                raise pyhsm.exception.YHSM_Error('Unknown AEAD file format')
+        else:
+            # version 0 format, just AEAD data
+            self.data = buf[:pyhsm.defines.YSM_MAX_KEY_SIZE + pyhsm.defines.YSM_BLOCK_SIZE]
         aead_f.close()
 
 class YHSM_YubiKeySecret():
