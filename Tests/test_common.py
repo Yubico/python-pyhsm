@@ -116,7 +116,7 @@ class YubiKeyEmu():
     def pack(self):
         """
         Return contents packed. Only add AES ECB encryption and modhex to
-        get your own YubiKey OTP.
+        get your own YubiKey OTP (see function 'from_key').
         """
 
         #define UID_SIZE 6
