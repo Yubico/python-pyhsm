@@ -53,6 +53,7 @@ import pyhsm.hmac_cmd
 import pyhsm.validate_cmd
 
 import pyhsm.yubikey
+import pyhsm.soft_hsm
 
 class YHSM():
     """

@@ -55,6 +55,7 @@ __all__ = ["base",
            "util",
            "version",
            "yubikey",
+           "soft_hsm",
            #
            "aead_cmd",
            "aes_ecb_cmd",
