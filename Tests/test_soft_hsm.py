@@ -70,7 +70,22 @@ class TestSoftHSM(test_common.YHSM_TestCase):
         # generate hard AEAD
         aead = self.hsm.generate_aead_simple(self.nonce, key_handle, plaintext)
 
+        self.assertEquals(aead.data, ct)
+
+        # decrypt the AEAD again
+        pt = pyhsm.soft_hsm.aesCCM(key, key_handle, self.nonce, ct, decrypt = True)
+        self.assertEquals(plaintext, pt)
+
+    def test_soft_generate_yubikey_secrets_aead(self):
+        """ Test soft_hsm generation of YubiKey secrets AEAD. """
+        key_handle = 0x2000
+        plaintext = 'A' * 22
+        key = str("2000" * 16).decode('hex')
+        # generate soft AEAD
         ct = pyhsm.soft_hsm.aesCCM(key, key_handle, self.nonce, plaintext, decrypt = False)
+        # generate hard AEAD
+        aead = self.hsm.generate_aead_simple(self.nonce, key_handle, plaintext)
+
         self.assertEquals(aead.data, ct)
 
         # decrypt the AEAD again

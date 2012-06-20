@@ -61,6 +61,7 @@ class _cbc_mac():
         self.mac = self.mac_aes.encrypt(t_mac)
 
     def update(self, block):
+        block = block.ljust(pyhsm.defines.YSM_BLOCK_SIZE, chr(0x0))
         t1 = _xor_block(self.mac, block)
         t2 = self.mac_aes.encrypt(t1)
         self.mac = t2
