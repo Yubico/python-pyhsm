@@ -561,7 +561,7 @@ class YHSM():
     #
     # Internal YubiKey database related commands
     #
-    def db_store_yubikey(self, public_id, key_handle, aead):
+    def db_store_yubikey(self, public_id, key_handle, aead, nonce = None):
         """
         Ask YubiHSM to store data about a YubiKey in the internal database (not buffer).
 
@@ -571,17 +571,22 @@ class YHSM():
         @param public_id: The six bytes public id of the YubiKey
         @param key_handle: Key handle that can decrypt the YubiKey AEAD
         @param aead: AEAD of an L{pyhsm.aead_cmd.YHSM_YubiKeySecret}
+        @param nonce: Nonce, if different from public_id.
         @type public_id: string
         @type key_handle: integer or string
         @type aead: L{YHSM_GeneratedAEAD} or string
+        @type nonce: None or string
 
         @return: True on success
         @rtype: bool
 
         @see: L{pyhsm.db_cmd.YHSM_Cmd_DB_YubiKey_Store}
         """
+        if nonce is not None and not self.version.have_YSM_DB_YUBIKEY_AEAD_STORE2():
+            # introduced in 1.0.4
+            raise pyhsm.exception.YHSM_Error("YubiHSM does not support nonce != public_id.")
         return pyhsm.db_cmd.YHSM_Cmd_DB_YubiKey_Store( \
-            self.stick, public_id, key_handle, aead).execute()
+            self.stick, public_id, key_handle, aead, nonce = nonce).execute()
 
     def db_validate_yubikey_otp(self, public_id, otp):
         """

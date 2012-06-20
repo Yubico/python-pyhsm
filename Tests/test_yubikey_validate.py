@@ -22,9 +22,6 @@ class TestYubikeyValidate(test_common.YHSM_TestCase):
         secret = pyhsm.aead_cmd.YHSM_YubiKeySecret(self.yk_key, self.yk_uid)
         self.hsm.load_secret(secret)
 
-        #self.kh_generate = 0x06		# key handle 0x9 is allowed to generate aeads
-        #self.kh_validate = 0x1000	# key handle 0x1000 is allowed to validate aeads and have the same key as 0x9
-
         # YubiHSM includes key handle id in AES-CCM of aeads, so we must use same
         # key to generate and validate. Key 0x2000 has all flags.
         self.kh_generate = 0x2000

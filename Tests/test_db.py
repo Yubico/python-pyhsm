@@ -42,6 +42,37 @@ class TestInternalDB(test_common.YHSM_TestCase):
         except pyhsm.exception.YHSM_CommandFailed, e:
             self.assertEqual(e.status, pyhsm.defines.YSM_OTP_INVALID)
 
+    def test_store_yubikey_with_nonce(self):
+        """ Test storing a YubiKey generated with non-public-id nonce in the internal database. """
+        if not self.hsm.version.have_YSM_DB_YUBIKEY_AEAD_STORE2():
+            print ("Test of command introduced in 1.0.4 disabled.")
+            return None
+        # Key handle 0x2000 has all flags enabled
+        key_handle = 0x2000
+        public_id = '4d4d4d001122'.decode('hex')
+        nonce = '010203040506'.decode('hex')
+        key = 'T' * 16
+        uid = 'F' * 6
+
+        secret = pyhsm.aead_cmd.YHSM_YubiKeySecret(key, uid)
+        self.hsm.load_secret(secret)
+
+        aead = self.hsm.generate_aead(nonce, key_handle)
+
+        # Try to store a record. YSM_ID_DUPLICATE is not an error since we don't
+        # always zap the configuration before running the test suite.
+        try:
+            self.assertTrue(self.hsm.db_store_yubikey(public_id, key_handle, aead, nonce = nonce))
+        except pyhsm.exception.YHSM_CommandFailed, e:
+            self.assertEqual(e.status, pyhsm.defines.YSM_ID_DUPLICATE)
+
+        # Now, try an invalid validation against that record
+        try:
+            res = self.hsm.db_validate_yubikey_otp(public_id, "x" * 16)
+            self.fail("Expected YSM_OTP_INVALID, got %s" % (res))
+        except pyhsm.exception.YHSM_CommandFailed, e:
+            self.assertEqual(e.status, pyhsm.defines.YSM_OTP_INVALID)
+
     def test_real_validate(self):
         """ Test real validation of YubiKey OTP against internal database. """
         # Key handle 0x2000 has all flags enabled

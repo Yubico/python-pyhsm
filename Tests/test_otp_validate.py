@@ -37,8 +37,8 @@ class TestOtpValidate(test_common.YHSM_TestCase):
         uid = '\x4d\x01\x4d\x02'
         public_id = 'f1f2f3f4f5f6'.decode('hex')
         if self.hsm.version.have_YSM_BUFFER_LOAD():
-            # Enabled flags 40000004 = YSM_BUFFER_AEAD_GENERATE,YSM_BUFFER_LOAD
-            # HSM> < keyload - Load key data now using flags 40000004. Press ESC to quit
+            # Enabled flags 60000004 = YSM_BUFFER_AEAD_GENERATE,YSM_USER_NONCE,YSM_BUFFER_LOAD
+            # HSM (keys changed)> < keyload - Load key data now using flags 60000004. Press ESC to quit
             # 00001002 - stored ok
             key_handle = 0x1002
         else:
@@ -56,10 +56,6 @@ class TestOtpValidate(test_common.YHSM_TestCase):
 
         self.assertEqual(aead.nonce, public_id)
         self.assertEqual(aead.key_handle, key_handle)
-        #self.assertEqual(aead.data.encode('hex'),
-        #                 '45bbdf26fc1a5560b6ff119dfdf743dbd1a65e3a00eab569'
-        #                 'fe27b5c3705ea4e8e2db0a88c21124e15321976154e4703f'
-        #                 )
 
     def test_yubikey_secrets(self):
         """ Test the class representing the YUBIKEY_SECRETS struct. """

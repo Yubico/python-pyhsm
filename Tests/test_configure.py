@@ -147,8 +147,8 @@ class ConfigureYubiHSMforTest(test_common.YHSM_TestCase):
         key = "1001" * 16
         self.add_key(flags, 0x1001, key)
 
-        # Key allowed to generate AEAD from known data (loaded into buffer)
-        flags = 0x4 | 0x40000000
+        # Key allowed to generate AEAD from known data (loaded into buffer), with user specified noncey
+        flags = 0x4 | 0x40000000 | 0x20000000
         key = "1002" * 16
         self.add_key(flags, 0x1002, key)
 
@@ -168,6 +168,16 @@ class ConfigureYubiHSMforTest(test_common.YHSM_TestCase):
         flags = 0x10000
         key = "303132333435363738393a3b3c3d3e3f40414243".ljust(64, '0')
         self.add_key(flags, 0x3031, key)
+
+        # Key permitting AEAD generate with user specified nonce
+        flags = 0x20000002
+        key = "20000002" * 8
+        self.add_key(flags, 0x20000002, key)
+
+        # Key permitting random AEAD generate with user specified nonce
+        flags = 0x20000008
+        key = "20000008" * 8
+        self.add_key(flags, 0x20000008, key)
 
     def add_key(self, flags, num, key):
         keyline = "%08x,%s\r" % (num, key)

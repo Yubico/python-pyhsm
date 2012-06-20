@@ -26,22 +26,40 @@ class YHSM_Cmd_DB_YubiKey_Store(YHSM_Cmd):
     Ask YubiHSM to store data about a YubiKey in the internal database (not buffer).
 
     The input is an AEAD, perhaps previously created using generate_aead().
+
+    If the nonce for the AEAD is not the same as the public_id, specify it with the nonce keyword argument.
+    This requires a YubiHSM >= 1.0.4.
     """
 
     status = None
 
-    def __init__(self, stick, public_id, key_handle, aead):
+    def __init__(self, stick, public_id, key_handle, aead, nonce = None):
         self.key_handle = pyhsm.util.input_validate_key_handle(key_handle)
         self.public_id = pyhsm.util.input_validate_nonce(public_id, pad = True)
         aead = pyhsm.util.input_validate_aead(aead, expected_len = pyhsm.defines.YSM_YUBIKEY_AEAD_SIZE)
-        # typedef struct {
-        #   uint8_t publicId[YSM_PUBLIC_ID_SIZE]; // Public id (nonce)
-        #   uint32_t keyHandle;                    // Key handle
-        #   uint8_t aead[YSM_YUBIKEY_AEAD_SIZE];       // AEAD block
-        # } YSM_DB_YUBIKEY_AEAD_STORE_REQ;
-        fmt = "< %is I %is" % (pyhsm.defines.YSM_AEAD_NONCE_SIZE, pyhsm.defines.YSM_YUBIKEY_AEAD_SIZE)
-        packed = struct.pack(fmt, self.public_id, self.key_handle, aead)
-        YHSM_Cmd.__init__(self, stick, pyhsm.defines.YSM_DB_YUBIKEY_AEAD_STORE, packed)
+        if nonce is None:
+            # typedef struct {
+            #   uint8_t publicId[YSM_PUBLIC_ID_SIZE]; // Public id (nonce)
+            #   uint32_t keyHandle;                    // Key handle
+            #   uint8_t aead[YSM_YUBIKEY_AEAD_SIZE];       // AEAD block
+            # } YSM_DB_YUBIKEY_AEAD_STORE_REQ;
+            fmt = "< %is I %is" % (pyhsm.defines.YSM_PUBLIC_ID_SIZE, \
+                                       pyhsm.defines.YSM_YUBIKEY_AEAD_SIZE)
+            packed = struct.pack(fmt, self.public_id, self.key_handle, aead)
+            YHSM_Cmd.__init__(self, stick, pyhsm.defines.YSM_DB_YUBIKEY_AEAD_STORE, packed)
+        else:
+            nonce = pyhsm.util.input_validate_nonce(nonce)
+            # typedef struct {
+            #   uint8_t publicId[YSM_PUBLIC_ID_SIZE]; // Public id
+            #   uint32_t keyHandle;                    // Key handle
+            #   uint8_t aead[YSM_YUBIKEY_AEAD_SIZE];       // AEAD block
+            #   uint8_t nonce[YSM_AEAD_NONCE_SIZE];  // Nonce
+            # } YSM_DB_YUBIKEY_AEAD_STORE2_REQ;
+            fmt = "< %is I %is %is" % (pyhsm.defines.YSM_PUBLIC_ID_SIZE, \
+                                           pyhsm.defines.YSM_YUBIKEY_AEAD_SIZE, \
+                                           pyhsm.defines.YSM_AEAD_NONCE_SIZE)
+            packed = struct.pack(fmt, self.public_id, self.key_handle, aead, nonce)
+            YHSM_Cmd.__init__(self, stick, pyhsm.defines.YSM_DB_YUBIKEY_AEAD_STORE2, packed)
 
     def parse_result(self, data):
         """ Return True if the AEAD was stored sucessfully. """

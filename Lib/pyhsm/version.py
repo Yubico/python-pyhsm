@@ -68,3 +68,9 @@ class YHSM_Version():
         This is a key handle permission flag that was introduced in 0.9.9.
         """
         return self.ver >= (0, 9, 9,)
+
+    def have_YSM_DB_YUBIKEY_AEAD_STORE2(self):
+        """
+        The 2nd generation store command (with public id != nonce) was introduced in 1.0.4.
+        """
+        return self.ver >= (1, 0, 4)

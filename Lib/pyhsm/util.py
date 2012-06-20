@@ -148,3 +148,17 @@ def validate_cmd_response_str(name, got, expected, hex_encode=True):
         raise(pyhsm.exception.YHSM_Error("Bad %s in response (got %s, expected %s)" \
                                              % (name, got_s, exp_s)))
     return got
+
+def validate_cmd_response_nonce(got, used):
+    """
+    Check that the returned nonce matches nonce used in request.
+
+    A request nonce of 000000000000 means the HSM should generate a nonce internally though,
+    so if 'used' is all zeros we actually check that 'got' does NOT match 'used'.
+    """
+    if used == '000000000000'.decode('hex'):
+        if got == used:
+            raise(pyhsm.exception.YHSM_Error("Bad nonce in response (got %s, expected HSM generated nonce)" \
+                                                 % (got.encode('hex'))))
+        return got
+    return validate_cmd_response_str('nonce', got, used)
