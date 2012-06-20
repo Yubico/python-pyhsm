@@ -137,17 +137,14 @@ def gen_keys(hsm, args):
         num_bytes = len(pyhsm.aead_cmd.YHSM_YubiKeySecret('a' * 16, 'b' * 6).pack())
         hsm.load_random(num_bytes)
         for kh in args.key_handles.keys():
-            aead = hsm.generate_aead(public_id, kh)
+            aead = hsm.generate_aead(public_id.decode('hex'), kh)
 
             filename = output_filename(args.output_dir, args.key_handles[kh], padded_id)
 
             if args.verbose:
                 print "    %4s, %i bytes (%s) -> %s" % \
                     (args.key_handles[kh], len(aead.data), shorten_aead(aead), filename)
-
-            f = open(filename, "w")
-            f.write(aead.data)
-            f.close()
+            aead.save(filename)
 
         if args.verbose:
             print ""
