@@ -1,0 +1,64 @@
+.\" Copyright (c) 2012 Yubico AB
+.\" See the file COPYING for license statement.
+.\"
+.de URL
+\\$2 \(laURL: \\$1 \(ra\\$3
+..
+.if \n[.g] .mso www.tmac
+.TH yhsm-decrypt-aead "1" "June 2012" "python-pyhsm"
+
+.SH NAME
+yhsm-decrypt-aead \(hy Decrypt AEADs (with secrets for YubiKeys)
+
+.SH SYNOPSIS
+.B yhsm\-decrypt\-aead [\fIoptions\fR] \-\-aes\-key KEY file-or-dir [...]
+
+.SH DESCRIPTION
+Decrypt AEADs generated using a YubiHSM.
+\fBNOTE\fR that this requires knowledge of the AES key used in the YubiHSM.
+
+After a number of YubiKey secrets have been generated using
+.BR yhsm-generate-keys (1)
+, this tool can decrypt them and produce a CSV file usable to personalize
+corresponding YubiKeys.
+
+.SH OPTIONS
+.PP
+.TP
+\fB\-v\fR, \fB\-\-verbose\fR
+Enable verbose operation.
+.TP
+\fB\-\-debug\fR
+Enable debug printout.
+.TP
+\fB\-\-format str\fR
+Select output format (raw or yubikey-csv).
+.TP
+\fB\-\-print\-filename\fR
+Prefix any output with the input filename.
+.TP
+\fB\-\-key\-handle kh\fR
+Key handle used when generated AEADs, if not stored in the AEAD file (AEAD generated with python-pyhsm 1.0.3 or lower).
+.TP
+\fB\-\-aes\-key hexstr\fR
+AES key used to generate the AEADs.
+
+.SH "EXIT STATUS"
+.IX Header "EXIT STATUS"
+.IP "\fB0\fR" 4
+.IX Item "0"
+OK
+.IP "\fB1\fR" 4
+.IX Item "1"
+Fail
+
+.SH BUGS
+Report python-pyhsm/yhsm-decrypt-aead bugs in
+.URL "https://github.com/Yubico/python-pyhsm/issues/" "the issue tracker"
+
+.SH "SEE ALSO"
+The
+.URL "https://github.com/Yubico/python-pyhsm/" "python-pyhsm home page"
+.PP
+YubiHSMs and YubiKeys can be obtained from
+.URL "http://www.yubico.com/" "Yubico" "."

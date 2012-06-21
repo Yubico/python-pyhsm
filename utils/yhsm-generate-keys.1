@@ -1,0 +1,77 @@
+.\" Copyright (c) 2012 Yubico AB
+.\" See the file COPYING for license statement.
+.\"
+.de URL
+\\$2 \(laURL: \\$1 \(ra\\$3
+..
+.if \n[.g] .mso www.tmac
+.TH yhsm-generate-keys "1" "June 2012" "python-pyhsm"
+
+.SH NAME
+yhsm-generate-keys \(hy Generate AEADs with secrets for YubiKeys using a YubiHSM
+
+.SH SYNOPSIS
+.B yhsm\-generate\-keys \-\-key\-handles KEY_HANDLES \-\-start\-public\-id START_ID
+[\fIoptions\fR]
+
+.SH DESCRIPTION
+With this tool, a YubiHSM can generate random secrets (using it's internal true
+random number generator), and these secrets protected in AEAD files can be stored
+on the host computer.
+
+The AEADs will be ready to be used by for example
+.BR yhsm-yubikey-ksm (1)
+),
+as a part of a YubiKey OTP validation service.
+
+To program YubiKeys with the generated secrets, it is possible to decrypt the
+AEADs (knowledge of the AES key used inside the YubiHSM is required) using
+.BR yhsm-decrypt-aead (1)
+.
+
+.SH OPTIONS
+.PP
+.TP
+\fB\-D\fR, \fB\-\-device\fR
+Device file name (default: /dev/ttyACM0).
+.TP
+\fB\-v\fR, \fB\-\-verbose\fR
+Enable verbose operation.
+.TP
+\fB\-\-debug\fR
+Enable debug printout, including all data sent to/from YubiHSM.
+.TP
+\fB\-O dir\fR
+Base output directory (default: /var/cache/yubikey-ksm/aeads).
+.TP
+\fB\-c integer\fR
+Number of AEADs to generate.
+.TP
+\fB\-\-public\-id\-chars integer\fR
+Number of chars in generated public ids (default: 12). Changing this might not work well.
+.TP
+\fB\-\-key\-handles kh [kh ...]\fR
+Key handles to encrypt the generated secrets with. Examples : "1", "0xabcd".
+.TP
+\fB\-\-start\-public\-id id\fR
+Public id of the first generated secret, in modhex.
+
+.SH "EXIT STATUS"
+.IX Header "EXIT STATUS"
+.IP "\fB0\fR" 4
+.IX Item "0"
+Secrets generated successfully.
+.IP "\fB1\fR" 4
+.IX Item "1"
+Failed to generate secrets.
+
+.SH BUGS
+Report python-pyhsm/yhsm-generate-keys bugs in
+.URL "https://github.com/Yubico/python-pyhsm/issues/" "the issue tracker"
+
+.SH "SEE ALSO"
+The
+.URL "https://github.com/Yubico/python-pyhsm/" "python-pyhsm home page"
+.PP
+YubiHSMs and YubiKeys can be obtained from
+.URL "http://www.yubico.com/" "Yubico" "."
