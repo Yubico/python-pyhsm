@@ -27,6 +27,7 @@ def parse_args():
     """
     parser = argparse.ArgumentParser(description = 'Decrypt AEADs',
                                      add_help = True,
+                                     formatter_class = argparse.ArgumentDefaultsHelpFormatter,
                                      )
     parser.add_argument('-v', '--verbose',
                         dest='verbose',
@@ -93,7 +94,7 @@ def process_file(path, fn, args):
     pt = pyhsm.soft_hsm.aesCCM(aes_key, aead.key_handle, aead.nonce, aead.data, decrypt = True)
 
     if args.print_filename:
-        print("%s " % (full_fn),)
+        print("%s " % (full_fn)),
 
     if args.format == 'raw':
         print(pt.encode('hex'))
@@ -150,4 +151,6 @@ def main():
                 return False
 
 if __name__ == '__main__':
-    main()
+    if main():
+        sys.exit(0)
+    sys.exit(1)
