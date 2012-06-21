@@ -196,4 +196,6 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    if main():
+        sys.exit(0)
+    sys.exit(1)
