@@ -14,7 +14,7 @@ __all__ = [
     # classes
     'YHSM_AEAD_Cmd',
     'YHSM_Cmd_AEAD_Generate',
-    'YHSM_Cmd_AEAD_Random_Generate'
+    'YHSM_Cmd_AEAD_Random_Generate',
     'YHSM_Cmd_AEAD_Buffer_Generate',
     'YHSM_Cmd_AEAD_Decrypt_Cmp',
     'YHSM_GeneratedAEAD',
@@ -131,8 +131,8 @@ class YHSM_Cmd_AEAD_Buffer_Generate(YHSM_AEAD_Cmd):
     all have a YubiHSM attached to them.
 
     Key handle (and system flags) permission flags required for this operation :
-        YSM_BUFFER_AEAD_GENERATE
-        YSM_BUFFER_LOAD if non-random data has been loaded into the internal buffer
+    YSM_BUFFER_AEAD_GENERATE
+    YSM_BUFFER_LOAD if non-random data has been loaded into the internal buffer
     """
     def __init__(self, stick, nonce, key_handle):
         self.nonce = pyhsm.util.input_validate_nonce(nonce, pad = True)
