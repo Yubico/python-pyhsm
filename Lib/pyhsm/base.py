@@ -60,7 +60,7 @@ class YHSM():
     Base class for accessing a YubiHSM.
     """
 
-    def __init__(self, device, debug=False, timeout=1):
+    def __init__(self, device, debug=False, timeout=1, test_comm=True):
         self.debug = debug
         self.stick = pyhsm.stick.YHSM_Stick(device, debug = self.debug, timeout = timeout)
         if not self.reset(test_sync = False):
@@ -71,6 +71,9 @@ class YHSM():
             raise pyhsm.exception.YHSM_Error("Unknown YubiHSM protocol version (%i, I speak %i)" % \
                                                  (self.version.sysinfo.protocol_ver, \
                                                       pyhsm.defines.YSM_PROTOCOL_VERSION))
+        # Check that communication isn't mangled (by something like 'stty onlcr')
+        if test_comm:
+            self.test_comm()
         return None
 
     def __repr__(self):
@@ -118,6 +121,28 @@ class YHSM():
         self.debug = new
         self.stick.set_debug(new)
         return old
+
+    def test_comm(self):
+        """
+        Verify that data we send to and receive from the YubiHSM isn't mangled.
+
+        In some scenarios, communications with the YubiHSM might be affected
+        by terminal line settings turning CR into LF for example.
+        """
+        data = ''.join([chr(x) for x in range(256)])
+        data = data + '0d0a0d0a'.decode('hex')
+        chunk_size = pyhsm.defines.YSM_MAX_PKT_SIZE - 10 # max size of echo
+        count = 0
+        while data:
+            this = data[:chunk_size]
+            data = data[chunk_size:]
+            res = self.echo(this)
+            for i in xrange(len(this)):
+                if res[i] != this[i]:
+                    msg = "Echo test failed at position %i (0x%x != 0x%x)" \
+                        % (count + i, ord(res[i]), ord(this[i]))
+                    raise pyhsm.exception.YHSM_Error(msg)
+            count += len(this)
 
     #
     # Basic commands
