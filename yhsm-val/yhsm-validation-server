@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright (c) 2011 Yubico AB
+# Copyright (c) 2011, 2012 Yubico AB
 # See the file COPYING for licence statement.
 #
 """
@@ -63,6 +63,7 @@ import time
 import hmac
 import syslog
 import serial
+import socket
 import base64
 import hashlib
 import sqlite3
@@ -89,7 +90,7 @@ saved_key_handle = None
 
 client_ids = {}
 
-class YHSM_KSMRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
+class YHSM_VALRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     """
     Handle HTTP GET requests according to configuration in global variable `args'.
     """
@@ -167,6 +168,16 @@ class YHSM_KSMRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     def my_address_string(self):
         """ For logging client host without resolving. """
         return self.client_address[0]
+
+class YHSM_VALServer(BaseHTTPServer.HTTPServer):
+    """
+    Wrapper class to properly initialize address_family for IPv6 addresses.
+    """
+    def __init__(self, server_address, req_handler):
+        if ":" in server_address[0]:
+            self.address_family = socket.AF_INET6
+        BaseHTTPServer.HTTPServer.__init__(self, server_address, req_handler)
+
 
 def validate_yubikey_otp_short(self, params):
     """
@@ -597,7 +608,7 @@ def run():
     Start the BaseHTTPServer and serve requests forever.
     """
     server_address = (args.listen_addr, args.listen_port)
-    httpd = BaseHTTPServer.HTTPServer(server_address, YHSM_KSMRequestHandler)
+    httpd = YHSM_VALServer(server_address, YHSM_VALRequestHandler)
     my_log_message(args, syslog.LOG_INFO, "Serving requests to 'http://%s:%s%s' (YubiHSM: '%s')" \
                        % (args.listen_addr, args.listen_port, args.serve_url, args.device))
     httpd.serve_forever()

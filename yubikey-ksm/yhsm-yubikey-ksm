@@ -1,4 +1,8 @@
 #!/usr/bin/env python
+#
+# Copyright (c) 2011, 2012 Yubico AB
+# See the file COPYING for licence statement.
+#
 """
 Small network server decrypting YubiKey OTPs using an attached YubiHSM.
 
@@ -28,14 +32,12 @@ the database) :
     user             +--+--+
                      | DB  |
                      +-----+
-
-Copyright (c) 2011 Yubico AB
-See the file COPYING for licence statement.
 """
 
 import os
 import sys
 import BaseHTTPServer
+import socket
 import argparse
 import syslog
 import re
@@ -103,6 +105,16 @@ class YHSM_KSMRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     def my_address_string(self):
         """ For logging client host without resolving. """
         return self.client_address[0]
+
+class YHSM_KSMServer(BaseHTTPServer.HTTPServer):
+    """
+    Wrapper class to properly initialize address_family for IPv6 addresses.
+    """
+    def __init__(self, server_address, req_handler):
+        if ":" in server_address[0]:
+            self.address_family = socket.AF_INET6
+        BaseHTTPServer.HTTPServer.__init__(self, server_address, req_handler)
+
 
 def decrypt_yubikey_otp(self, from_key):
     """
@@ -268,7 +280,7 @@ def run(args):
     Start a BaseHTTPServer.HTTPServer and serve requests forever.
     """
     server_address = (args.listen_addr, args.listen_port)
-    httpd = BaseHTTPServer.HTTPServer(server_address, YHSM_KSMRequestHandler)
+    httpd = YHSM_KSMServer(server_address, YHSM_KSMRequestHandler)
     my_log_message(args, syslog.LOG_INFO, "Serving requests to 'http://%s:%s%s' with key handle(s) %s (YubiHSM: '%s', AEADs in '%s')" \
                        % (args.listen_addr, args.listen_port, args.serve_url, args.key_handles, args.device, args.aead_dir))
     httpd.serve_forever()
