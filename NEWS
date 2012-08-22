@@ -2,6 +2,8 @@ Python-pyhsm NEWS -- History of user-visible changes.          -*- outline -*-
 
 * Version 1.0.4b (unreleased)
 
+** Added this NEWS file, based on debian/changelog in the Debian package.
+
 * Version 1.0.4a (released 2012-06-26)
 
 ** Enable IPv6 --addr for network servers.
