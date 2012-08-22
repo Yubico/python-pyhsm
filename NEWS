@@ -1,0 +1,29 @@
+Python-pyhsm NEWS -- History of user-visible changes.          -*- outline -*-
+
+* Version 1.0.4b (unreleased)
+
+* Version 1.0.4a (released 2012-06-26)
+
+** Enable IPv6 --addr for network servers.
+
+** Verifies communication with YubiHSM on initialization.
+
+* Version 1.0.4 (released 2012-06-21)
+
+** Match firmware 1.0.4.
+Firmware adds flag YSM_USER_NONCE to address security problem
+for some usages where AEADs could be decrypted by an attacker
+capable of generating new AEADs.
+
+** New file format for stored AEADs (code loading AEADs is backwards
+** compatible), including key handle and nonce.
+
+** AES CCM implementation compatible with YubiHSM in software, for
+** transparency and to enable willfull decryption of AEADs.
+
+** Tools to generate YubiKey secrets into AEADs as well as decrypt
+** them to enable provisioning YubiKeys with the secrets.
+
+* Version 1.0.3c (released 2012-01-05)
+
+** First public release.
