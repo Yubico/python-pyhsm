@@ -76,6 +76,18 @@ def parse_args():
                         help='AES key used when generating *new* AEADs (with --format aead).',
                         metavar='HEXSTR',
                         )
+    parser.add_argument('--start-public-id',
+                        dest='start_id',
+                        required=False, default=None,
+                        help='The first public id to decrypt',
+                        metavar='INT-OR-MODHEX',
+                        )
+    parser.add_argument('--stop-public-id',
+                        dest='stop_id',
+                        required=False, default=None,
+                        help='The last public id to decrypt',
+                        metavar='INT-OR-MODHEX',
+                        )
     parser.add_argument('paths',
                         nargs='+',
                         help='Files and/or directories to process.',
@@ -87,6 +99,20 @@ def parse_args():
     args.aes_key = args.aes_key.decode('hex')
     if args.key_handle:
         args.key_handle = pyhsm.util.key_handle_to_int(args.key_handle)
+    if args.start_id is not None:
+        try:
+            n = int(args.start_id)
+        except ValueError:
+            hexstr = pyhsm.yubikey.modhex_decode(args.start_id)
+            n = int(hexstr, 16)
+        args.start_id = n
+    if args.stop_id is not None:
+        try:
+            n = int(args.stop_id)
+        except ValueError:
+            hexstr = pyhsm.yubikey.modhex_decode(args.stop_id)
+            n = int(hexstr, 16)
+        args.stop_id = n
     # some checks
     if args.format == 'aead':
         if not args.output_dir:
@@ -111,6 +137,17 @@ def process_file(path, fn, args):
     """
     The main function for reading a file and decrypting it.
     """
+    if (args.start_id is not None) or (args.stop_id is not None):
+        this = int(pyhsm.yubikey.modhex_decode(fn), 16)
+        if (args.start_id is not None) and this < args.start_id:
+            if args.debug:
+                print "Skipping public id %s (%i) < %i" % (fn, this, args.start_id)
+            return True
+        if (args.stop_id is not None) and this > args.stop_id:
+            if args.debug:
+                print "Skipping public id %s (%i) > %i" % (fn, this, args.stop_id)
+            return True
+
     full_fn = os.path.join(path, fn)
 
     if args.debug:
@@ -143,6 +180,8 @@ def process_file(path, fn, args):
         aead_out = pyhsm.aead_cmd.YHSM_GeneratedAEAD(aead.nonce, args.key_handle_out, ct)
         filename = aead_filename(args.output_dir, args.key_handle_out_orig, fn)
         aead_out.save(filename)
+        if args.print_filename:
+            print ""
     elif args.format == 'yubikey-csv':
         key = pt[:pyhsm.defines.KEY_SIZE]
         uid = pt[pyhsm.defines.KEY_SIZE:]
