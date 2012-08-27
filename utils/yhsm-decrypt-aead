@@ -42,7 +42,12 @@ def parse_args():
     parser.add_argument('--format',
                         dest='format',
                         default='raw',
-                        help='Select output format (raw or yubikey-csv)',
+                        help='Select output format (aead, raw or yubikey-csv)',
+                        )
+    parser.add_argument('--output-dir',
+                        dest='output_dir',
+                        help='Output dir basename (for --format aead)',
+                        metavar='DIR',
                         )
     parser.add_argument('--print-filename',
                         dest='print_filename',
@@ -54,10 +59,21 @@ def parse_args():
                         help='Key handle used when generating the AEADs.',
                         metavar='HANDLE',
                         )
+    parser.add_argument('--key-handle-out',
+                        dest='key_handle_out',
+                        help='Key handle used when generating *new* AEADs (with --format aead).',
+                        metavar='HANDLE',
+                        )
     parser.add_argument('--aes-key',
                         dest='aes_key',
                         required=True,
                         help='AES key used when generating the AEADs.',
+                        metavar='HEXSTR',
+                        )
+    parser.add_argument('--aes-key-out',
+                        dest='aes_key_out',
+                        required=True,
+                        help='AES key used when generating *new* AEADs (with --format aead).',
                         metavar='HEXSTR',
                         )
     parser.add_argument('paths',
@@ -65,7 +81,31 @@ def parse_args():
                         help='Files and/or directories to process.',
                         metavar='FILE-OR-DIR'
                         )
-    return parser.parse_args()
+    args = parser.parse_args()
+    # argument fixups
+    args.format = args.format.lower()
+    args.aes_key = args.aes_key.decode('hex')
+    if args.key_handle:
+        args.key_handle = pyhsm.util.key_handle_to_int(args.key_handle)
+    # some checks
+    if args.format == 'aead':
+        if not args.output_dir:
+            sys.stderr.write("ERROR: --output-dir is required when using --format aead.\n")
+            return False
+        if not os.path.isdir(args.output_dir):
+            sys.stderr.write("ERROR: Output directory '%s' not found\n" % (args.output_dir))
+            return False
+        if not args.aes_key_out:
+            sys.stderr.write("ERROR: --aes-key-out is required when using --format aead.\n")
+            return False
+        if not args.key_handle_out:
+            sys.stderr.write("ERROR: --key-handle-out is required when using --format aead.\n")
+            return False
+        # argument fixups
+        args.aes_key_out = args.aes_key_out.decode('hex')
+        args.key_handle_out_orig = args.key_handle_out # save to use in AEAD output paths
+        args.key_handle_out = pyhsm.util.key_handle_to_int(args.key_handle_out)
+    return args
 
 def process_file(path, fn, args):
     """
@@ -84,20 +124,25 @@ def process_file(path, fn, args):
         if args.key_handle is None:
             sys.stderr.write("ERROR: AEAD in file %s does not include key_handle, and none provided.\n" % (full_fn))
             return False
-        aead.key_handle = pyhsm.util.key_handle_to_int(args.key_handle)
+        aead.key_handle = args.key_handle
         aead.nonce = pyhsm.yubikey.modhex_decode(fn)
 
-    aes_key = args.aes_key.decode('hex')
     if args.debug:
         print(aead)
         print "AEAD len %i : %s" % (len(aead.data), aead.data.encode('hex'))
-    pt = pyhsm.soft_hsm.aesCCM(aes_key, aead.key_handle, aead.nonce, aead.data, decrypt = True)
+    pt = pyhsm.soft_hsm.aesCCM(args.aes_key, aead.key_handle, aead.nonce, aead.data, decrypt = True)
 
     if args.print_filename:
         print("%s " % (full_fn)),
 
     if args.format == 'raw':
         print(pt.encode('hex'))
+    elif args.format == 'aead':
+        # encrypt secrets with new key
+        ct = pyhsm.soft_hsm.aesCCM(args.aes_key_out, args.key_handle_out, aead.nonce, pt, decrypt = False)
+        aead_out = pyhsm.aead_cmd.YHSM_GeneratedAEAD(aead.nonce, args.key_handle_out, ct)
+        filename = aead_filename(args.output_dir, args.key_handle_out_orig, fn)
+        aead_out.save(filename)
     elif args.format == 'yubikey-csv':
         key = pt[:pyhsm.defines.KEY_SIZE]
         uid = pt[pyhsm.defines.KEY_SIZE:]
@@ -114,6 +159,19 @@ def process_file(path, fn, args):
                                           ))
 
     return True
+
+def aead_filename(aead_dir, key_handle, public_id):
+    """
+    Return the filename of the AEAD for this public_id,
+    and create any missing directorys.
+    """
+    parts = [aead_dir, key_handle] + pyhsm.util.group(public_id, 2)
+    path = os.path.join(*parts)
+
+    if not os.path.isdir(path):
+        os.makedirs(path)
+
+    return os.path.join(path, public_id)
 
 def walk_dir(path, args):
     """
@@ -137,6 +195,9 @@ def main():
     """ Main function when running as a program. """
     global args
     args = parse_args()
+
+    if not args:
+        return False
 
     for path in args.paths:
         if os.path.isdir(path):
