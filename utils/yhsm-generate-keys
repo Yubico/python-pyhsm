@@ -24,7 +24,7 @@ Example :
             /var/cache/yubikey-ksm/aeads
   4) Program YubiKeys using CSV file contents
   5) Start a KSM to decrypt OTPs from the YubiKeys
-      $ yhsm-yubikey-ksm --key-handle 0x2000
+      $ yhsm-yubikey-ksm --key-handle 99
 """
 #
 # Copyright (c) 2011, 2012 Yubico AB
