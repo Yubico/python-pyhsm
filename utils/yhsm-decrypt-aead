@@ -72,7 +72,7 @@ def parse_args():
                         )
     parser.add_argument('--aes-key-out',
                         dest='aes_key_out',
-                        required=True,
+                        required=False,
                         help='AES key used when generating *new* AEADs (with --format aead).',
                         metavar='HEXSTR',
                         )
