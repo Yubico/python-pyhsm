@@ -89,6 +89,11 @@ def parse_args():
                         help='The last public id to decrypt',
                         metavar='INT-OR-MODHEX',
                         )
+    parser.add_argument('--fail-fast',
+                        dest='fail_fast',
+                        action='store_true', default=False,
+                        help='Terminate on the first AEAD failure, rather than keep going.',
+                        )
     parser.add_argument('paths',
                         nargs='+',
                         help='Files and/or directories to process.',
@@ -218,7 +223,47 @@ def aead_filename(aead_dir, key_handle, public_id):
 
     return os.path.join(path, public_id)
 
-def walk_dir(path, args):
+class MyState():
+    """
+    Class to keep track of failed files.
+    """
+    def __init__(self, args):
+        self.args = args
+        self.failed_files = []
+        self.file_count = 0
+
+    def log_failed(self, fn):
+        self.failed_files.append(fn)
+        self.file_count += 1
+
+    def log_success(self, fn):
+        self.file_count += 1
+
+    def should_quit(self):
+        return (self.failed_files and self.args.fail_fast)
+
+def safe_process_files(path, files, args, state):
+    """
+    Process a number of files in a directory. Catches any exception from the
+    processing and checks if we should fail directly or keep going.
+    """
+    for fn in files:
+        full_fn = os.path.join(path, fn)
+        try:
+            if not process_file(path, fn, args):
+                state.log_failed(full_fn)
+                return False
+            state.log_success(full_fn)
+        except Exception, e:
+            print "ERROR processing file %s :" % (os.path.join(path, fn))
+            print traceback.format_exc()
+            print ""
+            state.log_failed(full_fn)
+        if state.should_quit():
+            return False
+    return True
+
+def walk_dir(path, args, state):
     """
     Check all files in `path' to see if there is any requests that
     we should send out on the bus.
@@ -227,13 +272,10 @@ def walk_dir(path, args):
         print "Walking %s" % path
 
     for root, _dirs, files in os.walk(path):
-        for fn in files:
-            try:
-                if not process_file(root, fn, args):
-                    return False
-            except Exception, e:
-                print traceback.format_exc()
-                return False
+        if not safe_process_files(root, files, args, state):
+            return False
+        if state.should_quit():
+            return False
     return True
 
 def main():
@@ -244,17 +286,20 @@ def main():
     if not args:
         return False
 
+    state = MyState(args)
+
     for path in args.paths:
         if os.path.isdir(path):
-            if not walk_dir(path, args):
-                return False
+            walk_dir(path, args, state)
         else:
-            try:
-                if not process_file('', path, args):
-                    return False
-            except Exception, e:
-                print traceback.format_exc()
-                return False
+            safe_process_files(os.path.dirname(path), [os.path.basename(path)], args, state)
+        if state.should_quit():
+            break
+    if state.failed_files:
+        print "%i/%i AEADs failed" % (len(state.failed_files), state.file_count)
+        return False
+    print "Successfully processed %i AEADs" % (state.file_count)
+    return True
 
 if __name__ == '__main__':
     if main():
