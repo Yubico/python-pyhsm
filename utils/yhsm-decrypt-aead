@@ -11,6 +11,7 @@ of AEADs, and then decrypt them to program YubiKeys accordingly.
 """
 
 import os
+import re
 import sys
 import fcntl
 import argparse
@@ -137,6 +138,13 @@ def process_file(path, fn, args):
     """
     The main function for reading a file and decrypting it.
     """
+    full_fn = os.path.join(path, fn)
+
+    if not re.match("^[cbdefghijklnrtuv]+$", fn):
+        if args.debug:
+            print "Ignoring non-modhex file '%s'" % (full_fn)
+        return True
+
     if (args.start_id is not None) or (args.stop_id is not None):
         this = int(pyhsm.yubikey.modhex_decode(fn), 16)
         if (args.start_id is not None) and this < args.start_id:
@@ -147,8 +155,6 @@ def process_file(path, fn, args):
             if args.debug:
                 print "Skipping public id %s (%i) > %i" % (fn, this, args.stop_id)
             return True
-
-    full_fn = os.path.join(path, fn)
 
     if args.debug:
         print "Loading AEAD : %s" % full_fn
