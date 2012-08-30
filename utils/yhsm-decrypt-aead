@@ -162,7 +162,7 @@ def process_file(path, fn, args):
             sys.stderr.write("ERROR: AEAD in file %s does not include key_handle, and none provided.\n" % (full_fn))
             return False
         aead.key_handle = args.key_handle
-        aead.nonce = pyhsm.yubikey.modhex_decode(fn)
+        aead.nonce = pyhsm.yubikey.modhex_decode(fn).decode('hex')
 
     if args.debug:
         print(aead)
