@@ -2,6 +2,13 @@ Python-pyhsm NEWS -- History of user-visible changes.          -*- outline -*-
 
 * Version 1.0.4b (unreleased)
 
+** yhsm-import-keys: Support soft HSM AEAD generation.
+
+** yhsm-decrypt-keys: Support generating AEADs.
+** yhsm-decrypt-keys: Ignores non-modhex files in AEAD directory trees.
+
+** yhsm-generate-keys: Bugfix that caused AEAD generation to fail.
+
 ** Added this NEWS file, based on debian/changelog in the Debian package.
 
 * Version 1.0.4a (released 2012-06-26)
