@@ -141,6 +141,9 @@ def import_keys(hsm, args):
     #123456,ftftftcccc,534543524554,fcacd309a20ce1809c2db257f0e8d6ea,000000000000,,,
 
     for line in sys.stdin:
+        if line[0] == '#':
+            continue
+
         l = line.split(',')
         modhex_id = l[1]
         uid = l[2].decode('hex')
