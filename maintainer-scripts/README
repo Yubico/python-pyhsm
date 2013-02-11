@@ -1,0 +1,20 @@
+All scripts should be run from the main directory.
+
+make-release.sh
+---------------
+Creates and signs a release, placing the resulting files in 
+../releases/ (outside the parent directory). Prior to invoking 
+this script, a signed tag should have been made using the version
+as name.
+
+generate_html.sh
+-------------
+Generates the HTML documentation in doc/html/. This file is
+called by maike-release.sh and does not need to be called by
+itself.
+
+update-release-page.sh
+----------------------
+Copies a release from the ../releases/ directory into the 
+GitHub Pages release page, and pushes the change to the 
+repository. This script should be called after make-release.sh.
