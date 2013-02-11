@@ -55,6 +55,9 @@ class TestAEAD(test_common.YHSM_TestCase):
         # Enabled flags 00000002 = YSM_AEAD_GENERATE
         # HSM> < keyload - Load key data now using flags 00000002. Press ESC to quit
         # 00000002 - stored ok
+        if self.hsm.version.ver < (1,0,4):
+            raise unittest.SkipTest("Requires 1.0.4 or greater")
+
         key_handle = 2
         try:
             res = self.hsm.generate_aead_simple(self.nonce, key_handle, self.secret)
@@ -96,6 +99,9 @@ class TestAEAD(test_common.YHSM_TestCase):
         """ Test generate_aead_random with unpermitted nonce. """
         # Enabled flags 00000008 = YSM_RANDOM_AEAD_GENERATE
         # 00000004 - stored ok
+        if self.hsm.version.ver < (1,0,4):
+            raise unittest.SkipTest("Requires 1.0.4 or greater")
+
         key_handle = 4
         try:
             res = self.hsm.generate_aead_random(self.nonce, key_handle, 22)
@@ -151,6 +157,8 @@ class TestAEAD(test_common.YHSM_TestCase):
         """ Test what key handles can generate a simple AEAD. """
         # Enabled flags 00000002 = YSM_AEAD_GENERATE
         # 00000002 - stored ok
+        if self.hsm.version.ver < (1,0,4):
+            raise unittest.SkipTest("Requires 1.0.4 or greater")
         this = lambda kh: self.hsm.generate_aead_simple(self.nonce, kh, self.secret)
         self.who_can(this, expected = [0x20000002], extra_khs = [0x1002, 0x20000002])
 

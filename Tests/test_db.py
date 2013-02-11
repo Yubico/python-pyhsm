@@ -45,8 +45,7 @@ class TestInternalDB(test_common.YHSM_TestCase):
     def test_store_yubikey_with_nonce(self):
         """ Test storing a YubiKey generated with non-public-id nonce in the internal database. """
         if not self.hsm.version.have_YSM_DB_YUBIKEY_AEAD_STORE2():
-            print ("Test of command introduced in 1.0.4 disabled.")
-            return None
+            raise unittest.SkipTest("Test of command introduced in 1.0.4 disabled.")
         # Key handle 0x2000 has all flags enabled
         key_handle = 0x2000
         public_id = '4d4d4d001122'.decode('hex')
