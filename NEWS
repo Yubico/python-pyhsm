@@ -1,5 +1,7 @@
 Python-pyhsm NEWS -- History of user-visible changes.          -*- outline -*-
 
+* Version 1.0.4c (unreleased)
+
 * Version 1.0.4b (released 2013-02-11)
 
 ** yhsm-import-keys: Support soft HSM AEAD generation.
