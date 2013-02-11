@@ -36,6 +36,9 @@ set -e
 
 gitdesc=$(git describe $gitref)
 
+sed -n -e 3p NEWS | grep -q "Version ${gitdesc} (released `date -I`)" || \
+    (echo 'error: You need to update date/version in NEWS'; exit 1)
+
 setup_ver=$(grep version setup.py | awk -F \' '{print $2}')
 if [ "x$setup_ver" != "x$gitdesc" ]; then
     echo ""
