@@ -105,6 +105,10 @@ def args_fixup(args):
         hexstr = pyhsm.yubikey.modhex_decode(args.start_id)
         n = int(hexstr, 16)
 
+    if(n <= 0):
+        sys.stderr.write("Start ID must be greater than 0, was %d\n" % (n))
+        sys.exit(1)
+
     args.start_id = n
 
 

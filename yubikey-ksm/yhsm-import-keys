@@ -153,6 +153,11 @@ def import_keys(hsm, args):
             public_id = pyhsm.yubikey.modhex_decode(modhex_id)
             padded_id = modhex_id.rjust(args.public_id_chars, 'c')
 
+        if int(public_id, 16) == 0:
+            print "WARNING: Skipping import of key with public ID: %s" % (padded_id)
+            print "This public ID is unsupported by the YubiHSM.\n"
+            continue
+
         if args.verbose:
             print "  %s" % (padded_id)
 
