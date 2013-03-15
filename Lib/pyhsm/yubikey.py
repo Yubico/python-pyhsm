@@ -74,6 +74,7 @@ def validate_yubikey_with_aead(hsm, from_key, aead, key_handle):
     """
 
     from_key = pyhsm.util.input_validate_str(from_key, 'from_key', max_len = 48)
+    nonce = aead.nonce
     aead = pyhsm.util.input_validate_aead(aead)
     key_handle = pyhsm.util.input_validate_key_handle(key_handle)
 
@@ -82,7 +83,11 @@ def validate_yubikey_with_aead(hsm, from_key, aead, key_handle):
     public_id = modhex_decode(public_id)
     otp = modhex_decode(otp)
 
-    return hsm.validate_aead_otp(public_id.decode('hex'), otp.decode('hex'), key_handle, aead)
+    if not nonce:
+        nonce = public_id.decode('hex')
+
+    return hsm.validate_aead_otp(nonce, otp.decode('hex'),
+        key_handle, aead)
 
 def modhex_decode(data):
     """
