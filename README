@@ -84,11 +84,11 @@ easy installation (and removal) on Ubuntu systems.
 If you use a recent Ubuntu release, you should be able to install
 python-pyhsm with these commands :
 
-  $ sudo add-apt-repository ppa:fredrikt/yubico
+  $ sudo add-apt-repository ppa:yubico/stable
   $ sudo apt-get update
   $ sudo apt-get install python-pyhsm
 
-The Launchpad PPA key generated for my packages is C7E50642.
+The Launchpad PPA key generated for the packages is 32CBA1A9.
 
 If you want to work on Debian/Ubuntu packaging, or just build packages
 directly from version controlled sources, you can find it maintained
