@@ -10,7 +10,7 @@ as name.
 generate_html.sh
 -------------
 Generates the HTML documentation in doc/html/. This file is
-called by maike-release.sh and does not need to be called by
+called by make-release.sh and does not need to be called by
 itself.
 
 update-release-page.sh
