@@ -90,6 +90,13 @@ def parse_args():
                         help='The first public id to generate AEAD for',
                         )
 
+    parser.add_argument('--random-nonce',
+                        dest='random_nonce',
+                        required=False,
+                        action='store_true', default=False,
+                        help='Let the HSM generate nonce',
+                        )
+
     return parser.parse_args()
 
 def args_fixup(args):
@@ -147,6 +154,10 @@ def gen_keys(hsm, args):
         num_bytes = len(pyhsm.aead_cmd.YHSM_YubiKeySecret('a' * 16, 'b' * 6).pack())
         hsm.load_random(num_bytes)
         for kh in args.key_handles.keys():
+            if args.random_nonce:
+                nonce = ""
+            else:
+                nonce = public_id.decode('hex')
             aead = hsm.generate_aead(public_id.decode('hex'), kh)
 
             filename = output_filename(args.output_dir, args.key_handles[kh], padded_id)

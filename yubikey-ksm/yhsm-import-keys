@@ -96,6 +96,12 @@ def parse_args():
                         help='AES key to use when generating AEADs (no YubiHSM)',
                         metavar='HEXSTR',
                         )
+    parser.add_argument('--random-nonce',
+                        dest='random_nonce',
+                        action='store_true', default=False,
+                        help='Let the HSM generate random nonce',
+                        )
+
 
     args = parser.parse_args()
     if args.internal_db:
@@ -167,7 +173,11 @@ def import_keys(hsm, args):
 
         for kh in args.key_handles.keys():
             if hsm:
-                aead = hsm.generate_aead(public_id.decode('hex'), kh)
+                if(args.random_nonce):
+                    nonce = ""
+                else:
+                    nonce = public_id.decode('hex')
+                aead = hsm.generate_aead(nonce, kh)
             else:
                 nonce = public_id.decode('hex')
                 ct = pyhsm.soft_hsm.aesCCM(args.aes_key, kh, nonce, secret.pack(), decrypt = False)
