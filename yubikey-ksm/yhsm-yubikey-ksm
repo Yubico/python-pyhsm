@@ -137,11 +137,13 @@ def decrypt_yubikey_otp(self, from_key):
     aead_kh_int = None
     fn_list = []
     for kh, kh_int in args.key_handles:
-        aead = pyhsm.aead_cmd.YHSM_GeneratedAEAD(public_id, kh_int, '')
+        aead = pyhsm.aead_cmd.YHSM_GeneratedAEAD(None, kh_int, '')
         filename = aead_filename(args.aead_dir, kh, public_id)
         fn_list.append(filename)
         try:
             aead.load(filename)
+            if not aead.nonce:
+                aead.nonce = pyhsm.yubikey.modhex_decode(public_id).decode('hex')
             aead_kh_int = kh_int
             break
         except IOError:
