@@ -41,7 +41,7 @@ Basic usage ::
 See help(pyhsm.base) (L{pyhsm.base.YHSM}) for more information.
 """
 
-__version__ = '1.0.4c'
+__version__ = '1.0.4d'
 __copyright__ = 'Yubico AB'
 __organization__ = 'Yubico'
 __license__ = 'BSD'
