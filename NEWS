@@ -1,6 +1,13 @@
 Python-pyhsm NEWS -- History of user-visible changes.          -*- outline -*-
 
-* Version 1.0.4c (unreleased)
+* Version 1.0.4c (released 2013-03-18)
+
+** When doing OTP verification, if a nonce is written to the AEAD file
+use that for decryption, not public id.
+
+** yhsm-import-keys: add --random-nonce for using hsm generated nonce.
+
+** yhsm-generate-keys: add --random-nonce for using hsm generated nonce.
 
 * Version 1.0.4b (released 2013-02-11)
 
