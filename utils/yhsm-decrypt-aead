@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright (C) 2012 Yubico AB. All rights reserved.
+# Copyright (C) 2012-2013 Yubico AB. All rights reserved.
 #
 """
 This is a tool to decrypt AEADs generated using a YubiHSM, provided that
@@ -201,7 +201,7 @@ def process_file(path, fn, args):
         global yknum
         yknum += 1
         print("%i,%s,%s,%s,%s,%s,,,,," % (yknum,
-                                          pyhsm.yubikey.modhex_encode(aead.nonce.encode('hex')),
+                                          fn,
                                           uid.encode('hex'),
                                           key.encode('hex'),
                                           access_code,
