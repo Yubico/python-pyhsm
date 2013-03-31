@@ -139,7 +139,26 @@ def parse_args():
         args.key_handle_out = pyhsm.util.key_handle_to_int(args.key_handle_out)
     return args
 
-def process_file(path, fn, args):
+class MyState():
+    """
+    Class to keep track of failed files.
+    """
+    def __init__(self, args):
+        self.args = args
+        self.failed_files = []
+        self.file_count = 0
+
+    def log_failed(self, fn):
+        self.failed_files.append(fn)
+        self.file_count += 1
+
+    def log_success(self, fn):
+        self.file_count += 1
+
+    def should_quit(self):
+        return (self.failed_files and self.args.fail_fast)
+
+def process_file(path, fn, args, state):
     """
     The main function for reading a file and decrypting it.
     """
@@ -171,6 +190,7 @@ def process_file(path, fn, args):
         # AEAD file version 0, need to fill in nonce etc.
         if args.key_handle is None:
             sys.stderr.write("error: AEAD in file %s does not include key_handle, and none provided.\n" % (full_fn))
+            state.log_failed(full_fn)
             return False
         aead.key_handle = args.key_handle
         aead.nonce = pyhsm.yubikey.modhex_decode(fn).decode('hex')
@@ -208,6 +228,8 @@ def process_file(path, fn, args):
                                           timestamp,
                                           ))
 
+    state.log_success(full_fn)
+
     return True
 
 def aead_filename(aead_dir, key_handle, public_id):
@@ -223,25 +245,6 @@ def aead_filename(aead_dir, key_handle, public_id):
 
     return os.path.join(path, public_id)
 
-class MyState():
-    """
-    Class to keep track of failed files.
-    """
-    def __init__(self, args):
-        self.args = args
-        self.failed_files = []
-        self.file_count = 0
-
-    def log_failed(self, fn):
-        self.failed_files.append(fn)
-        self.file_count += 1
-
-    def log_success(self, fn):
-        self.file_count += 1
-
-    def should_quit(self):
-        return (self.failed_files and self.args.fail_fast)
-
 def safe_process_files(path, files, args, state):
     """
     Process a number of files in a directory. Catches any exception from the
@@ -250,10 +253,8 @@ def safe_process_files(path, files, args, state):
     for fn in files:
         full_fn = os.path.join(path, fn)
         try:
-            if not process_file(path, fn, args):
-                state.log_failed(full_fn)
+            if not process_file(path, fn, args, state):
                 return False
-            state.log_success(full_fn)
         except Exception, e:
             sys.stderr.write("error: %s\n%s\n" % (os.path.join(path, fn), traceback.format_exc()))
             state.log_failed(full_fn)
