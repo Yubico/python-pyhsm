@@ -7,6 +7,10 @@ Before the prefix was set to the AEAD nonce which is only correct for
 old style AEAD files.  Now it uses the AEAD filename for the prefix
 field.
 
+** yhsm-decrypt-aead: Improve diagnostic messages.
+Errors and warnings are now printed to standard error.  The count of
+number of failed and processsed AEADs should now be accurate.
+
 * Version 1.0.4d (released 2013-03-18)
 
 ** Fix so that yhsm-yubikey-ksm can work with the older format.
