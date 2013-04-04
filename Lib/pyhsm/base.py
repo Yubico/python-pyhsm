@@ -40,6 +40,7 @@ __all__ = [
 #from pyhsm  import __version__
 import pyhsm.cmd
 import pyhsm.stick
+import pyhsm.stick_client
 import pyhsm.exception
 import pyhsm.version
 
@@ -62,7 +63,11 @@ class YHSM():
 
     def __init__(self, device, debug=False, timeout=1, test_comm=True):
         self.debug = debug
-        self.stick = pyhsm.stick.YHSM_Stick(device, debug = self.debug, timeout = timeout)
+        if type(device) == str:
+            self.stick = pyhsm.stick.YHSM_Stick(device, debug = self.debug, timeout = timeout)
+        else:
+            self.stick = pyhsm.stick_client.YHSM_Stick_Client(device)
+
         if not self.reset(test_sync = False):
             raise pyhsm.exception.YHSM_Error("Initialization of YubiHSM failed")
         self.version = pyhsm.version.YHSM_Version(self.info())
@@ -488,7 +493,11 @@ class YHSM():
         @returns: True on success
         @rtype: bool
         """
-        return self.stick.drain()
+        try:
+            unlock = self.stick.acquire()
+            return self.stick.drain()
+        finally:
+            unlock()
 
     #
     # AES ECB commands

@@ -64,13 +64,17 @@ class YHSM_Cmd():
             cmd_buf = chr(self.command)
         cmd_buf += self.payload
         debug_info = None
-        if self.stick.debug:
-            debug_info = "%s (payload %i/0x%x)" % (pyhsm.defines.cmd2str(self.command), \
-                                                       len(self.payload), len(self.payload))
-        self.stick.write(cmd_buf, debug_info)
-        if not read_response:
-            return None
-        return self._read_response()
+        unlock = self.stick.acquire()
+        try:
+            if self.stick.debug:
+                debug_info = "%s (payload %i/0x%x)" % (pyhsm.defines.cmd2str(self.command), \
+                                                        len(self.payload), len(self.payload))
+            self.stick.write(cmd_buf, debug_info)
+            if not read_response:
+                return None
+            return self._read_response()
+        finally:
+            unlock()
 
     def _read_response(self):
         """
@@ -148,5 +152,9 @@ def reset(stick):
     """
     nulls = (pyhsm.defines.YSM_MAX_PKT_SIZE - 1) * '\x00'
     res = YHSM_Cmd(stick, pyhsm.defines.YSM_NULL, payload = nulls).execute(read_response = False)
-    stick.flush()
+    unlock = stick.acquire()
+    try:
+        stick.flush()
+    finally:
+        unlock()
     return res == 0

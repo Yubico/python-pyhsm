@@ -1,5 +1,5 @@
 """
-module for actually talking to the YubiHSM
+module for talking to the YubiHSM over a socket.
 """
 
 # Copyright (c) 2011 Yubico AB
@@ -12,16 +12,26 @@ __all__ = [
     'write',
     'flush',
     # classes
-    'YHSM_Stick',
+    'YHSM_Stick_Client',
 ]
 
 import sys
-import serial
+import socket
+import pickle
 
 import pyhsm.util
 import pyhsm.exception
 
-class YHSM_Stick():
+
+CMD_WRITE = 0
+CMD_READ = 1
+CMD_FLUSH = 2
+CMD_DRAIN = 3
+CMD_LOCK = 4
+CMD_UNLOCK = 5
+
+
+class YHSM_Stick_Client():
     """
     The current YHSM is a USB device using serial communication.
 
@@ -33,22 +43,28 @@ class YHSM_Stick():
         """
         self.debug = debug
         self.device = device
+        self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.socket.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+        self.socket.connect(self.device)
+        self.socket_file = self.socket.makefile('wb')
+
         self.num_read_bytes = 0
         self.num_write_bytes = 0
-        self.ser = None # to not bomb in destructor on open fail
-        self.ser = serial.Serial(device, 115200, timeout = timeout)
         if self.debug:
             sys.stderr.write("%s: OPEN %s\n" %(
                     self.__class__.__name__,
-                    self.ser
+                    self.socket
                     ))
         return None
 
     def acquire(self):
-        """
-        Do nothing
-        """
-        return self.acquire
+        pickle.dump((CMD_LOCK,),self.socket_file)
+        self.socket_file.flush()
+        return self.release
+
+    def release(self):
+        pickle.dump((CMD_UNLOCK,),self.socket_file)
+        self.socket_file.flush()
 
     def write(self, data, debug_info=None):
         """
@@ -63,7 +79,9 @@ class YHSM_Stick():
                     debug_info,
                     pyhsm.util.hexdump(data)
                     ))
-        return self.ser.write(data)
+        pickle.dump((CMD_WRITE, data),self.socket_file)
+        self.socket_file.flush()
+        return pickle.load(self.socket_file)
 
     def read(self, num_bytes, debug_info=None):
         """
@@ -76,7 +94,10 @@ class YHSM_Stick():
                     self.__class__.__name__,
                     debug_info
                     ))
-        res = self.ser.read(num_bytes)
+        pickle.dump((CMD_READ, num_bytes), self.socket_file)
+        self.socket_file.flush()
+        res = pickle.load(self.socket_file)
+
         if self.debug:
             sys.stderr.write("%s: READ %i:\n%s\n" %(
                     self.__class__.__name__,
@@ -90,33 +111,19 @@ class YHSM_Stick():
         """
         Flush input buffers.
         """
-        if self.debug:
-            sys.stderr.write("%s: FLUSH INPUT (%i bytes waiting)\n" %(
-                    self.__class__.__name__,
-                    self.ser.inWaiting()
-                    ))
-        self.ser.flushInput()
+        pickle.dump((CMD_FLUSH,), self.socket_file)
+        self.socket_file.flush()
+        return pickle.load(self.socket_file)
 
     def drain(self):
         """ Drain input. """
-        if self.debug:
-            sys.stderr.write("%s: DRAIN INPUT (%i bytes waiting)\n" %(
-                    self.__class__.__name__,
-                    self.ser.inWaiting()
-                    ))
-        old_timeout = self.ser.timeout
-        self.ser.timeout = 0.1
-        data = self.ser.read(1)
-        while len(data):
-            if self.debug:
-                sys.stderr.write("%s: DRAINED 0x%x (%c)\n" %(self.__class__.__name__, ord(data[0]), data[0]))
-            data = self.ser.read(1)
-        self.ser.timeout = old_timeout
-        return True
+        pickle.dump((CMD_DRAIN,), self.socket_file)
+        self.socket_file.flush()
+        return pickle.load(self.socket_file)
 
     def raw_device(self):
-        """ Get raw serial device. Only intended for test code/debugging! """
-        return self.ser
+        """ Get the socket address. Only intended for test code/debugging! """
+        return self.device
 
     def set_debug(self, new):
         """
@@ -147,7 +154,10 @@ class YHSM_Stick():
         if self.debug:
             sys.stderr.write("%s: CLOSE %s\n" %(
                     self.__class__.__name__,
-                    self.ser
+                    self.device
                     ))
-        if self.ser:
-            self.ser.close()
+        try:
+            self.socket_file.close()
+            self.socket.close()
+        except Exception:
+            pass
