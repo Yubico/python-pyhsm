@@ -1,6 +1,6 @@
 Python-pyhsm NEWS -- History of user-visible changes.          -*- outline -*-
 
-* Version 1.0.4e (unreleased)
+* Version 1.0.4e (released 2013-04-06)
 
 ** yhsm-decrypt-aead: For yubikey-csv output, fix prefix field.
 Before the prefix was set to the AEAD nonce which is only correct for
