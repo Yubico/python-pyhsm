@@ -1,10 +1,14 @@
 #!/usr/bin/env python
 
-from distutils.core import setup
 from setuptools import setup, find_packages
+from distutils import versionpredicate
 
 import sys
 sys.path.append('Tests');
+
+requires = [
+    'pyserial >= 2.6',
+]
 
 setup(name		= 'pyhsm',
       version		= '1.0.4e',
@@ -15,5 +19,7 @@ setup(name		= 'pyhsm',
       license		= 'BSD',
       packages		= ['pyhsm'],
       package_dir	= {'': 'Lib'},
-      test_suite	= "test_init.suite"
+      test_suite	= "test_init.suite",
+      install_requires	= requires,
+      build_requires	= requires,
      )
