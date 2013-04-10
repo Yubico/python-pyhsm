@@ -6,92 +6,70 @@ if [ ! -f Lib/pyhsm/base.py ]; then
 fi
 
 do_test="true"
-do_sign="true"
 
 if [ "x$1" == "x--no-test" ]; then
-    do_test="false"
-    shift
+	do_test="false"
+	shift
 fi
 
-if [ "x$1" == "x--no-sign" ]; then
-    do_sign="false"
-    shift
+keyid="$1"
+
+if [ "x$keyid" = "x" ]; then
+	echo "Syntax: $0 [--no-test] <KEYID>"
+	exit 1
 fi
-
-gitref="$1"
-
-if [ "x$gitref" = "x" ]; then
-    echo "Syntax: $0 [--no-test] [--no-sign] gitref"
-    exit 1
-fi
-
-tmpdir=$(mktemp -d /tmp/pyhsm_make-release.XXXXXX)
-if [ ! -d "$tmpdir" ]; then
-    echo "$0: Failed creating tmpdir ($tmpdir)"
-    exit 1
-fi
-
 
 set -e
 
-gitdesc=$(git describe $gitref)
+version=$(grep "version\s*=" setup.py | sed "s/^.\{1,\}version\s\{0,\}=\s\{0,\}'\(.\{1,\}\)'.\{1,\}$/\1/")
 
-sed -n -e 3p NEWS | grep -q "Version ${gitdesc} (released `date -I`)" || \
+sed -n -e 3p NEWS | grep -q "Version $version (released `date -I`)" || \
     (echo 'error: You need to update date/version in NEWS'; exit 1)
 
-setup_ver=$(grep version setup.py | awk -F \' '{print $2}')
-if [ "x$setup_ver" != "x$gitdesc" ]; then
-    echo ""
-    echo "setup.py version mismatch! ($setup_ver != $gitdesc) Press enter to ignore."
-    read foo
-fi
-
 init_ver=$(grep __version__ Lib/pyhsm/__init__.py | awk -F \' '{print $2}')
-if [ "x$init_ver" != "x$gitdesc" ]; then
+if [ "x$init_ver" != "x$version" ]; then
     echo ""
-    echo "Lib/pyhsm/__init__.py version mismatch! ($init_ver != $gitdesc) Press enter to ignore."
+    echo "Lib/pyhsm/__init__.py version mismatch! ($init_ver != $version) Press enter to ignore."
     read foo
 fi
 
-releasedir="python-pyhsm-$gitdesc"
-tarfile="$tmpdir/$releasedir.tar"
-git archive --format=tar --prefix=${releasedir}/ ${gitref} | (cd $tmpdir && tar xf -)
+if git tag | grep -q "^$version\$"; then
+	echo "Tag $version already exists!"
+	echo "Did you remember to update the version in setup.py?"
+	exit 1
+fi
 
 # update API documentation
 rm -rf doc/html
 ./maintainer-scripts/generate_html.sh
-rsync -a --delete doc/html/ $tmpdir/$releasedir/doc/html
 
 # update documentation from wiki
 git submodule update
 
-test -d "$tmpdir/$releasedir/doc/wiki/" && rm -rf "$tmpdir/$releasedir/doc/wiki/"
-(cd doc/wiki/ && git archive --format=tar --prefix=${releasedir}/doc/wiki/ HEAD) | (cd $tmpdir && tar xf -)
-
-git2cl > $tmpdir/$releasedir/ChangeLog
-
-echo "path : $tmpdir/$releasedir"
-
-ls -l $tmpdir/$releasedir
-
-# tar it up to not accidentally get junk in there while running tests etc.
-(cd ${tmpdir} && tar zcf python-pyhsm-${gitdesc}.tar.gz ${releasedir})
+git2cl > ChangeLog
 
 if [ "x$do_test" != "xfalse" ]; then
-    # run all unit tests
-    (cd $tmpdir/$releasedir && PYTHONPATH="Lib" ./Tests/run.sh)
+	# run all unit tests
+	PYTHONPATH="Lib" ./Tests/run.sh
 fi
 
-mkdir -p ../releases
-cp ${tmpdir}/python-pyhsm-${gitdesc}.tar.gz ../releases
+python setup.py sdist
 
-if [ "x$do_sign" != "xfalse" ]; then
-    # sign the release
-    gpg --detach-sign ../releases/python-pyhsm-${gitdesc}.tar.gz
-    gpg --verify ../releases/python-pyhsm-${gitdesc}.tar.gz.sig
+gpg --detach-sign --default-key $keyid dist/pyhsm-$version.tar.gz
+gpg --verify dist/pyhsm-$version.tar.gz.sig
+
+git tag -u $keyid -m $version $version
+
+#Publish release
+if test ! -d $YUBICO_GITHUB_REPO; then
+	echo "warn: YUBICO_GITHUB_REPO not set or invalid!"
+	echo "      This release will not be published!"
+else
+	$YUBICO_GITHUB_REPO/publish python-pyhsm $version dist/pyhsm-$version.tar.gz*
 fi
 
+echo "Done! Don't forget to git push && git push --tags"
 echo ""
 echo "Finished"
 echo ""
-ls -l ../releases/python-pyhsm-${gitdesc}.tar.gz*
+ls -l dist/pyhsm-$version.tar.gz*

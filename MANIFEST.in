@@ -1,0 +1,14 @@
+include COPYING
+include ChangeLog
+include NEWS
+include doc/*
+include doc/html/*
+include doc/wiki/*
+exclude doc/wiki/.git
+include utils/*
+include yhsm-val/*
+include yubikey-ksm/*
+include Tests/*
+exclude Tests/*.pyc
+include examples/*.py
+include maintainer-scripts/*
