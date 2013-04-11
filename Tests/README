@@ -1,0 +1,27 @@
+Tests require a YubiHSM to be run.
+
+Preparation
+-----------
+
+Prepare the HSM as follows:
+
+zap
+yes
+hsm ffffffff
+<enter>
+<enter>
+<enter>
+yes
+exit
+yes
+
+Running tests
+-------------
+
+When the HSM is prepared the run script must be invoked with YHSM_ZAP:
+
+  $ YHSM_ZAP=1 ./Tests/run.sh
+
+Subsequent runs do not require this:
+
+  $ ./Tests/run.sh
