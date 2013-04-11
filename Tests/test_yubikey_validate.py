@@ -51,7 +51,7 @@ class TestYubikeyValidate(test_common.YHSM_TestCase):
         """ Test validate YubiKey OTP. """
         from_key = self.yk_rnd.from_key(self.yk_public_id, self.yk_key)
         self.assertTrue(pyhsm.yubikey.validate_yubikey_with_aead( \
-                self.hsm, from_key, self.aead.data, self.kh_validate))
+                self.hsm, from_key, self.aead, self.kh_validate))
 
     def test_modhex_encode_decode(self):
         """ Test modhex encoding/decoding. """
