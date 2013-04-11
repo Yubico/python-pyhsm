@@ -7,8 +7,8 @@ import sys
 sys.path.append('Tests');
 
 requires = [
-    'pyserial >= 2.6',
-    'pycrypto >= 2.6',
+    'pyserial >= 2.3',
+    'pycrypto >= 2.1',
 ]
 
 setup(name		= 'pyhsm',
