@@ -35,7 +35,6 @@ class YHSM_Stick_Server():
         sys.exit(1)
 
     def client_handler(self, socket):
-        print "Client connected!"
         socket_file = socket.makefile('wb')
 
         try:
@@ -60,9 +59,11 @@ class YHSM_Stick_Server():
         except Exception:
             pass
         finally:
+            if self.user = socket:
+                self.user = None
+                self.lock.release()
             socket_file.close()
             socket.close()
-        print "Client disconnected!"
 
     def handle(self, cmd, args):
         if cmd == CMD_WRITE:

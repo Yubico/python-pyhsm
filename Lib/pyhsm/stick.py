@@ -36,7 +36,9 @@ class YHSM_Stick():
         self.num_read_bytes = 0
         self.num_write_bytes = 0
         self.ser = None # to not bomb in destructor on open fail
-        self.ser = serial.Serial(device, 115200, timeout = timeout)
+        self.ser = serial.serial_for_url(device)
+        self.ser.baudrate = 115200
+        self.ser.timeout = timeout
         if self.debug:
             sys.stderr.write("%s: OPEN %s\n" %(
                     self.__class__.__name__,
