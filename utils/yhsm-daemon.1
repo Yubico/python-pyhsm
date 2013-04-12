@@ -1,0 +1,40 @@
+.\" Copyright (c) 2013 Yubico AB
+.\" See the file COPYING for license statement.
+.\"
+.de URL
+\\$2 \(laURL: \\$1 \(ra\\$3
+..
+.if \n[.g] .mso www.tmac
+.TH yhsm-daemon "1" "June 2013" "python-pyhsm"
+
+.SH NAME
+yhsm-daemon \(hy Allow multiple users of a YubiHSM.
+
+.SH SYNOPSIS
+.B yhsm\-aemon [\fIoptions\fR] [device] [port]
+
+.SH DESCRIPTION
+This is a daemon to allow multiple users of a YubiHSM without requiring
+permission to use the device. The daemon listens on a TCP port on localhost
+and allows multiple connections to share a YubiHSM. Access the YubiHSM via
+the daemon by specifying a device string following the daemon://<host>:<port>
+syntax:
+
+hsm = YHSM('daemon://localhost:4711')
+
+.SH OPTIONS
+.PP
+.TP
+\fB\-h\fR, \fB\-\-help\fR
+Displays usage
+
+.SH BUGS
+Report python-pyhsm/yhsm-daemon bugs in
+.URL "https://github.com/Yubico/python-pyhsm/issues/" "the issue tracker"
+
+.SH "SEE ALSO"
+The
+.URL "https://github.com/Yubico/python-pyhsm/" "python-pyhsm home page"
+.PP
+YubiHSMs and YubiKeys can be obtained from
+.URL "http://www.yubico.com/" "Yubico" "."

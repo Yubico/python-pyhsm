@@ -42,7 +42,7 @@ class YHSM_Stick_Server():
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.socket.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
         self.socket.bind(addr)
-        self.lock = threading.RLock()
+        self.lock = threading.Lock()
 
     def serve(self):
         self.socket.listen(20)
@@ -58,6 +58,7 @@ class YHSM_Stick_Server():
 
     def client_handler(self, socket):
         socket_file = socket.makefile('wb')
+        has_lock = False
 
         try:
             while True:
@@ -65,26 +66,25 @@ class YHSM_Stick_Server():
                 cmd = data[0]
                 args = data[1:]
                 if cmd == CMD_LOCK:
-                    self.lock.acquire()
-                elif self.lock.acquire(blocking=False):
-                    try:
-                        if cmd == CMD_UNLOCK:
-                            self.lock.release()
-                        else:
-                            pickle.dump(self.commands[cmd](*args), socket_file)
-                            socket_file.flush()
-                    finally:
+                    if not has_lock:
+                        self.lock.acquire()
+                        has_lock = True
+                elif has_lock:
+                    if cmd == CMD_UNLOCK:
                         self.lock.release()
+                        has_lock = False
+                    else:
+                        pickle.dump(self.commands[cmd](*args), socket_file)
+                        socket_file.flush()
                 else:
                     print "Command run without holding lock!"
                     break
         except Exception:
+            #Client disconnected, ignore.
             pass
         finally:
-            try:
+            if has_lock:
                 self.lock.release()
-            except:
-                pass
             socket_file.close()
             socket.close()
 
