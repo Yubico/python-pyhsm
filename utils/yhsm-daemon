@@ -1,8 +1,22 @@
+#!/usr/bin/python
+#
+# Copyright (C) 2013 Yubico AB. All rights reserved.
+#
+"""
+This is a daemon to allow multiple users of a YubiHSM without requiring
+permission to use the device. The daemon listens on a TCP port on localhost
+and allows multiple connections to share a YubiHSM. Access the YubiHSM via
+the daemon by specifying a device string following the daemon://<host>:<port>
+syntax:
+
+hsm = YHSM('daemon://localhost:4711')
+"""
+
 import sys
 import socket
 import pickle
 import threading
-
+import argparse
 import pyhsm.stick
 
 
@@ -76,5 +90,21 @@ class YHSM_Stick_Server():
 
 
 if __name__ == '__main__':
-    server = YHSM_Stick_Server('/dev/ttyACM0', ('localhost', 4711))
+    parser = argparse.ArgumentParser(
+        description='YubiHSM daemon',
+        add_help=True,
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter
+    )
+    parser.add_argument('device', nargs='?', default='/dev/ttyACM0',
+                        help='Device name')
+    parser.add_argument('port', nargs='?', default='4711',
+                        help='TCP port to bind on')
+
+    args = parser.parse_args()
+    args.port = int(args.port)
+
+    print 'Starting YubiHSM daemon for device: %s on port: %s' % \
+        (args.device, args.port)
+
+    server = YHSM_Stick_Server(args.device, ('localhost', args.port))
     server.serve()
