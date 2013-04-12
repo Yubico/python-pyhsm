@@ -18,21 +18,29 @@ class YHSM_Stick_Server():
     def __init__(self, device, addr, **kwargs):
         self.stick = pyhsm.stick.YHSM_Stick(device, **kwargs)
 
+        self.commands = {
+            CMD_WRITE: self.stick.write,
+            CMD_READ: self.stick.read,
+            CMD_FLUSH: self.stick.flush,
+            CMD_DRAIN: self.stick.drain,
+        }
+
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.socket.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
         self.socket.bind(addr)
-        self.lock = threading.Lock()
-        self.user = None
+        self.lock = threading.RLock()
 
     def serve(self):
         self.socket.listen(20)
 
-        while True:
-            cs, address = self.socket.accept()
-            thread = threading.Thread(target=self.client_handler, args=(cs,))
-            thread.start()
-
-        sys.exit(1)
+        try:
+            while True:
+                cs, address = self.socket.accept()
+                thread = threading.Thread(target=self.client_handler,
+                                          args=(cs,))
+                thread.start()
+        except:
+            sys.exit(1)
 
     def client_handler(self, socket):
         socket_file = socket.makefile('wb')
@@ -44,38 +52,27 @@ class YHSM_Stick_Server():
                 args = data[1:]
                 if cmd == CMD_LOCK:
                     self.lock.acquire()
-                    self.user = socket
-                elif self.user == socket:
-                    if cmd == CMD_UNLOCK:
-                        self.user = None
+                elif self.lock.acquire(blocking=False):
+                    try:
+                        if cmd == CMD_UNLOCK:
+                            self.lock.release()
+                        else:
+                            pickle.dump(self.commands[cmd](*args), socket_file)
+                            socket_file.flush()
+                    finally:
                         self.lock.release()
-                    else:
-                        resp = self.handle(cmd, args)
-                        pickle.dump(resp, socket_file)
-                        socket_file.flush()
                 else:
                     print "Command run without holding lock!"
                     break
         except Exception:
             pass
         finally:
-            if self.user == socket:
-                self.user = None
+            try:
                 self.lock.release()
+            except:
+                pass
             socket_file.close()
             socket.close()
-
-    def handle(self, cmd, args):
-        if cmd == CMD_WRITE:
-            return self.stick.write(*args)
-        elif cmd == CMD_READ:
-            return self.stick.read(*args)
-        elif cmd == CMD_FLUSH:
-            return self.stick.flush(*args)
-        elif cmd == CMD_DRAIN:
-            return self.stick.drain(*args)
-        print 'error: Unknown command %d' % cmd
-        return 'error'
 
 
 if __name__ == '__main__':
