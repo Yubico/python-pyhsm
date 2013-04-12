@@ -1,5 +1,7 @@
 Python-pyhsm NEWS -- History of user-visible changes.          -*- outline -*-
 
+* Version 1.0.4g (unreleased)
+
 * Version 1.0.4f (released 2013-04-12)
 
 ** Fix failing test.
