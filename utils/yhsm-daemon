@@ -9,7 +9,7 @@ and allows multiple connections to share a YubiHSM. Access the YubiHSM via
 the daemon by specifying a device string following the daemon://<host>:<port>
 syntax:
 
-hsm = YHSM('daemon://localhost:4711')
+hsm = YHSM('daemon://localhost:5348')
 """
 
 import sys
@@ -97,7 +97,7 @@ if __name__ == '__main__':
     )
     parser.add_argument('device', nargs='?', default='/dev/ttyACM0',
                         help='Device name')
-    parser.add_argument('port', nargs='?', default='4711',
+    parser.add_argument('port', nargs='?', default='5348',
                         help='TCP port to bind on')
 
     args = parser.parse_args()
