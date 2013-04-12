@@ -59,7 +59,7 @@ class YHSM_Stick_Server():
         except Exception:
             pass
         finally:
-            if self.user = socket:
+            if self.user == socket:
                 self.user = None
                 self.lock.release()
             socket_file.close()

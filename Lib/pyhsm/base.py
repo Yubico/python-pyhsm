@@ -63,10 +63,10 @@ class YHSM():
 
     def __init__(self, device, debug=False, timeout=1, test_comm=True):
         self.debug = debug
-        if type(device) == str:
-            self.stick = pyhsm.stick.YHSM_Stick(device, debug = self.debug, timeout = timeout)
-        else:
+        if device.startswith('daemon://'):
             self.stick = pyhsm.stick_client.YHSM_Stick_Client(device)
+        else:
+            self.stick = pyhsm.stick.YHSM_Stick(device, debug = self.debug, timeout = timeout)
 
         if not self.reset(test_sync = False):
             raise pyhsm.exception.YHSM_Error("Initialization of YubiHSM failed")

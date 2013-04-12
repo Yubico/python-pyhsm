@@ -17,7 +17,7 @@ class YHSM_TestCase(unittest.TestCase):
 
     hsm = None
 
-    def setUp(self, device = "/dev/ttyACM0", debug = False):
+    def setUp(self, device = os.getenv('YHSM_DEVICE', '/dev/ttyACM0'), debug = False):
         """
         Common initialization class for our tests. Initializes a
         YubiHSM in self.hsm.

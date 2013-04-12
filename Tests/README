@@ -25,3 +25,11 @@ When the HSM is prepared the run script must be invoked with YHSM_ZAP:
 Subsequent runs do not require this:
 
   $ ./Tests/run.sh
+
+Selecting the device
+--------------------
+
+By default the tests will use /dev/ttyACM0, but you can change this by
+providing the device to use with YHSM_DEVICE:
+
+  $ YHSM_DEVICE="/dev/ttyACM1" ./Tests/run.sh
