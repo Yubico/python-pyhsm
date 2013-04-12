@@ -1,5 +1,14 @@
 Python-pyhsm NEWS -- History of user-visible changes.          -*- outline -*-
 
+* Version 1.0.4f (released 2013-04-12)
+
+** Fix failing test.
+
+** Support URLs in device field, for more info see:
+http://pyserial.sourceforge.net/pyserial_api.html#serial.serial_for_url
+
+** Added yhsm-daemon.
+
 * Version 1.0.4e (released 2013-04-06)
 
 ** yhsm-decrypt-aead: For yubikey-csv output, fix prefix field.
