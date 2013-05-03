@@ -59,6 +59,11 @@ valid_input_from_key = re.compile('^[cbdefghijklnrtuv]{32,48}$')
 hsm = None
 args = None
 
+stats = { 'ok': 0,
+    'invalid': 0,
+    'no_aead': 0,
+    'err': 0 }
+
 class YHSM_KSMRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     """
     Handle a HTTP request.
@@ -87,6 +92,12 @@ class YHSM_KSMRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(val_res)
             self.wfile.write("\n")
+        elif args.stats_url and self.path == args.stats_url:
+            self.send_response(200)
+            self.send_header('Content-type', 'text/html')
+            self.end_headers()
+            for key in stats:
+                self.wfile.write("%s %d\n" % (key, stats[key]))
         else:
             self.log_error ("Bad URL '%s' - I'm serving '%s' (responding 403)" % (self.path, args.serve_url))
             self.send_response(403, 'Forbidden')
@@ -130,6 +141,8 @@ def decrypt_yubikey_otp(self, from_key):
     """
     if not re.match(valid_input_from_key, from_key):
         self.log_error("IN: %s, Invalid OTP" % (from_key))
+        if args.stats_url:
+            stats['invalid'] += 1
         return "ERR Invalid OTP"
 
     public_id, _otp = pyhsm.yubikey.split_id_otp(from_key)
@@ -152,6 +165,8 @@ def decrypt_yubikey_otp(self, from_key):
     if aead_kh_int == None:
         self.log_error("IN: %s, Found no (readable) AEAD for public_id %s" % (from_key, public_id))
         self.log_message("Tried to load AEAD from : %s" % (fn_list))
+        if args.stats_url:
+            stats['no_aead'] += 1
         return "ERR Unknown public_id"
 
     try:
@@ -160,9 +175,13 @@ def decrypt_yubikey_otp(self, from_key):
         # XXX fix use vs session counter confusion
         val_res = "OK counter=%04x low=%04x high=%02x use=%02x" % \
             (res.use_ctr, res.ts_low, res.ts_high, res.session_ctr)
+        if args.stats_url:
+            stats['ok'] += 1
     except pyhsm.exception.YHSM_Error, e:
         self.log_error ("IN: %s, Validate FAILED: %s" % (from_key, str(e)))
         val_res = "ERR"
+        if args.stats_url:
+            stats['err'] += 1
 
     self.log_message("SUCCESS OTP %s PT hsm %s", from_key, val_res)
     return val_res
@@ -200,6 +219,12 @@ def parse_args():
                         default=default_serve_url,
                         required=False,
                         help='Base URL for decrypt web service',
+                        metavar='URL',
+                        )
+    parser.add_argument('-S', '--stats-url',
+                        dest='stats_url',
+                        required=False,
+                        help='URL where statistics can be retrieved',
                         metavar='URL',
                         )
     parser.add_argument('-v', '--verbose',
