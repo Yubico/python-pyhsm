@@ -38,8 +38,11 @@ enable verbose operation
 \fB\-\-debug\fR
 enable debug printout, including all data sent to/from YubiHSM
 .TP
-\fB\-\-U\fR, \fB\-\-serve-url\fR base
+\fB\-U\fR, \fB\-\-serve\-url\fR base
 base of URL for decrypt web service (default: /yhsm/validate?)
+.TP
+\fB\-S\fR, \fB\-\-stats\-url\fR url
+URL where some basic statistics about operations since start can be collected
 .TP
 \fB\-\-port\fR num
 port to listen on (default: 8002)
