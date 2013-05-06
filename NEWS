@@ -1,6 +1,6 @@
 Python-pyhsm NEWS -- History of user-visible changes.          -*- outline -*-
 
-* Version 1.0.4g (unreleased)
+* Version 1.0.4g (released 2013-05-06)
 
 ** yhsm-daemon: Support listening to non-loopback interfaces.
 ** yhsm-daemon: Forward exceptions to the client.
