@@ -12,9 +12,3 @@ generate_html.sh
 Generates the HTML documentation in doc/html/. This file is
 called by make-release.sh and does not need to be called by
 itself.
-
-update-release-page.sh
-----------------------
-Copies a release from the ../releases/ directory into the 
-GitHub Pages release page, and pushes the change to the 
-repository. This script should be called after make-release.sh.
