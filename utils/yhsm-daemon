@@ -37,6 +37,7 @@ COMMANDS = {
 
 class YHSM_Stick_Server():
     def __init__(self, device, addr):
+        print addr
         self.device = device
         self._stick = None
 
@@ -45,8 +46,8 @@ class YHSM_Stick_Server():
         self.socket.bind(addr)
         self.lock = threading.Lock()
 
-        def serve(self):
-            self.socket.listen(20)
+    def serve(self):
+        self.socket.listen(20)
 
         try:
             while True:
@@ -54,7 +55,8 @@ class YHSM_Stick_Server():
                 thread = threading.Thread(target=self.client_handler,
                                           args=(cs,))
                 thread.start()
-        except:
+        except Exception as e:
+            print e
             sys.exit(1)
 
     def invoke(self, cmd, *args):
