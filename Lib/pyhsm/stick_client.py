@@ -29,7 +29,7 @@ CMD_LOCK = 4
 CMD_UNLOCK = 5
 
 
-DEVICE_PATTERN = re.compile(r'daemon://(?P<host>[^:]+)(:(?P<port>\d+))?')
+DEVICE_PATTERN = re.compile(r'yhsm://(?P<host>[^:]+)(:(?P<port>\d+))?')
 
 
 class YHSM_Stick_Client():
@@ -99,6 +99,8 @@ class YHSM_Stick_Client():
         pickle.dump((CMD_READ, num_bytes), self.socket_file)
         self.socket_file.flush()
         res = pickle.load(self.socket_file)
+        if isinstance(res, Exception):
+            raise res
 
         if self.debug:
             sys.stderr.write("%s: READ %i:\n%s\n" % (

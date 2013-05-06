@@ -63,7 +63,7 @@ class YHSM():
 
     def __init__(self, device, debug=False, timeout=1, test_comm=True):
         self.debug = debug
-        if device.startswith('daemon://'):
+        if device.startswith('yhsm://'):
             self.stick = pyhsm.stick_client.YHSM_Stick_Client(device)
         else:
             self.stick = pyhsm.stick.YHSM_Stick(device, debug = self.debug, timeout = timeout)

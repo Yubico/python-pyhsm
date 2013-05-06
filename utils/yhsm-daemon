@@ -6,10 +6,10 @@
 This is a daemon to allow multiple users of a YubiHSM without requiring
 permission to use the device. The daemon listens on a TCP port on localhost
 and allows multiple connections to share a YubiHSM. Access the YubiHSM via
-the daemon by specifying a device string following the daemon://<host>:<port>
+the daemon by specifying a device string following the yhsm://<host>:<port>
 syntax:
 
-hsm = YHSM('daemon://localhost:5348')
+hsm = YHSM('yhsm://localhost:5348')
 """
 
 import sys
@@ -27,25 +27,26 @@ CMD_DRAIN = 3
 CMD_LOCK = 4
 CMD_UNLOCK = 5
 
+COMMANDS = {
+    CMD_WRITE: 'write',
+    CMD_READ: 'read',
+    CMD_FLUSH: 'flush',
+    CMD_DRAIN: 'drain'
+}
+
 
 class YHSM_Stick_Server():
-    def __init__(self, device, addr, **kwargs):
-        self.stick = pyhsm.stick.YHSM_Stick(device, **kwargs)
-
-        self.commands = {
-            CMD_WRITE: self.stick.write,
-            CMD_READ: self.stick.read,
-            CMD_FLUSH: self.stick.flush,
-            CMD_DRAIN: self.stick.drain,
-        }
+    def __init__(self, device, addr):
+        self.device = device
+        self._stick = None
 
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.socket.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
         self.socket.bind(addr)
         self.lock = threading.Lock()
 
-    def serve(self):
-        self.socket.listen(20)
+        def serve(self):
+            self.socket.listen(20)
 
         try:
             while True:
@@ -55,6 +56,17 @@ class YHSM_Stick_Server():
                 thread.start()
         except:
             sys.exit(1)
+
+    def invoke(self, cmd, *args):
+        try:
+            if not self._stick:
+                self._stick = pyhsm.stick.YHSM_Stick(self.device)
+            res = getattr(self._stick, COMMANDS[cmd])(*args)
+        except Exception as e:
+            res = e
+            print e
+            self._stick = None
+        return res
 
     def client_handler(self, socket):
         socket_file = socket.makefile('wb')
@@ -74,13 +86,17 @@ class YHSM_Stick_Server():
                         self.lock.release()
                         has_lock = False
                     else:
-                        pickle.dump(self.commands[cmd](*args), socket_file)
+                        res = self.invoke(cmd, *args)
+                        pickle.dump(res, socket_file)
                         socket_file.flush()
                 else:
-                    print "Command run without holding lock!"
+                    err = Exception('Command run without holding lock!')
+                    print err
+                    pickle.dump(err, socket_file)
+                    socket_file.flush()
                     break
         except Exception:
-            #Client disconnected, ignore.
+            # Client disconnected, ignore.
             pass
         finally:
             if has_lock:
@@ -91,20 +107,23 @@ class YHSM_Stick_Server():
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
-        description='YubiHSM daemon',
+        description='YubiHSM server daemon',
         add_help=True,
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
-    parser.add_argument('device', nargs='?', default='/dev/ttyACM0',
-                        help='Device name')
-    parser.add_argument('port', nargs='?', default='5348',
-                        help='TCP port to bind on')
+    parser.add_argument('-D', '--device', nargs='?', default='/dev/ttyACM0',
+                        help='device name')
+    parser.add_argument('-I', '--interface', nargs='?', default='localhost',
+                        help='network interface to bind to')
+    parser.add_argument('-P', '--port', nargs='?', type=int, default=5348,
+                        help='TCP port to bind to')
 
     args = parser.parse_args()
-    args.port = int(args.port)
 
-    print 'Starting YubiHSM daemon for device: %s on port: %s' % \
-        (args.device, args.port)
+    print 'Starting YubiHSM daemon for device: %s, listening on: %s:%d' % \
+        (args.device, args.interface, args.port)
 
-    server = YHSM_Stick_Server(args.device, ('localhost', args.port))
+    server = YHSM_Stick_Server(args.device, (args.interface, args.port))
+    print 'You can connect to the server using the following device string:'
+    print 'yhsm://127.0.0.1:%d' % args.port
     server.serve()

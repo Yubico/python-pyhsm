@@ -5,28 +5,37 @@
 \\$2 \(laURL: \\$1 \(ra\\$3
 ..
 .if \n[.g] .mso www.tmac
-.TH yhsm-daemon "1" "June 2013" "python-pyhsm"
+.TH yhsm-daemon "1" "May 2013" "python-pyhsm"
 
 .SH NAME
 yhsm-daemon \(hy Allow multiple users of a YubiHSM.
 
 .SH SYNOPSIS
-.B yhsm\-aemon [\fIoptions\fR] [device] [port]
+.B yhsm\-daemon [\fIoptions\fR] [device] [port]
 
 .SH DESCRIPTION
 This is a daemon to allow multiple users of a YubiHSM without requiring
 permission to use the device. The daemon listens on a TCP port on localhost
 and allows multiple connections to share a YubiHSM. Access the YubiHSM via
-the daemon by specifying a device string following the daemon://<host>:<port>
+the daemon by specifying a device string following the yhsm://<host>:<port>
 syntax:
 
-hsm = YHSM('daemon://localhost:5348')
+hsm = YHSM('yhsm://localhost:5348')
 
 .SH OPTIONS
 .PP
 .TP
 \fB\-h\fR, \fB\-\-help\fR
-Displays usage
+Shows this help message and exit
+.TP
+\fB\-D\fR, \fB\-\-device\fR
+YubiHSM device name
+.TP
+\fB\-I\fR, \fB\-\-interface\fR
+Network interface to bind to
+.TP
+\fB\-P\fR, \fB\-\-port\fR
+TCP port to bind to
 
 .SH BUGS
 Report python-pyhsm/yhsm-daemon bugs in
