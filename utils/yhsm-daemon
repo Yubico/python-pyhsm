@@ -18,6 +18,7 @@ import pickle
 import threading
 import argparse
 import pyhsm.stick
+from pyhsm.exception import YHSM_Error
 
 
 CMD_WRITE = 0
@@ -92,7 +93,7 @@ class YHSM_Stick_Server():
                         pickle.dump(res, socket_file)
                         socket_file.flush()
                 else:
-                    err = Exception('Command run without holding lock!')
+                    err = YHSM_Error('Command run without holding lock!')
                     print err
                     pickle.dump(err, socket_file)
                     socket_file.flush()
