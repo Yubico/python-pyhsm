@@ -1,0 +1,43 @@
+This is the Python package to talk to a YubiHSM.
+
+The YubiHSM is Yubico's take on the Hardware Security Module (HSM),
+designed for protecting secrets on authentication servers, including
+cryptographic keys and passwords, at unmatched simplicity and low
+cost.
+
+See the files in utils/, examples/ yhsm-val/, and yubikey-ksm/ to get
+an idea of how to use this code.
+
+Copyright (c) 2011 Yubico AB
+See the file COPYING for licence statement.
+
+
+
+==============================
+	INSTALLATION
+==============================
+
+#On debian/Ubuntu install:
+~$ sudo apt-get install python
+~$ sudo apt-get install python-mysqldb
+~$ pip install SQLAlchemy (or any other method illustrated at: http://docs.sqlalchemy.org/en/rel_0_8/intro.html#installation)
+
+#On other systems
+install python 2.7 or above from www.python.org
+install MySqlDb from http://sourceforge.net/projects/mysql-python/
+isntall SQLAlchemy from http://docs.sqlalchemy.org/en/rel_0_8/intro.html#installation
+
+======================
+	USAGE
+======================
+
+~$ python import_aeads.py /root/aeads/ mysql://root:password@localhost:3306/database_name
+
+
+
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~ Comments, feedback and patches welcome!       ~
+~                                               ~
+~ Tommaso De Orchi <tom@yubico.com> 2013-07-12  ~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
