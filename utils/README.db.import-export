@@ -14,8 +14,7 @@ See the file COPYING for licence statement.
 
 
 
-# Reqiured software to have the import/export from the datbase #
-
+# IMPORT / EXPORT AEADs, to/from a database using yhsm-db-import and yhsm-db-export
 
 ==============================
 	INSTALLATION
@@ -32,7 +31,7 @@ install python 2.7 or above from www.python.org
 isntall SQLAlchemy from http://docs.sqlalchemy.org/en/rel_0_8/intro.html#installation
 
 
-#A database schema is provided to configure the database table for the import/export tools.
+#A database schema is provided to configure the database table for the import/export tools. Create your favourite database and use te schema db_schema provided.
 
 ~$ cat db_schema
 
@@ -41,6 +40,10 @@ isntall SQLAlchemy from http://docs.sqlalchemy.org/en/rel_0_8/intro.html#install
 ======================
 	USAGE
 ======================
+
+
+IMPORT: yhsm-db-import aeads_source_folder database_url
+EXPORT: yhsm-db-export aeads_destination_folder database_url
 
 
 #IMPORT

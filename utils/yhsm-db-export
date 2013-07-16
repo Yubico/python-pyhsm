@@ -40,7 +40,13 @@ import re
 import time
 import errno
 
-from sqlalchemy import create_engine, Table, MetaData
+try:
+    from sqlalchemy import create_engine, Table, MetaData 
+except ImportError: 
+    print "Please, install SQLAlchemy. Follow instruction in README.db.import-export file."
+    sys.exit(1)
+
+
 from os.path import abspath
 
 sys.path.append('Lib')

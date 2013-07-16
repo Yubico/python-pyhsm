@@ -39,9 +39,14 @@ import hashlib
 import re
 import time
 
-from sqlalchemy import create_engine, Table, MetaData
-from os.path import abspath
+try:
+    from sqlalchemy import create_engine, Table, MetaData 
+except ImportError: 
+    print "Please, install SQLAlchemy. Follow instruction in README.db.import-export file."
+    sys.exit(1)
 
+
+from os.path import abspath
 sys.path.append('Lib')
 from pyhsm.util import key_handle_to_int
 
