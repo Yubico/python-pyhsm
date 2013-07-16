@@ -136,7 +136,7 @@ for row in result:
     keyhandle = hex(keyhandle)
 
     #os.path.join(path, [keyhandle, [insert_slash(publicId)]])
-    path = ''.join([path, '/', keyhandle, '/', insert_slash(publicId)])
+    path = ''.join([path, '/', keyhandle[:-1], '/', insert_slash(publicId)])
     #sanitize path
     path = os.path.normpath(path)
     #create path
