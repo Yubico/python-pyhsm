@@ -38,6 +38,7 @@ import io
 import hashlib
 import re
 import time
+import errno
 
 from sqlalchemy import create_engine, Table, MetaData
 from os.path import abspath
@@ -55,7 +56,7 @@ from pyhsm.util import key_handle_to_int
 
 
 if len(sys.argv) != 3:
-    print("\nUsage: python import_aeads.py /path/to/keyhandle/ database_url\ni.e. python import_aeads.py /root/aeads/ mysql://root:password@localhost:3306/database_name")
+    print("\nUsage: python export_aeads.py /path/to/export/ database_url\ni.e. python export_aeads.py /root/aeads/ mysql://root:password@localhost:3306/database_name")
     sys.exit(2)
     
 if not os.path.isdir(sys.argv[1]):
@@ -85,73 +86,72 @@ connection = engine.connect()
 
 
 #
-# extract keyhandle value from the path
+#mkdir -p: creates path like mkdir -p
 #
-def extract_keyhandle(path, filepath):
-
-      keyhandle = filepath.lstrip(path)
-      keyhandle = keyhandle.split("/")
-      return keyhandle[0]
-                        
+def mkdir_p(path):
+    try:
+        os.makedirs(path)
+    except OSError as exc: 
+        if exc.errno == errno.EEXIST and os.path.isdir(path):
+            pass
+        else: raise
 
 
 
 #
-#insert_query: this functions read the response fields and creates sql query. then inserts everything inside the database
+#insert_slash insert / every 2 char
 #
-def insert_query(publicId, aead, keyhandle, aeadobj):
+def insert_slash(string, every=2):
+    return '/'.join(string[i:i+every] for i in xrange(0, len(string), every))
 
-    #turn the keyhandle into an integer 
-    keyhandle = key_handle_to_int(keyhandle)
-    #creates the query object 
-    sql = aeadobj.insert().values(public_id=publicId, keyhandle=keyhandle, aead=aead)
-    #insert the query
-    result = connection.execute(sql)
 
+#################################
+# END of functions declariation #
+#################################
+
+
+
+
+
+
+
+#get data from the database   
+result = connection.execute("SELECT * from aead_table")
+
+#cycle through resutls
+for row in result:
+
+    #read values row by row
+    aead = row['aead']
+    publicId = row['public_id']
+    keyhandle = row['keyhandle']
+
+    #convert the keyhandle in hexformat
+    keyhandle = hex(keyhandle)
+
+    #os.path.join(path, [keyhandle, [insert_slash(publicId)]])
+    path = ''.join([path, '/', keyhandle, '/', insert_slash(publicId)])
+    #sanitize path
+    path = os.path.normpath(path)
+    #create path
+    mkdir_p(path)
+
+    #write the file in the path
+    output_file = open(path+publicId, "wb")
+    output_file.write(aead)
+    output_file.close()
+    #reset path constructor
+    path = sys.argv[1]
     
-    return result
+    
 
 
 
 
 
 
-
-
-####################
-#                  #
-# Computation area #
-#                  #
-####################
-
-
-
-#walk across the file system and build insert query for: public_id, keyhandle, aead
-for root, subFolders, files in os.walk(path):
-    if files:
-        #build file path
-        filepath = os.path.join(root,files[0])
-        
-        #read the file in memory
-        aead = open(filepath, 'rb').read()
-        
-        #set the public_id
-        publicId = str(files[0])
-        
-        #extract the key handle from the path
-        keyhandle = extract_keyhandle(path, filepath)
-        
-        if not insert_query(publicId, aead, keyhandle, aeadobj):
-            print "WARNING: could not insert %s" % publicId
-            #logfile.write("Error: could not insert %s", publicId)
- 
-
-
-
-#close sqlalchemy
+#close connection    
 connection.close()
 
-
-
-
+#exit without error
 sys.exit(0)

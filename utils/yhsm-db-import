@@ -1,0 +1,154 @@
+#!/usr/bin/python
+
+"""
+Copyright (c) 2011-2013 Yubico AB
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or
+without modification, are permitted provided that the following
+conditions are met:
+
+    1. Redistributions of source code must retain the above copyright
+    notice, this list of conditions and the following disclaimer.
+    2. Redistributions in binary form must reproduce the above
+    copyright notice, this list of conditions and the following
+    disclaimer in the documentation and/or other materials provided
+    with the distribution.
+    
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+POSSIBILITY OF SUCH DAMAGE.
+"""
+
+
+
+#import lib
+import os
+import sys
+import io
+import hashlib
+import re
+import time
+
+from sqlalchemy import create_engine, Table, MetaData
+from os.path import abspath
+
+sys.path.append('Lib')
+from pyhsm.util import key_handle_to_int
+
+
+
+#######################
+#                     #
+# Initialization Area #
+#                     #
+#######################
+
+
+if len(sys.argv) != 3:
+    print("\nUsage: python import_aeads.py /path/to/keyhandle/ database_url\ni.e. python import_aeads.py /root/aeads/ mysql://root:password@localhost:3306/database_name")
+    sys.exit(2)
+    
+if not os.path.isdir(sys.argv[1]):
+    print("\nInvalid path, check your spelling.\n")
+    sys.exit(2)
+                        
+                        
+#set the path
+path = sys.argv[1]
+#mysql url
+databaseUrl = sys.argv[2]
+#check database connection
+engine = create_engine(databaseUrl)
+
+#SQLAlchemy voodoo
+metadata = MetaData()
+aeadobj = Table('aead_table', metadata, autoload=True, autoload_with=engine)
+connection = engine.connect()
+
+
+
+#########################
+#                       #
+# Functions Declaration #
+#                       #
+#########################
+
+
+#
+# extract keyhandle value from the path
+#
+def extract_keyhandle(path, filepath):
+
+      keyhandle = filepath.lstrip(path)
+      keyhandle = keyhandle.split("/")
+      return keyhandle[0]
+                        
+
+
+
+#
+#insert_query: this functions read the response fields and creates sql query. then inserts everything inside the database
+#
+def insert_query(publicId, aead, keyhandle, aeadobj):
+    
+    #turn the keyhandle into an integer 
+    keyhandle = key_handle_to_int(keyhandle)
+    #creates the query object 
+    sql = aeadobj.insert().values(public_id=publicId, keyhandle=keyhandle, aead=aead)
+    #insert the query
+    result = connection.execute(sql)
+
+    
+    return result
+
+#################################
+# END of functions declariation #
+#################################
+
+
+
+
+
+
+
+
+####################
+# Computation area #
+####################
+
+#walk across the file system and build insert query for: public_id, keyhandle, aead
+for root, subFolders, files in os.walk(path):
+    if files:
+        #build file path
+        filepath = os.path.join(root,files[0])
+        
+        #read the file in memory
+        aead = open(filepath, 'rb').read()
+        
+        #set the public_id
+        publicId = str(files[0])
+        
+        #extract the key handle from the path
+        keyhandle = extract_keyhandle(path, filepath)
+        
+        if not insert_query(publicId, aead, keyhandle, aeadobj):
+            print "WARNING: could not insert %s" % publicId
+            
+
+
+
+#close sqlalchemy
+connection.close()
+
+#exit without error
+sys.exit(0)

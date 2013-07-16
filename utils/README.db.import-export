@@ -13,25 +13,43 @@ See the file COPYING for licence statement.
 
 
 
+
+# Reqiured software to have the import/export from the datbase #
+
+
 ==============================
 	INSTALLATION
 ==============================
 
 #On debian/Ubuntu install:
 ~$ sudo apt-get install python
-~$ sudo apt-get install python-mysqldb
-~$ pip install SQLAlchemy (or any other method illustrated at: http://docs.sqlalchemy.org/en/rel_0_8/intro.html#installation)
+~$ sudo pip install SQLAlchemy (or any other method illustrated at: http://docs.sqlalchemy.org/en/rel_0_8/intro.html#installation)
+
+
 
 #On other systems
 install python 2.7 or above from www.python.org
-install MySqlDb from http://sourceforge.net/projects/mysql-python/
 isntall SQLAlchemy from http://docs.sqlalchemy.org/en/rel_0_8/intro.html#installation
+
+
+#A database schema is provided to configure the database table for the import/export tools.
+
+~$ cat db_schema
+
+
 
 ======================
 	USAGE
 ======================
 
-~$ python import_aeads.py /root/aeads/ mysql://root:password@localhost:3306/database_name
+
+#IMPORT
+
+~$ python yhsm-db-import /root/aeads/ mysql://root:password@localhost:3306/database_name
+
+
+#EXPORT
+~$ python yhsm-db-export /root/aeads/ mysql://root:password@localhost:3306/database_name
 
 
 
