@@ -52,6 +52,75 @@ from pyhsm.util import key_handle_to_int
 
 
 
+##########################
+# Functions Declarations #
+##########################
+
+
+#
+# reconstruct a database url with the valid username and password
+#
+def build_database_url(databaseUrl, dbusername, dbpassword):
+
+    #urltype mysql://user:pass@localhost/dbname
+    result = re.search(r'@', databaseUrl)
+    if result:
+        #build a valid url
+        result = re.sub(r'://.*?@', '://'+dbusername+":"+dbpassword+"@", databaseUrl)
+        if result:
+            #return a valid url
+            return result
+        else:
+            #unrecognized url format
+            print "FATAL: Malformed database url. A valid url looks like this: mysql://username:password@hostname/dbname"
+            sys.exit(1)
+            
+    else:
+        #fix the url with username and password
+        result = re.search(r'(.*?://)(.*?/)(.+)', databaseUrl)
+        if result:
+            databaseUrl = result.group(1)+dbusername+":"+dbpassword+"@"+result.group(2)+result.group(3)
+            return databaseUrl
+
+        else:
+            #unrecognized url format
+            print "FATAL: Malformed database url. A valid url looks like this: mysql://username:password@hostname/dbname"
+            sys.exit(1)
+
+
+
+#
+# extract keyhandle value from the path
+#
+def extract_keyhandle(path, filepath):
+
+    keyhandle = filepath.lstrip(path)
+    keyhandle = keyhandle.split("/")
+    return keyhandle[0]
+
+
+
+#
+#insert_query: this functions read the response fields and creates sql query. then inserts everything inside the database
+#
+def insert_query(publicId, aead, keyhandle, aeadobj):
+
+    #turn the keyhandle into an integer
+    keyhandle = key_handle_to_int(keyhandle)
+    #creates the query object
+    sql = aeadobj.insert().values(public_id=publicId, keyhandle=keyhandle, aead=aead)
+    #insert the query
+    result = connection.execute(sql)
+
+    return result
+
+#################################
+# END of functions declariation #
+#################################
+
+
+
+
 #######################
 #                     #
 # Initialization Area #
@@ -72,14 +141,37 @@ if not os.path.isdir(sys.argv[1]):
 path = sys.argv[1]
 #mysql url
 databaseUrl = sys.argv[2]
-#check database connection
-engine = create_engine(databaseUrl)
 
-#SQLAlchemy voodoo
-metadata = MetaData()
-aeadobj = Table('aead_table', metadata, autoload=True, autoload_with=engine)
-connection = engine.connect()
+try:
+    #check database connection
+    engine = create_engine(databaseUrl)
 
+    #SQLAlchemy voodoo
+    metadata = MetaData()
+    aeadobj = Table('aead_table', metadata, autoload=True, autoload_with=engine)
+    connection = engine.connect()
+except:
+    print "\nPlease provide a valid database username"
+    dbusername = raw_input(">>")  
+    print "\nPlease provide a valid database password:"
+    dbpassword = raw_input(">>")
+
+    try:
+        #rebuild the url with given username and password
+        databaseUrl = build_database_url(databaseUrl, dbusername, dbpassword)
+        
+        #check database connection
+        engine = create_engine(databaseUrl)
+   
+        #SQLAlchemy voodoo
+        metadata = MetaData()
+        aeadobj = Table('aead_table', metadata, autoload=True, autoload_with=engine)
+        connection = engine.connect()
+        
+    
+    except: 
+         print "FATAL: Please provide valid username and password and a valid address i.e. mysql://localhost/dbname"
+         sys.exit(1)
 
 
 #########################
@@ -88,6 +180,24 @@ connection = engine.connect()
 #                       #
 #########################
 
+"""
+#
+# reconstruct a database url with the valid username and password
+#
+def build_database_url(databaseUrl, dbusername, dbpassword):
+
+    print "sono nel dburl"
+    result = re.sub(r'://.*?@', '://'+dbusername+":"+dbpassword+"@", databaseUrl)
+    
+    if result:
+        print result
+        print databaseUrl
+        return databaseUrl
+    else:
+        print "test rotto"
+        return databaseUrl
+
+        
 
 #
 # extract keyhandle value from the path
@@ -119,11 +229,7 @@ def insert_query(publicId, aead, keyhandle, aeadobj):
 #################################
 # END of functions declariation #
 #################################
-
-
-
-
-
+"""
 
 
 
