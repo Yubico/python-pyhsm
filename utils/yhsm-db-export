@@ -53,7 +53,72 @@ sys.path.append('Lib')
 from pyhsm.util import key_handle_to_int
 
 
+##########################
+# Functions Declarartion #
+##########################
 
+
+
+
+#
+# reconstruct a database url with the valid username and password
+#
+def build_database_url(databaseUrl, dbusername, dbpassword):
+
+    #urltype mysql://user:pass@localhost/dbname
+    result = re.search(r'@', databaseUrl)
+    if result:
+        result = re.sub(r'://.*?@', '://'+dbusername+":"+dbpassword+"@", databaseUrl)
+        if result:
+            return result
+        else:
+            print "FATAL: Malformed database url. A valid url looks like this: mysql://username:password@hostname/dbname"
+            sys.exit(1)
+        
+    else:
+        result = re.search(r'(.*?://)(.*?/)(.+)', databaseUrl)
+        if result:
+            databaseUrl = result.group(1)+dbusername+":"+dbpassword+"@"+result.group(2)+result.group(3)
+            return databaseUrl
+        
+        else:
+            print "FATAL: Malformed database url. A valid url looks like this: mysql://username:password@hostname/dbname"
+            sys.exit(1)
+
+
+#
+#insert_slash insert / every 2 char
+#
+def insert_slash(string, every=2):
+    return '/'.join(string[i:i+every] for i in xrange(0, len(string), every))
+
+#
+#mkdir -p: creates path like mkdir -p
+#
+def mkdir_p(path):
+    try:
+        os.makedirs(path)
+    except OSError as exc:
+        if exc.errno == errno.EEXIST and os.path.isdir(path):
+            pass
+        else: raise
+        
+
+
+
+
+#################################
+# END of functions declariation #
+#################################
+                            
+
+
+
+
+
+        
+        
+        
 #######################
 #                     #
 # Initialization Area #
@@ -74,46 +139,39 @@ if not os.path.isdir(sys.argv[1]):
 path = sys.argv[1]
 #mysql url
 databaseUrl = sys.argv[2]
-#check database connection
-engine = create_engine(databaseUrl)
 
-#SQLAlchemy voodoo
-metadata = MetaData()
-aeadobj = Table('aead_table', metadata, autoload=True, autoload_with=engine)
-connection = engine.connect()
+try:
+    #check database connection
+    engine = create_engine(databaseUrl)
 
+    #SQLAlchemy voodoo
+    metadata = MetaData()
+    aeadobj = Table('aead_table', metadata, autoload=True, autoload_with=engine)
+    connection = engine.connect()
 
-
-#########################
-#                       #
-# Functions Declaration #
-#                       #
-#########################
-
-
-#
-#mkdir -p: creates path like mkdir -p
-#
-def mkdir_p(path):
+except:
+    print "\nPlease provide a valid database username"
+    dbusername = raw_input(">>")
+    print "\nPlease provide a valid database password:"
+    dbpassword = raw_input(">>")
+    
     try:
-        os.makedirs(path)
-    except OSError as exc: 
-        if exc.errno == errno.EEXIST and os.path.isdir(path):
-            pass
-        else: raise
-
-
-
-#
-#insert_slash insert / every 2 char
-#
-def insert_slash(string, every=2):
-    return '/'.join(string[i:i+every] for i in xrange(0, len(string), every))
-
-
-#################################
-# END of functions declariation #
-#################################
+        #rebuild the url with given username and password
+        databaseUrl = build_database_url(databaseUrl, dbusername, dbpassword)
+        
+        #check database connection
+        engine = create_engine(databaseUrl)
+        
+        #SQLAlchemy voodoo
+        metadata = MetaData()
+        aeadobj = Table('aead_table', metadata, autoload=True, autoload_with=engine)
+        connection = engine.connect()
+    
+    
+    except:
+        print "FATAL: Please provide valid username and password and a valid address i.e. mysql://localhost/dbname"
+        sys.exit(1)
+                                                                                                                      
 
 
 
