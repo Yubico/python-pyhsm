@@ -31,7 +31,6 @@ POSSIBILITY OF SUCH DAMAGE.
 
 
 
-#import lib
 import os
 import sys
 import io
@@ -39,6 +38,8 @@ import hashlib
 import re
 import time
 import errno
+import argparse
+
 
 try:
     from sqlalchemy import create_engine, Table, MetaData 
@@ -125,6 +126,12 @@ def mkdir_p(path):
 #                     #
 #######################
 
+parser = argparse.ArgumentParser(description='Import AEADs into the database')
+
+parser.add_argument('path', action="store", type=str)
+parser.add_argument('dburl', action="store")
+args = vars(parser.parse_args())
+
 
 if len(sys.argv) != 3:
     print("\nUsage: python export_aeads.py /path/to/export/ database_url\ni.e. python export_aeads.py /root/aeads/ mysql://root:password@localhost:3306/database_name")
@@ -133,12 +140,11 @@ if len(sys.argv) != 3:
 if not os.path.isdir(sys.argv[1]):
     print("\nInvalid path, check your spelling.\n")
     sys.exit(2)
-                        
-                        
+
 #set the path
-path = sys.argv[1]
+path = args['path']
 #mysql url
-databaseUrl = sys.argv[2]
+databaseUrl = args['dburl']
 
 try:
     #check database connection

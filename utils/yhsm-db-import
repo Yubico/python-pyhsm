@@ -38,6 +38,8 @@ import io
 import hashlib
 import re
 import time
+import argparse
+
 
 try:
     from sqlalchemy import create_engine, Table, MetaData 
@@ -127,6 +129,16 @@ def insert_query(publicId, aead, keyhandle, aeadobj):
 #                     #
 #######################
 
+parser = argparse.ArgumentParser(description='Import AEADs into the database')
+
+parser.add_argument('path', action="store", type=str)
+parser.add_argument('dburl', action="store")
+
+
+args = vars(parser.parse_args())
+
+
+
 
 if len(sys.argv) != 3:
     print("\nUsage: python import_aeads.py /path/to/keyhandle/ database_url\ni.e. python import_aeads.py /root/aeads/ mysql://root:password@localhost:3306/database_name")
@@ -138,9 +150,9 @@ if not os.path.isdir(sys.argv[1]):
                         
                         
 #set the path
-path = sys.argv[1]
+path = args['path']
 #mysql url
-databaseUrl = sys.argv[2]
+databaseUrl = args['dburl']
 
 try:
     #check database connection
