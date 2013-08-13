@@ -1,6 +1,7 @@
 CREATE TABLE aead_table (
   public_id varchar(16) NOT NULL,
   keyhandle INT NOT NULL,
-  aead BLOB NOT NULL,
+  nonce BLOB(6) NOT NULL,
+  aead BLOB(32) NOT NULL,
   PRIMARY KEY (public_id, keyhandle)
-); 
+);
