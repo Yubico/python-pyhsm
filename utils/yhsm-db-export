@@ -52,7 +52,8 @@ from os.path import abspath
 
 sys.path.append('Lib')
 from pyhsm.util import key_handle_to_int
-
+#from pyhsm.yubikey import modehex_decode
+import pyhsm.aead_cmd
 
 ##########################
 # Functions Declarartion #
@@ -182,8 +183,11 @@ except:
 
 
 
+aead = None
+nonce = None
+key_handle = None
 
-
+aead = pyhsm.aead_cmd.YHSM_GeneratedAEAD(nonce, key_handle, aead)
 
 #get data from the database   
 result = connection.execute("SELECT * from aead_table")
@@ -192,31 +196,26 @@ result = connection.execute("SELECT * from aead_table")
 for row in result:
 
     #read values row by row
-    aead = row['aead']
+    aead.data = row['aead']
     publicId = row['public_id']
-    keyhandle = row['keyhandle']
-
-    #convert the keyhandle in hexformat
-    keyhandle = hex(keyhandle)
+    aead.key_handle = row['keyhandle']
+    aead.nonce = row['nonce']
 
     #os.path.join(path, [keyhandle, [insert_slash(publicId)]])
-    path = ''.join([path, '/', keyhandle[:-1], '/', insert_slash(publicId)])
+    path = ''.join([path, '/', str(hex(aead.key_handle)).rstrip('L'), '/', insert_slash(publicId)])
     #sanitize path
     path = os.path.normpath(path)
     #create path
     mkdir_p(path)
 
     #write the file in the path
-    output_file = open(path+publicId, "wb")
-    output_file.write(aead)
-    output_file.close()
+    pyhsm.aead_cmd.YHSM_GeneratedAEAD.save(aead, path+'/'+publicId)
+    
+
     #reset path constructor
     path = sys.argv[1]
     
     
-
-
-
 
 
 

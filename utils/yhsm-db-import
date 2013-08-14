@@ -40,7 +40,6 @@ import re
 import time
 import argparse
 
-
 try:
     from sqlalchemy import create_engine, Table, MetaData 
 except ImportError: 
@@ -51,7 +50,8 @@ except ImportError:
 from os.path import abspath
 sys.path.append('Lib')
 from pyhsm.util import key_handle_to_int
-
+from pyhsm.yubikey import modhex_decode
+import pyhsm.aead_cmd 
 
 
 ##########################
@@ -109,8 +109,11 @@ def insert_query(publicId, aead, keyhandle, aeadobj):
 
     #turn the keyhandle into an integer
     keyhandle = key_handle_to_int(keyhandle)
+    if not keyhandle == aead.key_handle:
+        print "WARNING: keyhandle does not match aead.key_handle"
+    
     #creates the query object
-    sql = aeadobj.insert().values(public_id=publicId, keyhandle=keyhandle, aead=aead)
+    sql = aeadobj.insert().values(public_id=publicId, keyhandle=aead.key_handle, nonce=aead.nonce, aead=aead.data)
     #insert the query
     result = connection.execute(sql)
 
@@ -186,62 +189,7 @@ except:
          sys.exit(1)
 
 
-#########################
-#                       #
-# Functions Declaration #
-#                       #
-#########################
-
-"""
-#
-# reconstruct a database url with the valid username and password
-#
-def build_database_url(databaseUrl, dbusername, dbpassword):
-
-    print "sono nel dburl"
-    result = re.sub(r'://.*?@', '://'+dbusername+":"+dbpassword+"@", databaseUrl)
-    
-    if result:
-        print result
-        print databaseUrl
-        return databaseUrl
-    else:
-        print "test rotto"
-        return databaseUrl
-
-        
-
-#
-# extract keyhandle value from the path
-#
-def extract_keyhandle(path, filepath):
-
-      keyhandle = filepath.lstrip(path)
-      keyhandle = keyhandle.split("/")
-      return keyhandle[0]
-                        
-
-
-
-#
-#insert_query: this functions read the response fields and creates sql query. then inserts everything inside the database
-#
-def insert_query(publicId, aead, keyhandle, aeadobj):
-    
-    #turn the keyhandle into an integer 
-    keyhandle = key_handle_to_int(keyhandle)
-    #creates the query object 
-    sql = aeadobj.insert().values(public_id=publicId, keyhandle=keyhandle, aead=aead)
-    #insert the query
-    result = connection.execute(sql)
-
-    
-    return result
-
-#################################
-# END of functions declariation #
-#################################
-"""
+ 
 
 
 
@@ -250,21 +198,39 @@ def insert_query(publicId, aead, keyhandle, aeadobj):
 ####################
 
 #walk across the file system and build insert query for: public_id, keyhandle, aead
+aead = None
+nonce = None
+key_handle = None
+
+#build the aead object from file
+pyhsm.aead_cmd.YHSM_GeneratedAEAD.load(aead, filepath)
+
 for root, subFolders, files in os.walk(path):
     if files:
         #build file path
         filepath = os.path.join(root,files[0])
-        
-        #read the file in memory
-        aead = open(filepath, 'rb').read()
-        
+
+        #instantiate a new aead object
+        aead = pyhsm.aead_cmd.YHSM_GeneratedAEAD(nonce, key_handle, aead)
+    
+        #build the aead object from file
+        #pyhsm.aead_cmd.YHSM_GeneratedAEAD.load(aead, filepath)
+    
         #set the public_id
-        publicId = str(files[0])
+        public_id = str(files[0])
         
+
         #extract the key handle from the path
         keyhandle = extract_keyhandle(path, filepath)
+                
         
-        if not insert_query(publicId, aead, keyhandle, aeadobj):
+        #check it is old format aead
+        if not aead.nonce:
+            #configure values for oldformat
+             aead.nonce = pyhsm.yubikey.modhex_decode(public_id).decode('hex')
+             aead.key_handle = key_handle_to_int(keyhandle)
+        
+        if not insert_query(public_id, aead, keyhandle, aeadobj):
             print "WARNING: could not insert %s" % publicId
             
 
