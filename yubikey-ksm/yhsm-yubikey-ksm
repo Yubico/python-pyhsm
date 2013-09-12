@@ -45,6 +45,16 @@ sys.path.append('Lib');
 import pyhsm
 import pyhsm.yubikey
 import serial
+#from sqlalchemy import *
+
+try:
+    from sqlalchemy import create_engine, Table, MetaData 
+except ImportError: 
+    print "Please, install SQLAlchemy. Follow instruction in utils/README.db.import-export file."
+    sys.exit(1)
+
+
+
 
 default_device = "/dev/ttyACM0"
 default_dir = "/var/cache/yubikey-ksm/aeads"
@@ -53,11 +63,13 @@ default_listen_addr = "127.0.0.1"
 default_port = 8002
 default_reqtimeout = 5
 default_pid_file = None
+default_db_url = "mysql://root:password@localhost/databasename"
 
 valid_input_from_key = re.compile('^[cbdefghijklnrtuv]{32,48}$')
 
 hsm = None
 args = None
+db_conn = None
 
 stats = { 'ok': 0,
     'invalid': 0,
@@ -75,7 +87,13 @@ class YHSM_KSMRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
     def __init__(self, *other_args, **kwargs):
         self.timeout = args.reqtimeout
+        
+        self.myconnection = args.db_conn        
+        
+        #run the http server
         BaseHTTPServer.BaseHTTPRequestHandler.__init__(self, *other_args, **kwargs)
+        
+        
 
     def do_GET(self):
         """ Handle a HTTP GET request. """
@@ -116,6 +134,35 @@ class YHSM_KSMRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     def my_address_string(self):
         """ For logging client host without resolving. """
         return self.client_address[0]
+      
+
+    def dbload(self, aead, public_id):
+        """
+        Loads AEAD from the specified database
+        
+        @param public_id: id to read AEAD from db
+        @type public_id: string
+        """
+
+        #get data from the database  
+        try:
+            result = self.myconnection.execute("SELECT * from aead_table where public_id=public_id")
+            
+            #cycle through resutls
+            for row in result:
+            #read values row by row
+                aead.data = row['aead']
+                publicId = row['public_id']
+                aead.key_handle = row['keyhandle']
+                aead.nonce = row['nonce']
+                  
+        except Exception, e:
+            print str(e) 
+            print "ERROR: could not SELECT %s from database. Check for valid db connection and for validity of the input(public_id exist in db?)" % public_id
+        
+
+
+
 
 class YHSM_KSMServer(BaseHTTPServer.HTTPServer):
     """
@@ -125,6 +172,96 @@ class YHSM_KSMServer(BaseHTTPServer.HTTPServer):
         if ":" in server_address[0]:
             self.address_family = socket.AF_INET6
         BaseHTTPServer.HTTPServer.__init__(self, server_address, req_handler)
+
+
+
+
+
+#
+# reconstruct a database url with the valid username and password
+#
+def build_database_url(databaseUrl, dbusername, dbpassword):
+    
+    """
+    sanitize the database url fixing it with username and password
+    
+    @param databaseUrl, dbusername, dbpassword: strings for configuration of the database
+    @type databaseUrl, dbusername, dbpassowrd: string
+    """
+
+
+    #urltype mysql://user:pass@localhost/dbname
+    result = re.search(r'@', databaseUrl)
+    if result:
+        result = re.sub(r'://.*?@', '://'+dbusername+":"+dbpassword+"@", databaseUrl)
+        if result:
+            return result
+        else:
+            print "FATAL: Malformed database url. A valid url looks like this: mysql://username:password@hostname/dbname"
+            sys.exit(1)
+        
+    else:
+        result = re.search(r'(.*?://)(.*?/)(.+)', databaseUrl)
+        if result:
+            databaseUrl = result.group(1)+dbusername+":"+dbpassword+"@"+result.group(2)+result.group(3)
+            return databaseUrl
+        
+        else:
+            print "FATAL: Malformed database url. A valid url looks like this: mysql://username:password@hostname/dbname"
+            sys.exit(1)
+
+
+
+
+#
+# Connect to a SQL database.
+#
+def dbconnect(databaseUrl):
+    """
+    Connect to a database
+    
+    @param databaseUrl string containing the database url
+    @type databaseUrl: string
+    """
+    
+    try:
+        #check database connection
+        engine = create_engine(databaseUrl)
+
+        #SQLAlchemy voodoo
+        #metadata = MetaData()
+        #aeadobj = Table('aead_table', metadata, autoload=True, autoload_with=engine)
+        myconnection = engine.connect()
+        
+        return myconnection
+
+    except:
+        print "\nPlease provide a valid database username"
+        dbusername = raw_input(">>")
+        print "\nPlease provide a valid database password:"
+        dbpassword = raw_input(">>")
+    
+        try:
+            #rebuild the url with given username and password
+            databaseUrl = build_database_url(databaseUrl, dbusername, dbpassword)
+            #check database connection
+            engine = create_engine(databaseUrl)
+        
+            #SQLAlchemy voodoo
+            #metadata = MetaData()
+            #aeadobj = Table('aead_table', metadata, autoload=True, autoload_with=engine)
+            myconnection = engine.connect()
+
+            return myconnection
+
+        except:
+            print "FATAL: Please provide valid username and password and a valid address i.e. mysql://localhost/dbname"
+            sys.exit(1)
+
+
+        return myconnection
+            
+
 
 
 def decrypt_yubikey_otp(self, from_key):
@@ -154,7 +291,9 @@ def decrypt_yubikey_otp(self, from_key):
         filename = aead_filename(args.aead_dir, kh, public_id)
         fn_list.append(filename)
         try:
-            aead.load(filename)
+            #loads an AEAD from the DB with the specific public_id
+            self.dbload(aead, public_id)
+            #aead.load(filename)
             if not aead.nonce:
                 aead.nonce = pyhsm.yubikey.modhex_decode(public_id).decode('hex')
             aead_kh_int = kh_int
@@ -272,6 +411,13 @@ def parse_args():
                         help='PID file',
                         metavar='FILENAME',
                         )
+    parser.add_argument('--db-url',
+                        dest='db_url',
+                        default=default_db_url,
+                        required=True,
+                        help='The database url to read the AEADs from',
+                        metavar='DBURL',
+                        )
 
     return parser.parse_args()
 
@@ -291,6 +437,14 @@ def args_fixup(my_args):
         res.append((kh, kh_int,))
     my_args.key_handles = res
 
+    #evaluate database url and connect to the database
+    my_args.db_conn = dbconnect(my_args.db_url)
+
+
+
+
+
+
 def write_pid_file(fn):
     """ Create a file with our PID. """
     if not fn:
@@ -306,6 +460,7 @@ def run(args):
     """
     Start a BaseHTTPServer.HTTPServer and serve requests forever.
     """
+ 
     server_address = (args.listen_addr, args.listen_port)
     httpd = YHSM_KSMServer(server_address, YHSM_KSMRequestHandler)
     my_log_message(args, syslog.LOG_INFO, "Serving requests to 'http://%s:%s%s' with key handle(s) %s (YubiHSM: '%s', AEADs in '%s')" \
@@ -331,9 +486,11 @@ def main():
 
     global args
     args = parse_args()
+    #fix database_url and connect to database <----- !!!
     args_fixup(args)
 
     global hsm
+
     try:
         hsm = pyhsm.YHSM(device = args.device, debug = args.debug)
     except serial.SerialException, e:
