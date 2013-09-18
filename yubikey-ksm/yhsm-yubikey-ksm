@@ -63,7 +63,7 @@ default_listen_addr = "127.0.0.1"
 default_port = 8002
 default_reqtimeout = 5
 default_pid_file = None
-default_db_url = "mysql://root:password@localhost/databasename"
+default_db_url = None
 
 valid_input_from_key = re.compile('^[cbdefghijklnrtuv]{32,48}$')
 
@@ -88,8 +88,10 @@ class YHSM_KSMRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     def __init__(self, *other_args, **kwargs):
         self.timeout = args.reqtimeout
         
-        self.myconnection = args.db_conn        
-        
+        #execute only if in database mode
+        if args.db_conn is not None:
+            self.myconnection = args.db_conn
+
         #run the http server
         BaseHTTPServer.BaseHTTPRequestHandler.__init__(self, *other_args, **kwargs)
         
@@ -291,9 +293,12 @@ def decrypt_yubikey_otp(self, from_key):
         filename = aead_filename(args.aead_dir, kh, public_id)
         fn_list.append(filename)
         try:
+            #execute only if in database mode
+            if args.db_url is not None:
             #loads an AEAD from the DB with the specific public_id
-            self.dbload(aead, public_id)
-            #aead.load(filename)
+                self.dbload(aead, public_id)
+            else:    
+                aead.load(filename)
             if not aead.nonce:
                 aead.nonce = pyhsm.yubikey.modhex_decode(public_id).decode('hex')
             aead_kh_int = kh_int
@@ -414,7 +419,7 @@ def parse_args():
     parser.add_argument('--db-url',
                         dest='db_url',
                         default=default_db_url,
-                        required=True,
+                        required=False,
                         help='The database url to read the AEADs from',
                         metavar='DBURL',
                         )
@@ -438,7 +443,11 @@ def args_fixup(my_args):
     my_args.key_handles = res
 
     #evaluate database url and connect to the database
-    my_args.db_conn = dbconnect(my_args.db_url)
+    #execute only if in database mode
+    if my_args.db_url is not None:
+        my_args.db_conn = dbconnect(my_args.db_url)
+    else:
+        my_args.db_conn = None
 
 
 
