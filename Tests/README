@@ -12,8 +12,9 @@ hsm ffffffff
 <enter>
 <enter>
 yes
+keycommit
 exit
-yes
+
 
 Running tests
 -------------
