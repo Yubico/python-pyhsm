@@ -15,11 +15,10 @@ __all__ = [
 import sys
 import re
 import socket
-import pickle
+import json
 
 import pyhsm.util
 import pyhsm.exception
-
 
 CMD_WRITE = 0
 CMD_READ = 1
@@ -31,6 +30,31 @@ CMD_UNLOCK = 5
 
 DEVICE_PATTERN = re.compile(r'yhsm://(?P<host>[^:]+)(:(?P<port>\d+))?/?')
 DEFAULT_PORT = 5348
+
+
+def pack_data(data):
+    if isinstance(data, basestring):
+        return data.encode('base64')
+    return data
+
+
+def unpack_data(data):
+    if isinstance(data, basestring):
+        return data.decode('base64')
+    elif isinstance(data, dict) and 'error' in data:
+        return pyhsm.exception.YHSM_Error(data['error'])
+    return data
+
+
+def read_sock(sf):
+    line = sf.readline()
+    return unpack_data(json.loads(line))
+
+
+def write_sock(sf, cmd, *args):
+    json.dump([cmd] + map(pack_data, args), sf)
+    sf.write("\n")
+    sf.flush()
 
 
 class YHSM_Stick_Client():
@@ -63,13 +87,11 @@ class YHSM_Stick_Client():
         return None
 
     def acquire(self):
-        pickle.dump((CMD_LOCK,), self.socket_file)
-        self.socket_file.flush()
+        write_sock(self.socket_file, CMD_LOCK)
         return self.release
 
     def release(self):
-        pickle.dump((CMD_UNLOCK,), self.socket_file)
-        self.socket_file.flush()
+        write_sock(self.socket_file, CMD_UNLOCK)
 
     def write(self, data, debug_info=None):
         """
@@ -84,9 +106,8 @@ class YHSM_Stick_Client():
                 debug_info,
                 pyhsm.util.hexdump(data)
             ))
-        pickle.dump((CMD_WRITE, data), self.socket_file)
-        self.socket_file.flush()
-        return pickle.load(self.socket_file)
+        write_sock(self.socket_file, CMD_WRITE, data)
+        return read_sock(self.socket_file)
 
     def read(self, num_bytes, debug_info=None):
         """
@@ -99,9 +120,8 @@ class YHSM_Stick_Client():
                 self.__class__.__name__,
                 debug_info
             ))
-        pickle.dump((CMD_READ, num_bytes), self.socket_file)
-        self.socket_file.flush()
-        res = pickle.load(self.socket_file)
+        write_sock(self.socket_file, CMD_READ, num_bytes)
+        res = read_sock(self.socket_file)
         if isinstance(res, Exception):
             raise res
 
@@ -118,15 +138,13 @@ class YHSM_Stick_Client():
         """
         Flush input buffers.
         """
-        pickle.dump((CMD_FLUSH,), self.socket_file)
-        self.socket_file.flush()
-        return pickle.load(self.socket_file)
+        write_sock(self.socket_file, CMD_FLUSH)
+        return read_sock(self.socket_file)
 
     def drain(self):
         """ Drain input. """
-        pickle.dump((CMD_DRAIN,), self.socket_file)
-        self.socket_file.flush()
-        return pickle.load(self.socket_file)
+        write_sock(self.socket_file, CMD_DRAIN)
+        return read_sock(self.socket_file)
 
     def raw_device(self):
         """ Get the socket address. Only intended for test code/debugging! """
