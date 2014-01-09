@@ -41,11 +41,11 @@ Basic usage ::
 See help(pyhsm.base) (L{pyhsm.base.YHSM}) for more information.
 """
 
-__version__ = '1.0.4g'
+__version__ = '1.0.4h'
 __copyright__ = 'Yubico AB'
 __organization__ = 'Yubico'
 __license__ = 'BSD'
-__authors__ = ['Fredrik Thulin']
+__authors__ = ['Fredrik Thulin', 'Dain Nilsson']
 
 __all__ = ["base",
            "cmd",
