@@ -197,33 +197,27 @@ except:
 # Computation area #
 ####################
 
-#walk across the file system and build insert query for: public_id, keyhandle, aead
-aead = None
-nonce = None
-key_handle = None
-
-#build the aead object from file
-pyhsm.aead_cmd.YHSM_GeneratedAEAD.load(aead, filepath)
 
 for root, subFolders, files in os.walk(path):
     if files:
+        aead = None
+        nonce = None
+        key_handle = None
+
         #build file path
         filepath = os.path.join(root,files[0])
 
-        #instantiate a new aead object
-        aead = pyhsm.aead_cmd.YHSM_GeneratedAEAD(nonce, key_handle, aead)
-    
-        #build the aead object from file
-        #pyhsm.aead_cmd.YHSM_GeneratedAEAD.load(aead, filepath)
-    
-        #set the public_id
-        public_id = str(files[0])
-        
-
         #extract the key handle from the path
         keyhandle = extract_keyhandle(path, filepath)
-                
-        
+        kh_int = pyhsm.util.key_handle_to_int(keyhandle)
+
+        #instantiate a new aead object
+        aead = pyhsm.aead_cmd.YHSM_GeneratedAEAD(None, kh_int, '')
+        aead.load(filepath)
+
+        #set the public_id
+        public_id = str(files[0])
+
         #check it is old format aead
         if not aead.nonce:
             #configure values for oldformat
