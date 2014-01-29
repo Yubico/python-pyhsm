@@ -29,8 +29,6 @@ ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 POSSIBILITY OF SUCH DAMAGE.
 """
 
-
-
 import os
 import sys
 import io
@@ -40,27 +38,21 @@ import time
 import errno
 import argparse
 
-
 try:
-    from sqlalchemy import create_engine, Table, MetaData 
-except ImportError: 
+    from sqlalchemy import create_engine, Table, MetaData
+except ImportError:
     print "Please, install SQLAlchemy. Follow instruction in README.db.import-export file."
     sys.exit(1)
-
 
 from os.path import abspath
 
 sys.path.append('Lib')
 from pyhsm.util import key_handle_to_int
-#from pyhsm.yubikey import modehex_decode
 import pyhsm.aead_cmd
 
 ##########################
 # Functions Declarartion #
 ##########################
-
-
-
 
 #
 # reconstruct a database url with the valid username and password
@@ -76,17 +68,16 @@ def build_database_url(databaseUrl, dbusername, dbpassword):
         else:
             print "FATAL: Malformed database url. A valid url looks like this: mysql://username:password@hostname/dbname"
             sys.exit(1)
-        
+
     else:
         result = re.search(r'(.*?://)(.*?/)(.+)', databaseUrl)
         if result:
             databaseUrl = result.group(1)+dbusername+":"+dbpassword+"@"+result.group(2)+result.group(3)
             return databaseUrl
-        
+
         else:
             print "FATAL: Malformed database url. A valid url looks like this: mysql://username:password@hostname/dbname"
             sys.exit(1)
-
 
 #
 #insert_slash insert / every 2 char
@@ -104,23 +95,11 @@ def mkdir_p(path):
         if exc.errno == errno.EEXIST and os.path.isdir(path):
             pass
         else: raise
-        
-
-
-
 
 #################################
 # END of functions declariation #
 #################################
-                            
 
-
-
-
-
-        
-        
-        
 #######################
 #                     #
 # Initialization Area #
@@ -137,7 +116,7 @@ args = vars(parser.parse_args())
 if len(sys.argv) != 3:
     print("\nUsage: python export_aeads.py /path/to/export/ database_url\ni.e. python export_aeads.py /root/aeads/ mysql://root:password@localhost:3306/database_name")
     sys.exit(2)
-    
+
 if not os.path.isdir(sys.argv[1]):
     print("\nInvalid path, check your spelling.\n")
     sys.exit(2)
@@ -161,27 +140,21 @@ except:
     dbusername = raw_input(">>")
     print "\nPlease provide a valid database password:"
     dbpassword = raw_input(">>")
-    
+
     try:
         #rebuild the url with given username and password
         databaseUrl = build_database_url(databaseUrl, dbusername, dbpassword)
-        
+
         #check database connection
         engine = create_engine(databaseUrl)
-        
+
         #SQLAlchemy voodoo
         metadata = MetaData()
         aeadobj = Table('aead_table', metadata, autoload=True, autoload_with=engine)
         connection = engine.connect()
-    
-    
     except:
         print "FATAL: Please provide valid username and password and a valid address i.e. mysql://localhost/dbname"
         sys.exit(1)
-                                                                                                                      
-
-
-
 
 aead = None
 nonce = None
@@ -201,7 +174,6 @@ for row in result:
     aead.key_handle = row['keyhandle']
     aead.nonce = row['nonce']
 
-    #os.path.join(path, [keyhandle, [insert_slash(publicId)]])
     path = ''.join([path, '/', str(hex(aead.key_handle)).rstrip('L'), '/', insert_slash(publicId)])
     #sanitize path
     path = os.path.normpath(path)
@@ -210,14 +182,9 @@ for row in result:
 
     #write the file in the path
     pyhsm.aead_cmd.YHSM_GeneratedAEAD.save(aead, path+'/'+publicId)
-    
 
     #reset path constructor
     path = sys.argv[1]
-    
-    
-
-
 
 #close connection    
 connection.close()

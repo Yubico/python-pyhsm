@@ -45,16 +45,12 @@ sys.path.append('Lib');
 import pyhsm
 import pyhsm.yubikey
 import serial
-#from sqlalchemy import *
 
 try:
     from sqlalchemy import *
-except ImportError: 
+except ImportError:
     print "Please, install SQLAlchemy. Follow instruction in utils/README.db.import-export file."
     sys.exit(1)
-
-
-
 
 default_device = "/dev/ttyACM0"
 default_dir = "/var/cache/yubikey-ksm/aeads"
@@ -86,7 +82,7 @@ class YHSM_KSMRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
     def __init__(self, *other_args, **kwargs):
         self.timeout = args.reqtimeout
-        
+
         #execute only if in database mode
         if args.db_conn is not None:
             self.myconnection = args.db_conn
@@ -94,8 +90,6 @@ class YHSM_KSMRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
         #run the http server
         BaseHTTPServer.BaseHTTPRequestHandler.__init__(self, *other_args, **kwargs)
-        
-        
 
     def do_GET(self):
         """ Handle a HTTP GET request. """
@@ -172,15 +166,10 @@ class YHSM_KSMServer(BaseHTTPServer.HTTPServer):
             self.address_family = socket.AF_INET6
         BaseHTTPServer.HTTPServer.__init__(self, server_address, req_handler)
 
-
-
-
-
 #
 # reconstruct a database url with the valid username and password
 #
 def build_database_url(databaseUrl, dbusername, dbpassword):
-    
     """
     sanitize the database url fixing it with username and password
     
@@ -198,19 +187,16 @@ def build_database_url(databaseUrl, dbusername, dbpassword):
         else:
             print "FATAL: Malformed database url. A valid url looks like this: mysql://username:password@hostname/dbname"
             sys.exit(1)
-        
+
     else:
         result = re.search(r'(.*?://)(.*?/)(.+)', databaseUrl)
         if result:
             databaseUrl = result.group(1)+dbusername+":"+dbpassword+"@"+result.group(2)+result.group(3)
             return databaseUrl
-        
+
         else:
             print "FATAL: Malformed database url. A valid url looks like this: mysql://username:password@hostname/dbname"
             sys.exit(1)
-
-
-
 
 #
 # Connect to a SQL database.
@@ -436,11 +422,6 @@ def args_fixup(my_args):
     else:
         my_args.db_conn = None
 
-
-
-
-
-
 def write_pid_file(fn):
     """ Create a file with our PID. """
     if not fn:
@@ -456,7 +437,6 @@ def run(args):
     """
     Start a BaseHTTPServer.HTTPServer and serve requests forever.
     """
- 
     server_address = (args.listen_addr, args.listen_port)
     httpd = YHSM_KSMServer(server_address, YHSM_KSMRequestHandler)
     my_log_message(args, syslog.LOG_INFO, "Serving requests to 'http://%s:%s%s' with key handle(s) %s (YubiHSM: '%s', AEADs in '%s')" \
@@ -482,11 +462,9 @@ def main():
 
     global args
     args = parse_args()
-    #fix database_url and connect to database <----- !!!
     args_fixup(args)
 
     global hsm
-
     try:
         hsm = pyhsm.YHSM(device = args.device, debug = args.debug)
     except serial.SerialException, e:

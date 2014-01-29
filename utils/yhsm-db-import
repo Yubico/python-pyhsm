@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
 """
-Copyright (c) 2011-2013 Yubico AB
+Copyright (c) 2011-2014 Yubico AB
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or
@@ -41,8 +41,8 @@ import time
 import argparse
 
 try:
-    from sqlalchemy import create_engine, Table, MetaData 
-except ImportError: 
+    from sqlalchemy import create_engine, Table, MetaData
+except ImportError:
     print "Please, install SQLAlchemy. Follow instruction in README.db.import-export file."
     sys.exit(1)
 
@@ -51,7 +51,7 @@ from os.path import abspath
 sys.path.append('Lib')
 from pyhsm.util import key_handle_to_int
 from pyhsm.yubikey import modhex_decode
-import pyhsm.aead_cmd 
+import pyhsm.aead_cmd
 
 
 ##########################
@@ -76,7 +76,7 @@ def build_database_url(databaseUrl, dbusername, dbpassword):
             #unrecognized url format
             print "FATAL: Malformed database url. A valid url looks like this: mysql://username:password@hostname/dbname"
             sys.exit(1)
-            
+
     else:
         #fix the url with username and password
         result = re.search(r'(.*?://)(.*?/)(.+)', databaseUrl)
@@ -89,8 +89,6 @@ def build_database_url(databaseUrl, dbusername, dbpassword):
             print "FATAL: Malformed database url. A valid url looks like this: mysql://username:password@hostname/dbname"
             sys.exit(1)
 
-
-
 #
 # extract keyhandle value from the path
 #
@@ -99,8 +97,6 @@ def extract_keyhandle(path, filepath):
     keyhandle = filepath.lstrip(path)
     keyhandle = keyhandle.split("/")
     return keyhandle[0]
-
-
 
 #
 #insert_query: this functions read the response fields and creates sql query. then inserts everything inside the database
@@ -111,7 +107,7 @@ def insert_query(publicId, aead, keyhandle, aeadobj):
     keyhandle = key_handle_to_int(keyhandle)
     if not keyhandle == aead.key_handle:
         print "WARNING: keyhandle does not match aead.key_handle"
-    
+
     #creates the query object
     sql = aeadobj.insert().values(public_id=publicId, keyhandle=aead.key_handle, nonce=aead.nonce, aead=aead.data)
     #insert the query
@@ -122,9 +118,6 @@ def insert_query(publicId, aead, keyhandle, aeadobj):
 #################################
 # END of functions declariation #
 #################################
-
-
-
 
 #######################
 #                     #
@@ -137,21 +130,16 @@ parser = argparse.ArgumentParser(description='Import AEADs into the database')
 parser.add_argument('path', action="store", type=str)
 parser.add_argument('dburl', action="store")
 
-
 args = vars(parser.parse_args())
-
-
-
 
 if len(sys.argv) != 3:
     print("\nUsage: python import_aeads.py /path/to/keyhandle/ database_url\ni.e. python import_aeads.py /root/aeads/ mysql://root:password@localhost:3306/database_name")
     sys.exit(2)
-    
+
 if not os.path.isdir(sys.argv[1]):
     print("\nInvalid path, check your spelling.\n")
     sys.exit(2)
-                        
-                        
+
 #set the path
 path = args['path']
 #mysql url
@@ -167,36 +155,29 @@ try:
     connection = engine.connect()
 except:
     print "\nPlease provide a valid database username"
-    dbusername = raw_input(">>")  
+    dbusername = raw_input(">>")
     print "\nPlease provide a valid database password:"
     dbpassword = raw_input(">>")
 
     try:
         #rebuild the url with given username and password
         databaseUrl = build_database_url(databaseUrl, dbusername, dbpassword)
-        
+
         #check database connection
         engine = create_engine(databaseUrl)
-   
+
         #SQLAlchemy voodoo
         metadata = MetaData()
         aeadobj = Table('aead_table', metadata, autoload=True, autoload_with=engine)
         connection = engine.connect()
-        
-    
-    except: 
+
+    except:
          print "FATAL: Please provide valid username and password and a valid address i.e. mysql://localhost/dbname"
          sys.exit(1)
-
-
- 
-
-
 
 ####################
 # Computation area #
 ####################
-
 
 for root, subFolders, files in os.walk(path):
     if files:
@@ -226,12 +207,9 @@ for root, subFolders, files in os.walk(path):
             #configure values for oldformat
              aead.nonce = pyhsm.yubikey.modhex_decode(public_id).decode('hex')
              aead.key_handle = key_handle_to_int(keyhandle)
-        
+
         if not insert_query(public_id, aead, keyhandle, aeadobj):
             print "WARNING: could not insert %s" % publicId
-            
-
-
 
 #close sqlalchemy
 connection.close()
