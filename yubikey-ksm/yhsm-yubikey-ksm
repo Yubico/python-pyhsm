@@ -47,8 +47,16 @@ import pyhsm.yubikey
 import serial
 #from sqlalchemy import *
 
+aead_table = None
+
 try:
-    from sqlalchemy import create_engine, Table, MetaData 
+    from sqlalchemy import *
+    metadata = MetaData()
+    aead_table = Table('aead_table', metadata,
+        Column('public_id', String(16), nullable = False),
+        Column('keyhandle', Integer, nullable = False),
+        Column('nonce', LargeBinary, nullable = False),
+        Column('aead', LargeBinary, nullable = False))
 except ImportError: 
     print "Please, install SQLAlchemy. Follow instruction in utils/README.db.import-export file."
     sys.exit(1)
@@ -136,9 +144,8 @@ class YHSM_KSMRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     def my_address_string(self):
         """ For logging client host without resolving. """
         return self.client_address[0]
-      
 
-    def dbload(self, aead, public_id):
+    def dbload(self, public_id):
         """
         Loads AEAD from the specified database
         
@@ -148,23 +155,21 @@ class YHSM_KSMRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
         #get data from the database  
         try:
-            result = self.myconnection.execute("SELECT * from aead_table where public_id=public_id")
-            
-            #cycle through resutls
+            s = select([aead_table]).where(aead_table.public_id == public_id)
+            result = self.myconnection.execute(s)
+
+            #cycle through results
             for row in result:
-            #read values row by row
+                kh_int = row['keyhandle']
+                aead = pyhsm.aead_cmd.YHSM_GeneratedAEAD(None, kh_int, '');
                 aead.data = row['aead']
-                publicId = row['public_id']
                 aead.key_handle = row['keyhandle']
                 aead.nonce = row['nonce']
-                  
+                return aead
+
         except Exception, e:
-            print str(e) 
+            print str(e)
             print "ERROR: could not SELECT %s from database. Check for valid db connection and for validity of the input(public_id exist in db?)" % public_id
-        
-
-
-
 
 class YHSM_KSMServer(BaseHTTPServer.HTTPServer):
     """
@@ -288,23 +293,24 @@ def decrypt_yubikey_otp(self, from_key):
 
     aead_kh_int = None
     fn_list = []
-    for kh, kh_int in args.key_handles:
-        aead = pyhsm.aead_cmd.YHSM_GeneratedAEAD(None, kh_int, '')
-        filename = aead_filename(args.aead_dir, kh, public_id)
-        fn_list.append(filename)
-        try:
-            #execute only if in database mode
-            if args.db_url is not None:
-            #loads an AEAD from the DB with the specific public_id
-                self.dbload(aead, public_id)
-            else:    
+
+    if args.db_url is not None:
+        #loads an AEAD from the DB with the specific public_id
+        aead = self.dbload(public_id)
+        aead_kh_int = aead.key_handle
+    else :
+        for kh, kh_int in args.key_handles:
+            aead = pyhsm.aead_cmd.YHSM_GeneratedAEAD(None, kh_int, '')
+            filename = aead_filename(args.aead_dir, kh, public_id)
+            fn_list.append(filename)
+            try:
                 aead.load(filename)
-            if not aead.nonce:
-                aead.nonce = pyhsm.yubikey.modhex_decode(public_id).decode('hex')
-            aead_kh_int = kh_int
-            break
-        except IOError:
-            continue
+                if not aead.nonce:
+                    aead.nonce = pyhsm.yubikey.modhex_decode(public_id).decode('hex')
+                aead_kh_int = kh_int
+                break
+            except IOError:
+                continue
 
     if aead_kh_int == None:
         self.log_error("IN: %s, Found no (readable) AEAD for public_id %s" % (from_key, public_id))
