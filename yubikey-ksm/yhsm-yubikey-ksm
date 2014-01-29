@@ -149,7 +149,6 @@ class YHSM_KSMRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                 kh_int = row['keyhandle']
                 aead = pyhsm.aead_cmd.YHSM_GeneratedAEAD(None, kh_int, '');
                 aead.data = row['aead']
-                aead.key_handle = row['keyhandle']
                 aead.nonce = row['nonce']
                 return aead
 
