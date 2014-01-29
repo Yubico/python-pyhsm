@@ -204,6 +204,9 @@ for root, subFolders, files in os.walk(path):
         nonce = None
         key_handle = None
 
+        if not re.match(r'^[cbdefghijklnrtuv]+$', files[0]):
+            continue
+
         #build file path
         filepath = os.path.join(root,files[0])
 
