@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright (c) 2011, 2012 Yubico AB
+# Copyright (c) 2011-2014 Yubico AB
 # See the file COPYING for licence statement.
 #
 """
@@ -47,16 +47,8 @@ import pyhsm.yubikey
 import serial
 #from sqlalchemy import *
 
-aead_table = None
-
 try:
     from sqlalchemy import *
-    metadata = MetaData()
-    aead_table = Table('aead_table', metadata,
-        Column('public_id', String(16), nullable = False),
-        Column('keyhandle', Integer, nullable = False),
-        Column('nonce', LargeBinary, nullable = False),
-        Column('aead', LargeBinary, nullable = False))
 except ImportError: 
     print "Please, install SQLAlchemy. Follow instruction in utils/README.db.import-export file."
     sys.exit(1)
@@ -77,7 +69,6 @@ valid_input_from_key = re.compile('^[cbdefghijklnrtuv]{32,48}$')
 
 hsm = None
 args = None
-db_conn = None
 
 stats = { 'ok': 0,
     'invalid': 0,
@@ -99,6 +90,7 @@ class YHSM_KSMRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         #execute only if in database mode
         if args.db_conn is not None:
             self.myconnection = args.db_conn
+            self.aead_table = args.aead_table
 
         #run the http server
         BaseHTTPServer.BaseHTTPRequestHandler.__init__(self, *other_args, **kwargs)
@@ -155,7 +147,7 @@ class YHSM_KSMRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
         #get data from the database  
         try:
-            s = select([aead_table]).where(aead_table.public_id == public_id)
+            s = select([self.aead_table]).where(self.aead_table.c.public_id == public_id)
             result = self.myconnection.execute(s)
 
             #cycle through results
@@ -230,46 +222,34 @@ def dbconnect(databaseUrl):
     @param databaseUrl string containing the database url
     @type databaseUrl: string
     """
-    
+
+    engine = None
+    myconnection = None
     try:
         #check database connection
         engine = create_engine(databaseUrl)
-
-        #SQLAlchemy voodoo
-        #metadata = MetaData()
-        #aeadobj = Table('aead_table', metadata, autoload=True, autoload_with=engine)
         myconnection = engine.connect()
-        
-        return myconnection
 
     except:
         print "\nPlease provide a valid database username"
         dbusername = raw_input(">>")
         print "\nPlease provide a valid database password:"
         dbpassword = raw_input(">>")
-    
+
         try:
             #rebuild the url with given username and password
             databaseUrl = build_database_url(databaseUrl, dbusername, dbpassword)
             #check database connection
             engine = create_engine(databaseUrl)
-        
-            #SQLAlchemy voodoo
-            #metadata = MetaData()
-            #aeadobj = Table('aead_table', metadata, autoload=True, autoload_with=engine)
             myconnection = engine.connect()
-
-            return myconnection
-
         except:
             print "FATAL: Please provide valid username and password and a valid address i.e. mysql://localhost/dbname"
             sys.exit(1)
 
+    metadata = MetaData()
+    aead_table = Table('aead_table', metadata, autoload=True, autoload_with=engine)
 
-        return myconnection
-            
-
-
+    return (myconnection,aead_table)
 
 def decrypt_yubikey_otp(self, from_key):
     """
@@ -452,7 +432,7 @@ def args_fixup(my_args):
     #evaluate database url and connect to the database
     #execute only if in database mode
     if my_args.db_url is not None:
-        my_args.db_conn = dbconnect(my_args.db_url)
+        (my_args.db_conn,my_args.aead_table) = dbconnect(my_args.db_url)
     else:
         my_args.db_conn = None
 
