@@ -12,7 +12,7 @@ requires = [
 ]
 
 setup(name		= 'pyhsm',
-      version		= '1.0.4g',
+      version		= '1.0.4h',
       description	= 'Python code for talking to a YubiHSM',
       author		= 'Fredrik Thulin',
       author_email	= 'fredrik@yubico.com',

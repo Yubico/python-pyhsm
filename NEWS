@@ -1,5 +1,10 @@
 Python-pyhsm NEWS -- History of user-visible changes.          -*- outline -*-
 
+* Version 1.0.4h (released 2014-01-09)
+
+** yhsm-daemon: Use JSON messages instead of Python pickling.
+(as suggested by Rogdham)
+
 * Version 1.0.4g (released 2013-05-06)
 
 ** yhsm-daemon: Support listening to non-loopback interfaces.

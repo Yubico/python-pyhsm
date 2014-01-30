@@ -10,15 +10,17 @@ the daemon by specifying a device string following the yhsm://<host>:<port>
 syntax:
 
 hsm = YHSM('yhsm://localhost:5348')
+
+Note that the daemon and clients need to share the same version number to be
+compatible.
 """
 
 import sys
 import socket
-import pickle
+import json
 import threading
 import argparse
 import pyhsm.stick
-from pyhsm.exception import YHSM_Error
 
 
 CMD_WRITE = 0
@@ -34,6 +36,18 @@ COMMANDS = {
     CMD_FLUSH: 'flush',
     CMD_DRAIN: 'drain'
 }
+
+
+def pack_data(data):
+    if isinstance(data, basestring):
+        return data.encode('base64')
+    return data
+
+
+def unpack_data(data):
+    if isinstance(data, basestring):
+        return data.decode('base64')
+    return data
 
 
 class YHSM_Stick_Server():
@@ -76,9 +90,9 @@ class YHSM_Stick_Server():
 
         try:
             while True:
-                data = pickle.load(socket_file)
+                data = json.loads(socket_file.readline())
                 cmd = data[0]
-                args = data[1:]
+                args = map(unpack_data, data[1:])
                 if cmd == CMD_LOCK:
                     if not has_lock:
                         self.lock.acquire()
@@ -89,12 +103,14 @@ class YHSM_Stick_Server():
                         has_lock = False
                     else:
                         res = self.invoke(cmd, *args)
-                        pickle.dump(res, socket_file)
+                        json.dump(pack_data(res), socket_file)
+                        socket_file.write("\n")
                         socket_file.flush()
                 else:
-                    err = YHSM_Error('Command run without holding lock!')
+                    err = 'Command run without holding lock!'
                     print err
-                    pickle.dump(err, socket_file)
+                    json.dump({'error': err}, socket_file)
+                    socket_file.write("\n")
                     socket_file.flush()
                     break
         except Exception:
