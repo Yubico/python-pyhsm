@@ -1,0 +1,7 @@
+Author: Yubico
+Basename: python-pyhsm
+Homepage: http://opensource.yubico.com/python-pyhsm/
+License: BSD-2-Clause
+Name: python-pyhsm
+Project: python-pyhsm
+Summary: Python code for YubiHSM
