@@ -41,7 +41,7 @@ import time
 import argparse
 
 try:
-    from sqlalchemy import create_engine, Table, MetaData
+    from sqlalchemy import create_engine, Table, MetaData, exc
 except ImportError:
     print "Please, install SQLAlchemy. Follow instruction in README.db.import-export file."
     sys.exit(1)
@@ -107,13 +107,18 @@ def insert_query(publicId, aead, keyhandle, aeadobj):
     keyhandle = key_handle_to_int(keyhandle)
     if not keyhandle == aead.key_handle:
         print "WARNING: keyhandle does not match aead.key_handle"
+	return None
 
     #creates the query object
-    sql = aeadobj.insert().values(public_id=publicId, keyhandle=aead.key_handle, nonce=aead.nonce, aead=aead.data)
-    #insert the query
-    result = connection.execute(sql)
+    try:
+	sql = aeadobj.insert().values(public_id=publicId, keyhandle=aead.key_handle, nonce=aead.nonce, aead=aead.data)
+    	#insert the query
+	result = connection.execute(sql)
+	return result
+    except exc.IntegrityError:
+	pass
+    return None;
 
-    return result
 
 #################################
 # END of functions declariation #
