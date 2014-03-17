@@ -209,7 +209,7 @@ for root, subFolders, files in os.walk(path):
              aead.key_handle = key_handle_to_int(keyhandle)
 
         if not insert_query(public_id, aead, keyhandle, aeadobj):
-            print "WARNING: could not insert %s" % publicId
+            print "WARNING: could not insert %s" % public_id
 
 #close sqlalchemy
 connection.close()
