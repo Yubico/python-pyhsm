@@ -140,6 +140,7 @@ class YHSM_KSMRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         """
 
         #get data from the database  
+        trans = self.myconnection.begin()
         try:
             s = select([self.aead_table]).where(self.aead_table.c.public_id == public_id)
             result = self.myconnection.execute(s)
@@ -150,11 +151,18 @@ class YHSM_KSMRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                 aead = pyhsm.aead_cmd.YHSM_GeneratedAEAD(None, kh_int, '');
                 aead.data = row['aead']
                 aead.nonce = row['nonce']
+		trans.commit()
                 return aead
 
         except Exception, e:
-            print str(e)
-            print "ERROR: could not SELECT %s from database. Check for valid db connection and for validity of the input(public_id exist in db?)" % public_id
+	    trans.rollback()
+	    print str(e)
+	    print "ERROR: could not SELECT %s from database. Check for valid db connection and for validity of the input(public_id exist in db?)" % public_id
+	    return None
+
+        trans.rollback()
+        print "ERROR: Found no aead for %s in database." % public_id
+        return None
 
 class YHSM_KSMServer(BaseHTTPServer.HTTPServer):
     """
