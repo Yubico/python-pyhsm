@@ -84,8 +84,8 @@ class YHSM_KSMRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         self.timeout = args.reqtimeout
 
         #execute only if in database mode
-        if args.db_conn is not None:
-            self.myconnection = args.db_conn
+        if args.engine is not None:
+	    self.engine = args.engine
             self.aead_table = args.aead_table
 
         #run the http server
@@ -140,10 +140,12 @@ class YHSM_KSMRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         """
 
         #get data from the database  
-        trans = self.myconnection.begin()
+	connection = self.engine.connect()
+        trans = connection.begin()
+	aead = None
         try:
             s = select([self.aead_table]).where(self.aead_table.c.public_id == public_id)
-            result = self.myconnection.execute(s)
+            result = connection.execute(s)
 
             #cycle through results
             for row in result:
@@ -152,17 +154,16 @@ class YHSM_KSMRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                 aead.data = row['aead']
                 aead.nonce = row['nonce']
 		trans.commit()
-                return aead
 
         except Exception, e:
-	    trans.rollback()
 	    print str(e)
 	    print "ERROR: could not SELECT %s from database. Check for valid db connection and for validity of the input(public_id exist in db?)" % public_id
-	    return None
+	    aead = None
 
-        trans.rollback()
-        print "ERROR: Found no aead for %s in database." % public_id
-        return None
+	if aead is None:
+	    trans.rollback()
+	connection.close()
+	return aead
 
 class YHSM_KSMServer(BaseHTTPServer.HTTPServer):
     """
@@ -217,11 +218,9 @@ def dbconnect(databaseUrl):
     """
 
     engine = None
-    myconnection = None
     try:
         #check database connection
         engine = create_engine(databaseUrl)
-        myconnection = engine.connect()
 
     except:
         print "\nPlease provide a valid database username"
@@ -234,7 +233,6 @@ def dbconnect(databaseUrl):
             databaseUrl = build_database_url(databaseUrl, dbusername, dbpassword)
             #check database connection
             engine = create_engine(databaseUrl)
-            myconnection = engine.connect()
         except:
             print "FATAL: Please provide valid username and password and a valid address i.e. mysql://localhost/dbname"
             sys.exit(1)
@@ -242,7 +240,7 @@ def dbconnect(databaseUrl):
     metadata = MetaData()
     aead_table = Table('aead_table', metadata, autoload=True, autoload_with=engine)
 
-    return (myconnection,aead_table)
+    return (engine,aead_table)
 
 def decrypt_yubikey_otp(self, from_key):
     """
@@ -425,9 +423,9 @@ def args_fixup(my_args):
     #evaluate database url and connect to the database
     #execute only if in database mode
     if my_args.db_url is not None:
-        (my_args.db_conn,my_args.aead_table) = dbconnect(my_args.db_url)
+        (my_args.engine,my_args.aead_table) = dbconnect(my_args.db_url)
     else:
-        my_args.db_conn = None
+        my_args.engine = None
 
 def write_pid_file(fn):
     """ Create a file with our PID. """
