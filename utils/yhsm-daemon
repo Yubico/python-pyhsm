@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 #
 # Copyright (C) 2013 Yubico AB. All rights reserved.
 #
@@ -21,6 +21,7 @@ import json
 import threading
 import argparse
 import pyhsm.stick
+import daemon
 
 
 CMD_WRITE = 0
@@ -37,6 +38,7 @@ COMMANDS = {
     CMD_DRAIN: 'drain'
 }
 
+context = daemon.DaemonContext()
 
 def pack_data(data):
     if isinstance(data, basestring):
@@ -131,6 +133,8 @@ if __name__ == '__main__':
     )
     parser.add_argument('-D', '--device', nargs='?', default='/dev/ttyACM0',
                         help='device name')
+    parser.add_argument('-d', '--daemon', default=False,
+                        action='store_true', help='run as daemon')
     parser.add_argument('-I', '--interface', nargs='?', default='localhost',
                         help='network interface to bind to')
     parser.add_argument('-P', '--port', nargs='?', type=int, default=5348,
@@ -144,4 +148,10 @@ if __name__ == '__main__':
     server = YHSM_Stick_Server(args.device, (args.interface, args.port))
     print 'You can connect to the server using the following device string:'
     print 'yhsm://127.0.0.1:%d' % args.port
-    server.serve()
+    
+    context.files_preserve = [server.socket]
+    if args.daemon:
+        with context:
+            server.serve()
+    else:
+        server.serve()
