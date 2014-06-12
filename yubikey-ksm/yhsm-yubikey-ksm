@@ -45,6 +45,7 @@ sys.path.append('Lib');
 import pyhsm
 import pyhsm.yubikey
 import serial
+import daemon
 
 default_device = "/dev/ttyACM0"
 default_dir = "/var/cache/yubikey-ksm/aeads"
@@ -63,6 +64,8 @@ stats = { 'ok': 0,
     'invalid': 0,
     'no_aead': 0,
     'err': 0 }
+
+context = daemon.DaemonContext()
 
 class YHSM_KSMRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     """
@@ -232,6 +235,11 @@ def parse_args():
                         action='store_true', default=False,
                         help='Enable verbose operation'
                         )
+    parser.add_argument('-d', '--daemon',
+                        dest='daemon',
+                        action='store_true', default=False,
+                        help='Run as daemon'
+                        )
     parser.add_argument('--debug',
                         dest='debug',
                         action='store_true', default=False,
@@ -306,6 +314,9 @@ def run(args):
     """
     Start a BaseHTTPServer.HTTPServer and serve requests forever.
     """
+
+    write_pid_file(args.pid_file)
+    
     server_address = (args.listen_addr, args.listen_port)
     httpd = YHSM_KSMServer(server_address, YHSM_KSMRequestHandler)
     my_log_message(args, syslog.LOG_INFO, "Serving requests to 'http://%s:%s%s' with key handle(s) %s (YubiHSM: '%s', AEADs in '%s')" \
@@ -340,14 +351,18 @@ def main():
         my_log_message(args, syslog.LOG_ERR, 'Failed opening YubiHSM device "%s" : %s' %(args.device, e))
         sys.exit(1)
 
-    write_pid_file(args.pid_file)
+    context.files_preserve = [hsm.get_raw_device()]
 
-    try:
-        run(args)
-    except KeyboardInterrupt:
-        print ""
-        print "Shutting down"
-        print ""
+    if args.daemon:
+        with context:
+            run(args)
+    else:
+         try:
+             run(args)
+         except KeyboardInterrupt:
+             print ""
+             print "Shutting down"
+             print ""
 
 if __name__ == '__main__':
     main()
