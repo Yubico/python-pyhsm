@@ -148,7 +148,7 @@ class YHSM_Stick_Client():
 
     def raw_device(self):
         """ Get the socket address. Only intended for test code/debugging! """
-        return self.device
+        return self.socket
 
     def set_debug(self, new):
         """
