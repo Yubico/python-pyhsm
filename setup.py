@@ -9,6 +9,7 @@ sys.path.append('Tests');
 requires = [
     'pyserial >= 2.3',
     'pycrypto >= 2.1',
+    'python-daemon >= 1.5'
 ]
 
 setup(name		= 'pyhsm',

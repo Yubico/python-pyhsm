@@ -45,6 +45,7 @@ sys.path.append('Lib');
 import pyhsm
 import pyhsm.yubikey
 import serial
+import daemon
 
 default_device = "/dev/ttyACM0"
 default_dir = "/var/cache/yubikey-ksm/aeads"
@@ -272,6 +273,9 @@ def parse_args():
                         help='PID file',
                         metavar='FILENAME',
                         )
+    parser.add_argument('-d', '--daemon',
+                        action='store_true',
+                        help='Daemonize process')
 
     return parser.parse_args()
 
@@ -340,14 +344,17 @@ def main():
         my_log_message(args, syslog.LOG_ERR, 'Failed opening YubiHSM device "%s" : %s' %(args.device, e))
         sys.exit(1)
 
-    write_pid_file(args.pid_file)
-
-    try:
-        run(args)
-    except KeyboardInterrupt:
-        print ""
-        print "Shutting down"
-        print ""
+    if args.daemon:
+        with daemon.DaemonContext(pidfile=args.pid_file):
+            run(args)
+    else:
+        write_pid_file(args.pid_file)
+        try:
+            run(args)
+        except KeyboardInterrupt:
+            print ""
+            print "Shutting down"
+            print ""
 
 if __name__ == '__main__':
     main()
