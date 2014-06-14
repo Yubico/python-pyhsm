@@ -123,7 +123,17 @@ class YHSM_Stick_Server():
             socket.close()
 
 
-if __name__ == '__main__':
+def main(args):
+    print 'Starting YubiHSM daemon for device: %s, listening on: %s:%d' % \
+        (args.device, args.interface, args.port)
+
+    server = YHSM_Stick_Server(args.device, (args.interface, args.port))
+    print 'You can connect to the server using the following device string:'
+    print 'yhsm://127.0.0.1:%d' % args.port
+    server.serve()
+
+
+def parse_args():
     parser = argparse.ArgumentParser(
         description='YubiHSM server daemon',
         add_help=True,
@@ -135,13 +145,18 @@ if __name__ == '__main__':
                         help='network interface to bind to')
     parser.add_argument('-P', '--port', nargs='?', type=int, default=5348,
                         help='TCP port to bind to')
+    parser.add_argument('-d', '--daemon', action='store_true',
+                        help='Daemonize process')
 
-    args = parser.parse_args()
+    return parser.parse_args()
 
-    print 'Starting YubiHSM daemon for device: %s, listening on: %s:%d' % \
-        (args.device, args.interface, args.port)
 
-    server = YHSM_Stick_Server(args.device, (args.interface, args.port))
-    print 'You can connect to the server using the following device string:'
-    print 'yhsm://127.0.0.1:%d' % args.port
-    server.serve()
+if __name__ == '__main__':
+    args = parse_args()
+
+    if args.daemon:
+        import daemon
+        with daemon.DaemonContext():
+            main(args)
+    else:
+        main(args)
