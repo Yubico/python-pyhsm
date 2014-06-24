@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 #
 # Copyright (C) 2013 Yubico AB. All rights reserved.
 #
@@ -21,6 +21,8 @@ import json
 import threading
 import argparse
 import pyhsm.stick
+import daemon
+import os
 
 
 CMD_WRITE = 0
@@ -37,6 +39,7 @@ COMMANDS = {
     CMD_DRAIN: 'drain'
 }
 
+context = daemon.DaemonContext()
 
 def pack_data(data):
     if isinstance(data, basestring):
@@ -49,11 +52,22 @@ def unpack_data(data):
         return data.decode('base64')
     return data
 
+def write_pid_file(fn):
+    """ Create a file with our PID. """
+    if not fn:
+        return None
+    if fn == '' or fn == "''":
+        # work around argument passings in init-scripts
+        return None
+    f = open(fn, "w")
+    f.write("%s\n" % (os.getpid()))
+    f.close()
 
 class YHSM_Stick_Server():
     def __init__(self, device, addr):
         self.device = device
         self._stick = None
+        self.pidfile = None
 
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.socket.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
@@ -61,6 +75,8 @@ class YHSM_Stick_Server():
         self.lock = threading.Lock()
 
     def serve(self):
+        write_pid_file(self.pidfile)
+
         self.socket.listen(20)
 
         try:
@@ -131,10 +147,18 @@ if __name__ == '__main__':
     )
     parser.add_argument('-D', '--device', nargs='?', default='/dev/ttyACM0',
                         help='device name')
+    parser.add_argument('-d', '--daemon', default=False,
+                        action='store_true', help='run as daemon')
     parser.add_argument('-I', '--interface', nargs='?', default='localhost',
                         help='network interface to bind to')
     parser.add_argument('-P', '--port', nargs='?', type=int, default=5348,
                         help='TCP port to bind to')
+    parser.add_argument('--pid-file',
+                        dest='pid_file',
+                        default=None,
+                        required=False,
+                        help='PID file',
+                        metavar='FILENAME')
 
     args = parser.parse_args()
 
@@ -144,4 +168,11 @@ if __name__ == '__main__':
     server = YHSM_Stick_Server(args.device, (args.interface, args.port))
     print 'You can connect to the server using the following device string:'
     print 'yhsm://127.0.0.1:%d' % args.port
-    server.serve()
+    
+    server.pidfile = args.pid_file
+    context.files_preserve = [server.socket]
+    if args.daemon:
+        with context:
+            server.serve()
+    else:
+        server.serve()
