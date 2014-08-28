@@ -158,7 +158,7 @@ def gen_keys(hsm, args):
                 nonce = ""
             else:
                 nonce = public_id.decode('hex')
-            aead = hsm.generate_aead(public_id.decode('hex'), kh)
+            aead = hsm.generate_aead(nonce, kh)
 
             filename = output_filename(args.output_dir, args.key_handles[kh], padded_id)
 

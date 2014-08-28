@@ -74,9 +74,10 @@ This requires the python-setuptools (well, the package is called
 that in Debian/Ubuntu).
 
 You will also need the pyserial package (python-serial in
-Debian/Ubuntu) from http://pyserial.sourceforge.net/ and, to run
-the test suite, pycrypto from http://www.pycrypto.org/
-(python-crypto in Debian/Ubuntu).
+Debian/Ubuntu) from http://pyserial.sourceforge.net/ and, to run the
+test suite, pycrypto from http://www.pycrypto.org/ (python-crypto in
+Debian/Ubuntu).  Please note that the pycrypto version has to be 2.1
+or higher -- it is known that RHEL6 has a lower version.
 
 I use Ubuntu, so I created a PPA (Personal Package Archive) for
 easy installation (and removal) on Ubuntu systems.
