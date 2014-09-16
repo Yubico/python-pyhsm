@@ -15,7 +15,7 @@ the YubiHSM to further protect the AES keys.
 The interface exposed to the validation servers is a simple REST web
 interface, currently implemented using the BaseHTTPServer. It is inter-
 changeable with the original PHP based KSM found at
-http://opensource.yubico.com/yubikey-ksm/
+https://developers.yubico.com/yubikey-ksm/
 
 *Be aware* that it is currently single threaded, and uses a short timeout
 (5 seconds per default) to prevent blocking on bad requests (typically
