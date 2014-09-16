@@ -1,4 +1,4 @@
-# Copyright (c) 2011, 2012 Yubico AB
+# Copyright (c) 2011-2014 Yubico AB
 # All rights reserved.
 #
 #   Redistribution and use in source and binary forms, with or
@@ -41,7 +41,7 @@ Basic usage ::
 See help(pyhsm.base) (L{pyhsm.base.YHSM}) for more information.
 """
 
-__version__ = '1.0.4h'
+__version__ = '1.0.4i'
 __copyright__ = 'Yubico AB'
 __organization__ = 'Yubico'
 __license__ = 'BSD'
