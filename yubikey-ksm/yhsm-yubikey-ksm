@@ -172,73 +172,22 @@ class YHSM_KSMServer(BaseHTTPServer.HTTPServer):
             self.address_family = socket.AF_INET6
         BaseHTTPServer.HTTPServer.__init__(self, server_address, req_handler)
 
-#
-# reconstruct a database url with the valid username and password
-#
-def build_database_url(databaseUrl, dbusername, dbpassword):
-    """
-    sanitize the database url fixing it with username and password
-    
-    @param databaseUrl, dbusername, dbpassword: strings for configuration of the database
-    @type databaseUrl, dbusername, dbpassowrd: string
-    """
-
-
-    #urltype mysql://user:pass@localhost/dbname
-    result = re.search(r'@', databaseUrl)
-    if result:
-        result = re.sub(r'://.*?@', '://'+dbusername+":"+dbpassword+"@", databaseUrl)
-        if result:
-            return result
-        else:
-            print "FATAL: Malformed database url. A valid url looks like this: mysql://username:password@hostname/dbname"
-            sys.exit(1)
-
-    else:
-        result = re.search(r'(.*?://)(.*?/)(.+)', databaseUrl)
-        if result:
-            databaseUrl = result.group(1)+dbusername+":"+dbpassword+"@"+result.group(2)+result.group(3)
-            return databaseUrl
-
-        else:
-            print "FATAL: Malformed database url. A valid url looks like this: mysql://username:password@hostname/dbname"
-            sys.exit(1)
-
-#
-# Connect to a SQL database.
-#
-def dbconnect(databaseUrl):
+def dbconnect(my_args):
     """
     Connect to a database
-    
-    @param databaseUrl string containing the database url
-    @type databaseUrl: string
     """
 
     engine = None
     try:
-        #check database connection
-        engine = create_engine(databaseUrl)
-
+        engine = create_engine(my_args.db_url)
     except:
-        print "\nPlease provide a valid database username"
-        dbusername = raw_input(">>")
-        print "\nPlease provide a valid database password:"
-        dbpassword = raw_input(">>")
-
-        try:
-            #rebuild the url with given username and password
-            databaseUrl = build_database_url(databaseUrl, dbusername, dbpassword)
-            #check database connection
-            engine = create_engine(databaseUrl)
-        except:
-            print "FATAL: Please provide valid username and password and a valid address i.e. mysql://localhost/dbname"
-            sys.exit(1)
+        my_log_message(my_args, syslog.LOG_ERR, "Could not connect to database: %s" % (my_args.db_url))
+        sys.exit(1)
 
     metadata = MetaData()
     aead_table = Table('aead_table', metadata, autoload=True, autoload_with=engine)
 
-    return (engine,aead_table)
+    return (engine, aead_table)
 
 def decrypt_yubikey_otp(self, from_key):
     """
@@ -426,7 +375,7 @@ def args_fixup(my_args):
     #evaluate database url and connect to the database
     #execute only if in database mode
     if my_args.db_url is not None:
-        (my_args.engine,my_args.aead_table) = dbconnect(my_args.db_url)
+        (my_args.engine,my_args.aead_table) = dbconnect(my_args)
     else:
         my_args.engine = None
 
