@@ -1,0 +1,14 @@
+Fredrik Thulin <fredrik@yubico.com>
+Created the project, design and implementation of most of it.
+
+Dain Nilsson
+Added yhsm-daemon, some other fixes.
+
+Tommaso De Orchi
+Added database support.
+
+Klas Lindfors
+Maintenance work.
+
+Simon Josefsson
+Maintenance work.

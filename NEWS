@@ -1,5 +1,11 @@
 Python-pyhsm NEWS -- History of user-visible changes.          -*- outline -*-
 
+* Version 1.0.4i (unreleased)
+
+** yhsm-db-import, yhsm-db-export: New tools to do database import/export.
+
+** Documentation cleanup.
+
 * Version 1.0.4h (released 2014-01-09)
 
 ** yhsm-daemon: Use JSON messages instead of Python pickling.

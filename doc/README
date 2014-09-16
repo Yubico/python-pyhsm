@@ -16,19 +16,7 @@ and then executing the ./maintainer-scripts/generate_html.sh script.
 Assorted usage documentation
 ----
 
-All pages that were available in the project Wiki (currently located at
-https://github.com/Yubico/python-pyhsm/wiki ) are included as-is in the
-releases.
-
 Please note that there might be more updated documentation available online.
-
-If you want to update the contents of the doc/wiki/ directory with what is
-currently available online, execute the following commands :
-
-----
-$ cd $top_srcdir
-$ git submodule update --init
-----
 
 
 ----
