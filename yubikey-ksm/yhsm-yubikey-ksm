@@ -80,13 +80,9 @@ class YHSM_KSMRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
     def __init__(self, *other_args, **kwargs):
         self.timeout = args.reqtimeout
-
-        #execute only if in database mode
         if args.engine is not None:
 	    self.engine = args.engine
             self.aead_table = args.aead_table
-
-        #run the http server
         BaseHTTPServer.BaseHTTPRequestHandler.__init__(self, *other_args, **kwargs)
 
     def do_GET(self):
@@ -130,14 +126,7 @@ class YHSM_KSMRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         return self.client_address[0]
 
     def dbload(self, public_id):
-        """
-        Loads AEAD from the specified database
-        
-        @param public_id: id to read AEAD from db
-        @type public_id: string
-        """
-
-        #get data from the database  
+        """ Loads AEAD from the specified database. """
 	connection = self.engine.connect()
         trans = connection.begin()
 	aead = None
@@ -145,7 +134,6 @@ class YHSM_KSMRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             s = select([self.aead_table]).where(self.aead_table.c.public_id == public_id)
             result = connection.execute(s)
 
-            #cycle through results
             for row in result:
                 kh_int = row['keyhandle']
                 aead = pyhsm.aead_cmd.YHSM_GeneratedAEAD(None, kh_int, '');
@@ -154,8 +142,7 @@ class YHSM_KSMRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 		trans.commit()
 
         except Exception, e:
-	    print str(e)
-	    print "ERROR: could not SELECT %s from database. Check for valid db connection and for validity of the input(public_id exist in db?)" % public_id
+            self.log_error("No AEAD in DB for public_id %s" % (public_id))
 	    aead = None
 
 	if aead is None:
