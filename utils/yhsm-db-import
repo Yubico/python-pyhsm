@@ -29,35 +29,6 @@ import pyhsm.aead_cmd
 ##########################
 
 
-#
-# reconstruct a database url with the valid username and password
-#
-def build_database_url(databaseUrl, dbusername, dbpassword):
-
-    #urltype mysql://user:pass@localhost/dbname
-    result = re.search(r'@', databaseUrl)
-    if result:
-        #build a valid url
-        result = re.sub(r'://.*?@', '://'+dbusername+":"+dbpassword+"@", databaseUrl)
-        if result:
-            #return a valid url
-            return result
-        else:
-            #unrecognized url format
-            print "FATAL: Malformed database url. A valid url looks like this: mysql://username:password@hostname/dbname"
-            sys.exit(1)
-
-    else:
-        #fix the url with username and password
-        result = re.search(r'(.*?://)(.*?/)(.+)', databaseUrl)
-        if result:
-            databaseUrl = result.group(1)+dbusername+":"+dbpassword+"@"+result.group(2)+result.group(3)
-            return databaseUrl
-
-        else:
-            #unrecognized url format
-            print "FATAL: Malformed database url. A valid url looks like this: mysql://username:password@hostname/dbname"
-            sys.exit(1)
 
 #
 # extract keyhandle value from the path
@@ -129,26 +100,8 @@ try:
     aeadobj = Table('aead_table', metadata, autoload=True, autoload_with=engine)
     connection = engine.connect()
 except:
-    print "\nPlease provide a valid database username"
-    dbusername = raw_input(">>")
-    print "\nPlease provide a valid database password:"
-    dbpassword = raw_input(">>")
-
-    try:
-        #rebuild the url with given username and password
-        databaseUrl = build_database_url(databaseUrl, dbusername, dbpassword)
-
-        #check database connection
-        engine = create_engine(databaseUrl)
-
-        #SQLAlchemy voodoo
-        metadata = MetaData()
-        aeadobj = Table('aead_table', metadata, autoload=True, autoload_with=engine)
-        connection = engine.connect()
-
-    except:
-         print "FATAL: Please provide valid username and password and a valid address i.e. mysql://localhost/dbname"
-         sys.exit(1)
+    print "FATAL: Database connect failure"
+    sys.exit(1)
 
 ####################
 # Computation area #
