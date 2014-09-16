@@ -1,77 +1,81 @@
-This is the Python package to talk to a YubiHSM.
+PyHSM - Python YubiHSM Project
+==============================
 
-The YubiHSM is Yubico's take on the Hardware Security Module (HSM),
-designed for protecting secrets on authentication servers, including
-cryptographic keys and passwords, at unmatched simplicity and low
-cost.
+Introduction
+------------
 
-See the files in utils/, examples/ yhsm-val/, and yubikey-ksm/ to get
-an idea of how to use this code.
+PyHSM is a Python package to talk to a YubiHSM.  The YubiHSM is
+Yubico's take on the Hardware Security Module (HSM), designed for
+protecting secrets on authentication servers, including cryptographic
+keys and passwords, at unmatched simplicity and low cost.
 
-Copyright (c) 2011 Yubico AB
-See the file COPYING for licence statement.
+License
+-------
 
+The project is licensed under the BSD license, see the file COPYING
+for exact wording.
 
-================
-  Introduction
-================
+Description
+-----------
 
-pyhsm aims to be a reference implementation implementing all the
+PyHSM aims to be a reference implementation implementing all the
 functions available in the YubiHSM. The base version number of pyhsm
-will match the supported hardware version of the YubiHSM (e.g. 0.9.8,
-0.9.8a, 0.9.8b all intended to be used with hardware version 0.9.8).
+will match the supported hardware version of the YubiHSM: PyHSM
+releases 0.9.8, 0.9.8a, 0.9.8b are all intended to be used with
+hardware version 0.9.8.
 
-pyhsm also includes the regression test suite for the YubiHSM.
+PyHSM also includes the regression test suite for the YubiHSM.
 
-In addition to the YubiHSM communication library, pyhsm also contains
-some applications utilizing the YubiHSM :
+In general, see the files in utils/, examples/ yhsm-val/, and
+yubikey-ksm/ to get an idea of how to use this code.
 
-  * yhsm-val    - a simple validation server supporting validation of
-                  YubiKey OTPs, OATH codes and password hashes.
-  * yubikey-ksm - ykval YubiKey OTP decryption backend using the
-                  YubiHSM.
+In addition to the YubiHSM communication library, PyHSM also contains
+some applications utilizing the YubiHSM:
 
-and some smaller scripts in the utils/ and examples/ directory :
+* yhsm-val: a simple validation server supporting validation of YubiKey
+  OTPs, OATH codes and password hashes.
 
-  * yhsm-linux-add-entropy
-                - Feed Linux kernel with random entropy from the TRNG
-		  on the YubiHSM.
-  * yhsm-keystore-unlock
-		- Unlock the key storage in the YubiHSM with your HSM
-		  password. Use with incorrect password to lock it again.
-  * yhsm-sysinfo.py
-		- Print basic system information about the connected
-		  YubiHSM.
-  * yhsm-monitor-exit.py
-		- Get a YubiHSM *in debug mode* to enter configuration
-		  mode again, without having to press the little button
-		  while inserting it into the USB port.
-  * yhsm-password-auth.py
-		- Example of how to turn passwords (or hashes of
-		  passwords if you like PBKDF2) into AEADs that can be
-		  used to verify the password later on.
+* yubikey-ksm: ykval YubiKey OTP decryption backend using the YubiHSM.
 
+Some smaller scripts are in the utils/ directory:
 
-================
-  Installation
-================
+* yhsm-linux-add-entropy: Feed Linux kernel with random entropy from
+  the TRNG on the YubiHSM.
 
-pyhsm is known to work with Python 2.6 and 2.7.
+* yhsm-keystore-unlock: Unlock the key storage in the YubiHSM with your HSM
+  password. Use with incorrect password to lock it again.
+
+* yhsm-daemon: Talk to the YubiHSM directly over TCP.
+
+And some more in examples/:
+
+* yhsm-sysinfo.py: Print basic system information about the connected YubiHSM.
+
+* yhsm-monitor-exit.py: Get a YubiHSM *in debug mode* to enter
+  configuration mode again, without having to press the little button
+  while inserting it into the USB port.
+
+* yhsm-password-auth.py: Example of how to turn passwords (or hashes
+  of passwords if you like PBKDF2) into AEADs that can be used to
+  verify the password later on.
+
+Installation
+------------
+
+PyHSM is known to work with Python 2.6 and 2.7, and is primarily
+tested using Debian/Ubuntu, but is of course meant to work on as many
+platforms as possible.
 
 NOTE: If you want to use any of the daemons (yhsm-validation-server,
 yhsm-yubikey-ksm) you will want to use Python 2.7 or later.
 SocketServer.py lacks critical timeout handling in Python 2.6.
 
-It is primarily tested using Debian/Ubuntu, but is of course
-meant to work on as many platforms as possible.
-
-pyhsm is installable in the standard-python way :
+PyHSM is installable in the standard-python way :
 
   $ cd pyhsm-$ver
   $ python setup.py install
 
-This requires the python-setuptools (well, the package is called
-that in Debian/Ubuntu).
+This requires the Debian/Ubuntu python-setuptools package.
 
 You will also need the pyserial package (python-serial in
 Debian/Ubuntu) from http://pyserial.sourceforge.net/ and, to run the
@@ -79,17 +83,21 @@ test suite, pycrypto from http://www.pycrypto.org/ (python-crypto in
 Debian/Ubuntu).  Please note that the pycrypto version has to be 2.1
 or higher -- it is known that RHEL6 has a lower version.
 
-I use Ubuntu, so I created a PPA (Personal Package Archive) for
-easy installation (and removal) on Ubuntu systems.
+Ubuntu PPA
+----------
 
-If you use a recent Ubuntu release, you should be able to install
-python-pyhsm with these commands :
+There is a PPA (Personal Package Archive) for easy installation (and
+removal) on Ubuntu systems.  If you use a recent Ubuntu release, you
+should be able to install python-pyhsm with these commands:
 
   $ sudo add-apt-repository ppa:yubico/stable
   $ sudo apt-get update
   $ sudo apt-get install python-pyhsm
 
 The Launchpad PPA key generated for the packages is 32CBA1A9.
+
+Building Debian/Ubuntu packages
+-------------------------------
 
 If you want to work on Debian/Ubuntu packaging, or just build packages
 directly from version controlled sources, you can find it maintained
@@ -100,9 +108,3 @@ in a git repository.
   $ git-buildpackage
 
 See https://github.com/Yubico/python-pyhsm-dpkg for more information.
-
-================
-
-Comments, feedback and patches welcome!
-
-Fredrik Thulin <fredrik@yubico.com> 2011-03-28
