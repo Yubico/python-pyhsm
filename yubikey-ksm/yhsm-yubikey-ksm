@@ -385,8 +385,8 @@ def run(args):
     
     server_address = (args.listen_addr, args.listen_port)
     httpd = YHSM_KSMServer(server_address, YHSM_KSMRequestHandler)
-    my_log_message(args, syslog.LOG_INFO, "Serving requests to 'http://%s:%s%s' with key handle(s) %s (YubiHSM: '%s', AEADs in '%s')" \
-                       % (args.listen_addr, args.listen_port, args.serve_url, args.key_handles, args.device, args.aead_dir))
+    my_log_message(args, syslog.LOG_INFO, "Serving requests to 'http://%s:%s%s' with key handle(s) %s (YubiHSM: '%s', AEADs in '%s', DB in '%s')" \
+                       % (args.listen_addr, args.listen_port, args.serve_url, args.key_handles, args.device, args.aead_dir, args.db_url))
     httpd.serve_forever()
 
 def my_log_message(my_args, prio, msg):
