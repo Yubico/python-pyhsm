@@ -70,41 +70,27 @@ NOTE: If you want to use any of the daemons (yhsm-validation-server,
 yhsm-yubikey-ksm) you will want to use Python 2.7 or later.
 SocketServer.py lacks critical timeout handling in Python 2.6.
 
-PyHSM is installable in the standard-python way :
+The pyserial package is needed, see:
+http://pyserial.sourceforge.net/
+
+  Debian: apt-get install python-serial
+
+For database support SQLAlchemy is needed, see:
+http://www.sqlalchemy.org/
+
+  Debian: apt-get install python-sqlalchemy
+
+To run the test suite, you need pycrypto, see:
+http://www.pycrypto.org/
+
+  Debian: apt-get install python-crypto
+
+Please note that the pycrypto version has to be 2.1 or higher -- it is
+known that RHEL6 has a lower version.
+
+PyHSM is installed like other Python packages:
 
   $ cd pyhsm-$ver
   $ python setup.py install
 
 This requires the Debian/Ubuntu python-setuptools package.
-
-You will also need the pyserial package (python-serial in
-Debian/Ubuntu) from http://pyserial.sourceforge.net/ and, to run the
-test suite, pycrypto from http://www.pycrypto.org/ (python-crypto in
-Debian/Ubuntu).  Please note that the pycrypto version has to be 2.1
-or higher -- it is known that RHEL6 has a lower version.
-
-Ubuntu PPA
-----------
-
-There is a PPA (Personal Package Archive) for easy installation (and
-removal) on Ubuntu systems.  If you use a recent Ubuntu release, you
-should be able to install python-pyhsm with these commands:
-
-  $ sudo add-apt-repository ppa:yubico/stable
-  $ sudo apt-get update
-  $ sudo apt-get install python-pyhsm
-
-The Launchpad PPA key generated for the packages is 32CBA1A9.
-
-Building Debian/Ubuntu packages
--------------------------------
-
-If you want to work on Debian/Ubuntu packaging, or just build packages
-directly from version controlled sources, you can find it maintained
-in a git repository.
-
-  $ git clone git://github.com/Yubico/python-pyhsm-dpkg.git
-  $ cd python-pyhsm-dpkg
-  $ git-buildpackage
-
-See https://github.com/Yubico/python-pyhsm-dpkg for more information.
