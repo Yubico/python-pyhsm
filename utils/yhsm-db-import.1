@@ -1,0 +1,38 @@
+.\" Copyright (c) 2014 Yubico AB
+.\" See the file COPYING for license statement.
+.\"
+.de URL
+\\$2 \(laURL: \\$1 \(ra\\$3
+..
+.if \n[.g] .mso www.tmac
+.TH yhsm-linux-add-entropy "1" "September 2014" "python-pyhsm"
+
+.SH NAME
+yhsm-db-import \(hy Import AEADs from filesystem to database
+
+.SH SYNOPSIS
+.B yhsm-db-import
+[\fIoptions\fR]
+
+.SH DESCRIPTION
+Use this program to import AEADs from a filesystem structure into a sql database.
+
+.SH OPTIONS
+.PP
+.TP
+\fB\-\-path\fR
+filesystem path of where to find AEADs
+.TP
+\fB\-\-dburl\fR
+connection URL for the database
+
+.SH BUGS
+Report python-pyhsm/yhsm-db-import bugs in
+.URL "https://github.com/Yubico/python-pyhsm/issues/" "the issue tracker"
+
+.SH "SEE ALSO"
+The
+.URL "https://developers.yubico.com/python-pyhsm/" "home page"
+.PP
+YubiHSMs can be obtained from
+.URL "http://www.yubico.com/" "Yubico" "."

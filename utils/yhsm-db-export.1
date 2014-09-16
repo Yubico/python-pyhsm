@@ -1,0 +1,38 @@
+.\" Copyright (c) 2014 Yubico AB
+.\" See the file COPYING for license statement.
+.\"
+.de URL
+\\$2 \(laURL: \\$1 \(ra\\$3
+..
+.if \n[.g] .mso www.tmac
+.TH yhsm-linux-add-entropy "1" "September 2014" "python-pyhsm"
+
+.SH NAME
+yhsm-db-export \(hy Export AEADs from a database to a filesystem structure
+
+.SH SYNOPSIS
+.B yhsm-db-export
+[\fIoptions\fR]
+
+.SH DESCRIPTION
+Use this program to export AEADs from a sql database to a filesystem structure.
+
+.SH OPTIONS
+.PP
+.TP
+\fB\-\-path\fR
+filesystem path of where to put AEADs
+.TP
+\fB\-\-dburl\fR
+connection URL for the database
+
+.SH BUGS
+Report python-pyhsm/yhsm-db-export bugs in
+.URL "https://github.com/Yubico/python-pyhsm/issues/" "the issue tracker"
+
+.SH "SEE ALSO"
+The
+.URL "https://developers.yubico.com/python-pyhsm/" "home page"
+.PP
+YubiHSMs can be obtained from
+.URL "http://www.yubico.com/" "Yubico" "."
