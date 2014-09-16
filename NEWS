@@ -2,6 +2,10 @@ Python-pyhsm NEWS -- History of user-visible changes.          -*- outline -*-
 
 * Version 1.0.4i (unreleased)
 
+** yhsm-yubikey-ksm: Add --daemon.
+
+** yhsm-yubikey-ksm: Add --db-url to specify SQL database path to AEAD store.
+
 ** yhsm-db-import, yhsm-db-export: New tools to do database import/export.
 
 ** Documentation cleanup.
