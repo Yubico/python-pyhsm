@@ -43,9 +43,6 @@ fi
 rm -rf doc/html
 ./maintainer-scripts/generate_html.sh
 
-# update documentation from wiki
-git submodule update
-
 git2cl > ChangeLog
 
 if [ "x$do_test" != "xfalse" ]; then
@@ -58,7 +55,7 @@ python setup.py sdist
 gpg --detach-sign --default-key $keyid dist/pyhsm-$version.tar.gz
 gpg --verify dist/pyhsm-$version.tar.gz.sig
 
-git tag -u $keyid -m $version $version
+git tag -s -u $keyid -m "python-pyhsm $version" $version
 
 #Publish release
 if test ! -d "$YUBICO_WWW_REPO"; then
