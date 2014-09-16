@@ -6,14 +6,8 @@ from distutils import versionpredicate
 import sys
 sys.path.append('Tests');
 
-requires = [
-    'pyserial >= 2.3',
-    'pycrypto >= 2.1',
-    'python-daemon >= 1.5'
-]
-
 setup(name		= 'pyhsm',
-      version		= '1.0.4h',
+      version		= '1.0.4i',
       description	= 'Python code for talking to a YubiHSM',
       author		= 'Fredrik Thulin',
       author_email	= 'fredrik@yubico.com',
@@ -22,6 +16,8 @@ setup(name		= 'pyhsm',
       packages		= ['pyhsm'],
       package_dir	= {'': 'Lib'},
       test_suite	= "test_init.suite",
-      install_requires	= requires,
-      build_requires	= requires,
-     )
+      install_requires	= ['pyserial >= 2.3',
+                           'pycrypto >= 2.1',
+                           'python-daemon >= 1.5',
+                           'sqlalchemy >= 0.9.7'],
+  )
