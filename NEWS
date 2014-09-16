@@ -1,5 +1,9 @@
 Python-pyhsm NEWS -- History of user-visible changes.          -*- outline -*-
 
+* Version 1.0.4j (unreleased)
+
+** yhsm-yubikey-ksm: Fix syntax error.
+
 * Version 1.0.4i (released 2014-09-16)
 
 ** yhsm-yubikey-ksm: Add --daemon.

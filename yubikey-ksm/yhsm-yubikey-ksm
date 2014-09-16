@@ -131,7 +131,7 @@ class YHSM_KSMRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         trans = connection.begin()
 	aead = None
         try:
-            s = select([self.aead_table]).where(self.aead_table.c.public_id == public_id)
+            s = sqlalchemy.select([self.aead_table]).where(self.aead_table.c.public_id == public_id)
             result = connection.execute(s)
 
             for row in result:
@@ -166,13 +166,12 @@ def dbconnect(my_args):
 
     engine = None
     try:
-        engine = create_engine(my_args.db_url)
+        engine = sqlalchemy.create_engine(my_args.db_url)
+        metadata = sqlalchemy.MetaData()
+        aead_table = sqlalchemy.Table('aead_table', metadata, autoload=True, autoload_with=engine)
     except:
         my_log_message(my_args, syslog.LOG_ERR, "Could not connect to database: %s" % (my_args.db_url))
         sys.exit(1)
-
-    metadata = MetaData()
-    aead_table = Table('aead_table', metadata, autoload=True, autoload_with=engine)
 
     return (engine, aead_table)
 
