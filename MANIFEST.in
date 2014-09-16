@@ -3,8 +3,6 @@ include ChangeLog
 include NEWS
 include doc/*
 include doc/html/*
-include doc/wiki/*
-exclude doc/wiki/.git
 include utils/*
 include yhsm-val/*
 include yubikey-ksm/*
