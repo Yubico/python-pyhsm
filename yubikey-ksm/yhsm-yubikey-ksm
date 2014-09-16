@@ -46,12 +46,7 @@ import pyhsm
 import pyhsm.yubikey
 import serial
 import daemon
-
-try:
-    from sqlalchemy import *
-except ImportError:
-    print "Please, install SQLAlchemy. Follow instruction in utils/README.db.import-export file."
-    sys.exit(1)
+import sqlalchemy
 
 default_device = "/dev/ttyACM0"
 default_dir = "/var/cache/yubikey-ksm/aeads"
