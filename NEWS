@@ -1,5 +1,9 @@
 Python-pyhsm NEWS -- History of user-visible changes.          -*- outline -*-
 
+* Version 1.0.4k (unreleased)
+
+** yhsm-db-import, yhsm-db-export: Fix syntax error.
+
 * Version 1.0.4j (released 2014-09-16)
 
 ** yhsm-yubikey-ksm: Fix syntax error.

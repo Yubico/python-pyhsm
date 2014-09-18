@@ -56,7 +56,7 @@ def insert_query(publicId, aead, keyhandle, aeadobj):
     	#insert the query
 	result = connection.execute(sql)
 	return result
-    except exc.IntegrityError:
+    except sqlalchemy.exc.IntegrityError:
 	pass
     return None;
 
@@ -93,11 +93,11 @@ databaseUrl = args['dburl']
 
 try:
     #check database connection
-    engine = create_engine(databaseUrl)
+    engine = sqlalchemy.create_engine(databaseUrl)
 
     #SQLAlchemy voodoo
-    metadata = MetaData()
-    aeadobj = Table('aead_table', metadata, autoload=True, autoload_with=engine)
+    metadata = sqlalchemy.MetaData()
+    aeadobj = sqlalchemy.Table('aead_table', metadata, autoload=True, autoload_with=engine)
     connection = engine.connect()
 except:
     print "FATAL: Database connect failure"

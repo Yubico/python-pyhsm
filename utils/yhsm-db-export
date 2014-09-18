@@ -76,11 +76,11 @@ databaseUrl = args['dburl']
 
 try:
     #check database connection
-    engine = create_engine(databaseUrl)
+    engine = sqlalchemy.create_engine(databaseUrl)
 
     #SQLAlchemy voodoo
-    metadata = MetaData()
-    aeadobj = Table('aead_table', metadata, autoload=True, autoload_with=engine)
+    metadata = sqlalchemy.MetaData()
+    aeadobj = sqlalchemy.Table('aead_table', metadata, autoload=True, autoload_with=engine)
     connection = engine.connect()
 
 except:
