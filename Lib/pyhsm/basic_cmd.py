@@ -2,7 +2,7 @@
 implementations of basic commands to execute on a YubiHSM
 """
 
-# Copyright (c) 2011 Yubico AB
+# Copyright (c) 2011-2014 Yubico AB
 # See the file COPYING for licence statement.
 
 import struct
@@ -286,7 +286,7 @@ class YHSM_Cmd_Key_Store_Decrypt(YHSM_Cmd):
     If an incorrect master key is given, the key store will become unavailable
     (cleared from RAM in YubiHSM).
 
-    @ivar status: The result of the unlock operation
+    @ivar status: The result of the decrypt operation
     @type status: integer
     """
 
@@ -304,13 +304,13 @@ class YHSM_Cmd_Key_Store_Decrypt(YHSM_Cmd):
         """
         Parse result of L{pyhsm.defines.YSM_KEY_STORE_DECRYPT} command.
 
-        @return: Only returns (True) on successful unlock
+        @return: Only returns (True) on successful decrypt
         @rtype: bool
 
-        @raise pyhsm.exception.YHSM_CommandFailed: YubiHSM failed to unlock key store
+        @raise pyhsm.exception.YHSM_CommandFailed: YubiHSM failed to decrypt key store
         """
         # typedef struct {
-        #   YSM_STATUS status;                  // Unlock status
+        #   YSM_STATUS status;                  // Decrypt status
         # } YSM_KEY_STORE_DECRYPT_RESP;
         fmt = "B"
         self.status, = struct.unpack(fmt, data)
