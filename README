@@ -26,8 +26,8 @@ hardware version 0.9.8.
 
 PyHSM also includes the regression test suite for the YubiHSM.
 
-In general, see the files in utils/, examples/ yhsm-val/, and
-yubikey-ksm/ to get an idea of how to use this code.
+In general, see the files in `utils/`, `examples/`, `yhsm-val/` and
+`yubikey-ksm/` to get an idea of how to use this code.
 
 In addition to the YubiHSM communication library, PyHSM also contains
 some applications utilizing the YubiHSM:
@@ -37,7 +37,7 @@ some applications utilizing the YubiHSM:
 
 * yubikey-ksm: ykval YubiKey OTP decryption backend using the YubiHSM.
 
-Some smaller scripts are in the utils/ directory:
+Some smaller scripts are in the `utils/` directory:
 
 * yhsm-linux-add-entropy: Feed Linux kernel with random entropy from
   the TRNG on the YubiHSM.
@@ -47,7 +47,7 @@ Some smaller scripts are in the utils/ directory:
 
 * yhsm-daemon: Talk to the YubiHSM directly over TCP.
 
-And some more in examples/:
+And some more in `examples/`:
 
 * yhsm-sysinfo.py: Print basic system information about the connected YubiHSM.
 
@@ -68,7 +68,7 @@ platforms as possible.
 
 NOTE: If you want to use any of the daemons (yhsm-validation-server,
 yhsm-yubikey-ksm) you will want to use Python 2.7 or later.
-SocketServer.py lacks critical timeout handling in Python 2.6.
+`SocketServer.py` lacks critical timeout handling in Python 2.6.
 
 The http://pyserial.sourceforge.net[pyserial] package is needed.
 
@@ -90,4 +90,4 @@ PyHSM is installed like other Python packages:
   $ cd pyhsm-$ver
   $ python setup.py install
 
-This requires the Debian/Ubuntu python-setuptools package.
+This requires the Debian/Ubuntu 'python-setuptools' package.
