@@ -70,18 +70,15 @@ NOTE: If you want to use any of the daemons (yhsm-validation-server,
 yhsm-yubikey-ksm) you will want to use Python 2.7 or later.
 SocketServer.py lacks critical timeout handling in Python 2.6.
 
-The pyserial package is needed, see:
-http://pyserial.sourceforge.net/
+The http://pyserial.sourceforge.net[pyserial] package is needed.
 
   Debian: apt-get install python-serial
 
-For database support SQLAlchemy is needed, see:
-http://www.sqlalchemy.org/
+For database support http://www.sqlalchemy.org[SQLAlchemy] is needed.
 
   Debian: apt-get install python-sqlalchemy
 
-To run the test suite, you need pycrypto, see:
-http://www.pycrypto.org/
+To run the test suite, you need http://www.pycrypto.org[pycrypto].
 
   Debian: apt-get install python-crypto
 
