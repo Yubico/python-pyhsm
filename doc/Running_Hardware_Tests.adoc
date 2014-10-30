@@ -1,10 +1,8 @@
-PyHSM self-tests with a YubiHSM
-===============================
+== PyHSM hardware tests with a YubiHSM
 
 Tests require a YubiHSM to be run.
 
-Preparation
------------
+=== Preparation
 
 Prepare the HSM as follows:
 
@@ -20,27 +18,22 @@ keycommit
 exit
 .....
 
-Running tests
--------------
+=== Running tests
 
 When the HSM is prepared the run script must be invoked with YHSM_ZAP:
 
-....
+[source, sh]
 $ YHSM_ZAP=1 ./Tests/run.sh
-....
 
 Subsequent runs do not require this:
 
-....
+[source, sh]
 $ ./Tests/run.sh
-....
 
-Selecting the device
---------------------
+=== Selecting the device
 
 By default the tests will use /dev/ttyACM0, but you can change this by
 providing the device to use with YHSM_DEVICE:
 
-....
+[source, sh]
 $ YHSM_DEVICE="/dev/ttyACM1" ./Tests/run.sh
-....

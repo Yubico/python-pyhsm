@@ -1,6 +1,6 @@
-YubiKey Key Storage Module using the YubiHSM
+== YubiKey Key Storage Module using the YubiHSM
 
-*Introduction*
+=== Introduction
 
 The YubiCloud architecture separates the online validation servers where
 queries are sent from the place where the actual secret YubiKey AES keys
@@ -17,11 +17,13 @@ interface, currently implemented using the BaseHTTPServer. It is inter-
 changeable with the original PHP based KSM found at
 https://developers.yubico.com/yubikey-ksm/
 
-*Be aware* that it is currently single threaded, and uses a short timeout
-(5 seconds per default) to prevent blocking on bad requests (typically
+[WARNING]
+The server is currently single threaded, and uses a short timeout
+(5 seconds by default) to prevent blocking on bad requests (typically
 network problems between a validation server and a KSM).
 
-*Key handle*
+[NOTE]
+.Key handle
 You need to configure the YubiHSM connected to the KSM server with at least
 one key handle that has the YSM_AEAD_OTP_DECODE permission flag set.
 
@@ -30,16 +32,17 @@ in which case the other YubiHSM will have the same key handle with the
 same secret key, but with different permission flags (the appropriate
 YSM AEAD generate flags for the type of keys you use).
 
-*Installation on Debian/Ubuntu*
+=== Installation on Debian/Ubuntu
 
 You can install the yhsm-yubikey-ksm from the package repositories :
 
+[source, sh]
 ----
 $ sudo apt-get install yhsm-yubikey-ksm
 $ sudo $EDITOR /etc/default/yhsm-yubikey-ksm
 ----
 
-*Non-Debian/Ubuntu installation instructions*
+=== Non-Debian/Ubuntu installation instructions
 
 . Install pyhsm (see README in top level of pyhsm)
 . Install yhsm-yubikey-ksm into a suitable directory such as /usr/local/sbin/
@@ -47,7 +50,7 @@ $ sudo $EDITOR /etc/default/yhsm-yubikey-ksm
   supply *--key-handles*, and possibly other parameters (verify --output-dir for
   example).
 
-*The AEAD files*
+=== The AEAD files
 
 yhsm-yubikey-ksm is supposed to work with at least a couple of million YubiKeys
 (although the use of BaseHTTPServer might prove to be a bit too simplistic for
@@ -70,25 +73,25 @@ directory. To avoid that, the AEAD file is hashed into a directory for each octe
 but the last one in the public ID. This ensures there will never be more than 256
 AEAD files in each directory :
 
-----
+....
 public id     key handle  AEAD file
 ccbbddeeffcc  0x20        /var/cache/yubikey-ksm/aeads/0x20/cc/bb/dd/ee/ff/ccbbddeeffcc
-----
+....
 
 An important note for storing large numbers of AEAD files in a filesystem is that it
 will use up large numbers of inodes. Consideration for this should be taken into
 account when setting up the filesystem.
 
-*Importing YubiKey secrets*
+=== Importing YubiKey secrets
 
 If you had a YK-KSM server before getting a YubiHSM, use the export utility to
 export all the secrets into a text file of this format :
 
-----
+....
 ykksm 1
 123456,ftftftcccccc,534543524554,fcacd309a20ce1809c2db257f0e8d6ea,000000000000,,,
 ...
-----
+....
 
 and then use the import utility /usr/sbin/yhsm-import-keys to create AEAD's for
 all YubiKey's listed in the text file.
