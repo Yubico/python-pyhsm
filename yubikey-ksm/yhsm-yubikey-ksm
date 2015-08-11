@@ -139,10 +139,11 @@ class YHSM_KSMRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                 aead = pyhsm.aead_cmd.YHSM_GeneratedAEAD(None, kh_int, '');
                 aead.data = row['aead']
                 aead.nonce = row['nonce']
-		trans.commit()
+
+            trans.commit()
 
         except Exception, e:
-            self.log_error("No AEAD in DB for public_id %s" % (public_id))
+            self.log_error("No AEAD in DB for public_id %s (%s)" % (public_id, str(e)))
 	    aead = None
 
 	if aead is None:
