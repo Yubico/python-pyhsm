@@ -81,7 +81,7 @@ class YHSM_KSMRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     def __init__(self, *other_args, **kwargs):
         self.timeout = args.reqtimeout
         if args.engine is not None:
-	    self.engine = args.engine
+            self.engine = args.engine
             self.aead_table = args.aead_table
         BaseHTTPServer.BaseHTTPRequestHandler.__init__(self, *other_args, **kwargs)
 
@@ -127,9 +127,9 @@ class YHSM_KSMRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
     def dbload(self, public_id):
         """ Loads AEAD from the specified database. """
-	connection = self.engine.connect()
+        connection = self.engine.connect()
         trans = connection.begin()
-	aead = None
+        aead = None
         try:
             s = sqlalchemy.select([self.aead_table]).where(self.aead_table.c.public_id == public_id)
             result = connection.execute(s)
@@ -144,12 +144,13 @@ class YHSM_KSMRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
         except Exception, e:
             self.log_error("No AEAD in DB for public_id %s (%s)" % (public_id, str(e)))
-	    aead = None
+            aead = None
 
-	if aead is None:
-	    trans.rollback()
-	connection.close()
-	return aead
+        if aead is None:
+            trans.rollback()
+
+        connection.close()
+        return aead
 
 class YHSM_KSMServer(BaseHTTPServer.HTTPServer):
     """
