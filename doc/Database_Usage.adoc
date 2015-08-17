@@ -4,7 +4,7 @@ IMPORT / EXPORT AEADs, to/from a database using yhsm-db-import and yhsm-db-expor
 
 === INSTALLATION
 
-On debian/Ubuntu install
+On Debian/Ubuntu install
 [source, sh]
 ~$ sudo apt-get install python-sqlalchemy (or any other method illustrated at: http://docs.sqlalchemy.org/en/rel_0_8/intro.html#installation)
 
@@ -34,6 +34,7 @@ CREATE TABLE aead_table (
 
 
 IMPORT: yhsm-db-import aeads_source_folder database_url
+
 EXPORT: yhsm-db-export aeads_destination_folder database_url
 
 [CAUTION]
