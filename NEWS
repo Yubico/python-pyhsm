@@ -1,5 +1,9 @@
 Python-pyhsm NEWS -- History of user-visible changes.          -*- outline -*-
 
+* Version 1.0.4i (unreleased)
+
+** Documentation is now in asciidoc format.
+
 * Version 1.0.4k (released 2014-09-18)
 
 ** yhsm-db-import, yhsm-db-export: Fix syntax error.
