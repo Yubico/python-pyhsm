@@ -1,8 +1,11 @@
 Python-pyhsm NEWS -- History of user-visible changes.          -*- outline -*-
 
-* Version 1.0.4i (unreleased)
+* Version 1.0.4l (unreleased)
 
 ** Documentation is now in asciidoc format.
+
+** yhsm-yubikey-ksm: Fix bug when the same public ID occured for multiple
+keyhandles.
 
 * Version 1.0.4k (released 2014-09-18)
 
