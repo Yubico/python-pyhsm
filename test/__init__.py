@@ -1,4 +1,4 @@
-# Copyright (c) 2011-2015 Yubico AB
+# Copyright (c) 2013 Yubico AB
 # All rights reserved.
 #
 #   Redistribution and use in source and binary forms, with or
@@ -24,48 +24,3 @@
 # LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
-#
-"""
-the pyhsm package
-
-Basic usage ::
-
-  import pyhsm
-
-  try:
-      hsm = pyhsm.base.YHSM(device="/dev/ttyACM0", debug=False)
-      print "Version : %s" % (hsm.info())
-  except pyhsm.exception.YHSM_Error, e:
-      print "ERROR: %s" % e
-
-See help(pyhsm.base) (L{pyhsm.base.YHSM}) for more information.
-"""
-
-__version__ = '1.0.4l'
-__copyright__ = 'Yubico AB'
-__organization__ = 'Yubico'
-__license__ = 'BSD'
-__authors__ = ['Fredrik Thulin', 'Dain Nilsson']
-
-__all__ = ["base",
-           "cmd",
-           "defines",
-           "exception",
-           "stick",
-           "util",
-           "version",
-           "yubikey",
-           "soft_hsm",
-           #
-           "aead_cmd",
-           "aes_ecb_cmd",
-           "basic_cmd",
-           "buffer_cmd",
-           "db_cmd",
-           "debug_cmd",
-           "hmac_cmd",
-           "oath_hotp",
-           "validate_cmd",
-           ]
-
-from pyhsm.base import YHSM
