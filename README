@@ -1,23 +1,16 @@
-PyHSM - Python YubiHSM Project
-==============================
+== PyHSM - Python YubiHSM Project
 
-Introduction
-------------
-
+=== Introduction
 PyHSM is a Python package to talk to a YubiHSM.  The YubiHSM is
 Yubico's take on the Hardware Security Module (HSM), designed for
 protecting secrets on authentication servers, including cryptographic
 keys and passwords, at unmatched simplicity and low cost.
 
-License
--------
-
+=== License
 The project is licensed under the BSD license, see the file COPYING
 for exact wording.
 
-Description
------------
-
+=== Description
 PyHSM aims to be a reference implementation implementing all the
 functions available in the YubiHSM. The base version number of pyhsm
 will match the supported hardware version of the YubiHSM: PyHSM
@@ -59,9 +52,7 @@ And some more in `examples/`:
   of passwords if you like PBKDF2) into AEADs that can be used to
   verify the password later on.
 
-Installation
-------------
-
+=== Installation
 PyHSM is known to work with Python 2.6 and 2.7, and is primarily
 tested using Debian/Ubuntu, but is of course meant to work on as many
 platforms as possible.
@@ -85,9 +76,25 @@ To run the test suite, you need http://www.pycrypto.org[pycrypto].
 Please note that the pycrypto version has to be 2.1 or higher -- it is
 known that RHEL6 has a lower version.
 
-PyHSM is installed like other Python packages:
+PyHSM easily installed via pip:
 
-  $ cd pyhsm-$ver
-  $ python setup.py install
+  $ pip install python-pyhsm
 
-This requires the Debian/Ubuntu 'python-setuptools' package.
+or, on Debian based systems:
+
+  $ sudo apt-get install python-pyhsm
+
+=== Working with the source code repository
+To work with the source code repository, if you wish to build your own release
+or contribute pull requests, follow these steps to set up your environment. If
+you just wish to install the application use the source release packages. This
+project is developed on a Debian based system, other OSes may not be supported
+for development.
+
+==== Check out the code
+Run these commands to check out the source code:
+
+  git clone https://github.com/Yubico/python-pyhsm.git
+  cd python-pyhsm
+  git submodules init
+  git submodules update
