@@ -3,6 +3,7 @@
 
 import re
 import sys
+import os
 import time
 import unittest
 import pyhsm
@@ -13,6 +14,9 @@ import test_common
 from StringIO import StringIO
 from test_common import CfgPassphrase, AdminYubiKeys, HsmPassphrase, PrimaryAdminYubiKey
 
+
+@unittest.skipUnless('YHSM_ZAP' in os.environ,
+                     "Set env var YHSM_ZAP to zap the device.")
 class ConfigureYubiHSMforTest(test_common.YHSM_TestCase):
 
     def test_aaa_echo(self):
