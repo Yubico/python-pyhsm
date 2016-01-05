@@ -47,6 +47,7 @@ import serial
 import daemon
 import sqlalchemy
 from functools import partial
+from pyhsm.soft_hsm import SoftYHSM
 
 default_device = "/dev/ttyACM0"
 default_dir = "/var/cache/yubikey-ksm/aeads"
@@ -420,14 +421,23 @@ def main():
     args = parse_args()
     args_fixup(args)
 
-    try:
-        hsm = pyhsm.YHSM(device = args.device, debug = args.debug)
-    except serial.SerialException as e:
-        my_log_message(args.debug or args.verbose, syslog.LOG_ERR,
-                       'Failed opening YubiHSM device "%s" : %s' % (args.device, e))
-        sys.exit(1)
-
-    context.files_preserve = [hsm.get_raw_device()]
+    if os.path.isfile(args.device):
+        # Using a soft-HSM
+        try:
+            hsm = SoftYHSM(args.device, debug=args.debug)
+        except ValueError as e:
+            my_log_message(args.debug or args.verbose, syslog.LOG_ERR,
+                           'Failed opening soft YHSM "%s" : %s' % (args.device, e))
+            sys.exit(1)
+    else:
+        # Using a real HSM
+        try:
+            hsm = pyhsm.YHSM(device=args.device, debug=args.debug)
+            context.files_preserve = [hsm.get_raw_device()]
+        except serial.SerialException as e:
+            my_log_message(args.debug or args.verbose, syslog.LOG_ERR,
+                           'Failed opening YubiHSM device "%s" : %s' % (args.device, e))
+            sys.exit(1)
 
     if args.daemon:
         with context:

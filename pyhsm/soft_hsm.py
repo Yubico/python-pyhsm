@@ -6,20 +6,26 @@ functions for implementing parts of the HSMs machinery in software
 # See the file COPYING for licence statement.
 
 import struct
+import json
 
 __all__ = [
     # constants
     # functions
     'aesCCM',
+    'crc16',
     # classes
+    'SoftYHSM'
 ]
 
+import pyhsm
 import pyhsm.exception
 from Crypto.Cipher import AES
+
 
 def _xor_block(a, b):
     """ XOR two blocks of equal length. """
     return ''.join([chr(ord(x) ^ ord(y)) for (x, y) in zip(a, b)])
+
 
 class _ctr_counter():
     """
@@ -48,6 +54,7 @@ class _ctr_counter():
                            0, 0, 0, # rfu
                            val
                            )
+
 
 class _cbc_mac():
     def __init__(self, key, key_handle, nonce, data_len):
@@ -82,6 +89,7 @@ def _split_data(data, pos):
     a = data[:pos]
     b = data[pos:]
     return (a, b,)
+
 
 def aesCCM(key, key_handle, nonce, data, decrypt=False):
     """
@@ -118,3 +126,56 @@ def aesCCM(key, key_handle, nonce, data, decrypt=False):
     else:
         out.append(mac.get())
     return ''.join(out)
+
+
+def crc16(data):
+    """
+    Calculate an ISO13239 CRC checksum of the input buffer.
+    """
+    m_crc = 0xffff
+    for this in data:
+        m_crc ^= ord(this)
+        for _ in range(8):
+            j = m_crc & 1
+            m_crc >>= 1
+            if j:
+                m_crc ^= 0x8408
+    return m_crc
+
+
+class SoftYHSM(object):
+    def __init__(self, fname, debug=False):
+        self.debug = debug
+
+        with open(fname, 'r') as f:
+            keys = json.load(f)
+        if not isinstance(keys, dict):
+            raise ValueError('File does not contain object as root element.')
+        self.keys = {}
+        for kh, aes_key_hex in keys.items():
+            self.keys[int(kh)] = aes_key_hex.decode('hex')
+        if len(self.keys) == 0:
+            raise ValueError('File contains no key handles!')
+
+    def validate_aead_otp(self, public_id, otp, key_handle, aead):
+        aes_key = self.keys[key_handle]
+        cmd = pyhsm.validate_cmd.YHSM_Cmd_AEAD_Validate_OTP(
+            None, public_id, otp, key_handle, aead)
+
+        aead_pt = aesCCM(aes_key, cmd.key_handle, cmd.public_id, aead, True)
+        yk_key, yk_uid = aead_pt[:16], aead_pt[16:]
+
+        ecb_aes = AES.new(yk_key, AES.MODE_ECB)
+        otp_plain = ecb_aes.decrypt(otp)
+
+        uid = otp_plain[:6]
+        use_ctr, ts_low, ts_high, session_ctr, rnd, crc = struct.unpack(
+            '<HHBBHH', otp_plain[6:])
+
+        if uid == yk_uid and crc16(otp_plain) == 0xf0b8:
+            return pyhsm.validate_cmd.YHSM_ValidationResult(
+                cmd.public_id, use_ctr, session_ctr, ts_high, ts_low
+            )
+
+        raise pyhsm.exception.YHSM_CommandFailed(
+            pyhsm.defines.cmd2str(cmd.command), pyhsm.defines.YSM_OTP_INVALID)

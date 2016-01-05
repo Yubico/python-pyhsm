@@ -6,6 +6,7 @@ import sys
 import unittest
 import pyhsm
 import struct
+from pyhsm.soft_hsm import crc16
 
 # configuration parameters
 CfgPassphrase = ""
@@ -82,20 +83,6 @@ class YHSM_TestCase(unittest.TestCase):
             # don't bother with the session_ctr - test run 5 would mean we first have to
             # exhaust 4 * 256 session_ctr increases before the YubiHSM would pass our OTP
             use_ctr += 1
-
-def crc16(data):
-    """
-    Calculate an ISO13239 CRC checksum of the input buffer.
-    """
-    m_crc = 0xffff
-    for this in data:
-        m_crc ^= ord(this)
-        for _ in range(8):
-            j = m_crc & 1
-            m_crc >>= 1
-            if j:
-                m_crc ^= 0x8408
-    return m_crc
 
 class YubiKeyEmu():
     """
