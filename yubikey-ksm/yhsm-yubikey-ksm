@@ -41,12 +41,12 @@ import socket
 import argparse
 import syslog
 import re
-sys.path.append('Lib');
 import pyhsm
 import pyhsm.yubikey
 import serial
 import daemon
 import sqlalchemy
+from functools import partial
 
 default_device = "/dev/ttyACM0"
 default_dir = "/var/cache/yubikey-ksm/aeads"
@@ -59,8 +59,6 @@ default_db_url = None
 
 valid_input_from_key = re.compile('^[cbdefghijklnrtuv]{32,48}$')
 
-hsm = None
-args = None
 
 stats = { 'ok': 0,
     'invalid': 0,
@@ -68,6 +66,7 @@ stats = { 'ok': 0,
     'err': 0 }
 
 context = daemon.DaemonContext()
+
 
 class YHSM_KSMRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     """
@@ -78,11 +77,20 @@ class YHSM_KSMRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     to decrypt the OTP using the AEAD and return the result (counter and timestamp information).
     """
 
-    def __init__(self, *other_args, **kwargs):
+    def __init__(self, hsm, args, *other_args, **kwargs):
+        self.hsm = hsm
+        self.verbose = args.debug or args.verbose
+
+        if not os.path.isdir(args.aead_dir):
+            self.log_error("AEAD directory '%s' does not exist." %
+                           (args.aead_dir))
+            sys.exit(1)
+        self.aead_dir = args.aead_dir
+        self.serve_url = args.serve_url
+        self.stats_url = args.stats_url
+        self.key_handles = args.key_handles
         self.timeout = args.reqtimeout
-        if args.engine is not None:
-            self.engine = args.engine
-            self.aead_table = args.aead_table
+        self.engine = self.dbconnect(args.db_url)
         BaseHTTPServer.BaseHTTPRequestHandler.__init__(self, *other_args, **kwargs)
 
     def do_GET(self):
@@ -90,36 +98,120 @@ class YHSM_KSMRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         # Example session:
         # in  : GET /wsapi/decrypt?otp=ftftftccccdvvbfcfduvvcubikngtchlubtutucrld HTTP/1.0
         # out : OK counter=0004 low=f585 high=3e use=03
-        if self.path.startswith(args.serve_url):
-            from_key = self.path[len(args.serve_url):]
+        if self.path.startswith(self.serve_url):
+            from_key = self.path[len(self.serve_url):]
 
-            val_res = decrypt_yubikey_otp(self, from_key)
+            val_res = self.decrypt_yubikey_otp(from_key)
 
             self.send_response(200)
             self.send_header('Content-type', 'text/html')
             self.end_headers()
             self.wfile.write(val_res)
             self.wfile.write("\n")
-        elif args.stats_url and self.path == args.stats_url:
+        elif self.stats_url and self.path == self.stats_url:
             self.send_response(200)
             self.send_header('Content-type', 'text/html')
             self.end_headers()
             for key in stats:
                 self.wfile.write("%s %d\n" % (key, stats[key]))
         else:
-            self.log_error ("Bad URL '%s' - I'm serving '%s' (responding 403)" % (self.path, args.serve_url))
+            self.log_error("Bad URL '%s' - I'm serving '%s' (responding 403)" % (self.path, self.serve_url))
             self.send_response(403, 'Forbidden')
             self.end_headers()
+
+    def dbconnect(self, db_url):
+        """
+        Connect to a database
+        """
+
+        if not db_url:
+            return None
+
+        try:
+            engine = sqlalchemy.create_engine(self.db_url)
+            metadata = sqlalchemy.MetaData()
+            self.aead_table = sqlalchemy.Table('aead_table', metadata, autoload=True, autoload_with=engine)
+            return engine
+        except:
+            self.log_error("Could not connect to database: %s" % (db_url))
+            sys.exit(1)
+
+    def decrypt_yubikey_otp(self, from_key):
+        """
+        Try to decrypt a YubiKey OTP.
+
+        Returns a string starting with either 'OK' or 'ERR' :
+
+        'OK counter=ab12 low=dd34 high=2a use=0a'
+
+        'ERR Unknown public_id'
+
+        on YubiHSM errors (or bad OTP), only 'ERR' is returned.
+        """
+        if not re.match(valid_input_from_key, from_key):
+            self.log_error("IN: %s, Invalid OTP" % (from_key))
+            if self.stats_url:
+                stats['invalid'] += 1
+            return "ERR Invalid OTP"
+
+        public_id, _otp = pyhsm.yubikey.split_id_otp(from_key)
+
+        aead_kh_int = None
+        fn_list = []
+
+        if self.engine is not None:
+            #loads an AEAD from the DB with the specific public_id
+            aead = self.dbload(public_id)
+            if(aead):
+                aead_kh_int = aead.key_handle
+        else :
+            for kh, kh_int in self.key_handles:
+                aead = pyhsm.aead_cmd.YHSM_GeneratedAEAD(None, kh_int, '')
+                filename = aead_filename(self.aead_dir, kh, public_id)
+                fn_list.append(filename)
+                try:
+                    aead.load(filename)
+                    if not aead.nonce:
+                        aead.nonce = pyhsm.yubikey.modhex_decode(public_id).decode('hex')
+                    aead_kh_int = kh_int
+                    break
+                except IOError:
+                    continue
+
+        if aead_kh_int == None:
+            self.log_error("IN: %s, Found no (readable) AEAD for public_id %s" % (from_key, public_id))
+            self.log_message("Tried to load AEAD from : %s" % (fn_list))
+            if self.stats_url:
+                stats['no_aead'] += 1
+            return "ERR Unknown public_id"
+
+        try:
+            res = pyhsm.yubikey.validate_yubikey_with_aead(self.hsm, from_key,
+                                                           aead, aead_kh_int)
+            # XXX double-check public_id in res, in case BaseHTTPServer suddenly becomes multi-threaded
+            # XXX fix use vs session counter confusion
+            val_res = "OK counter=%04x low=%04x high=%02x use=%02x" % \
+                (res.use_ctr, res.ts_low, res.ts_high, res.session_ctr)
+            if self.stats_url:
+                stats['ok'] += 1
+        except pyhsm.exception.YHSM_Error as e:
+            self.log_error ("IN: %s, Validate FAILED: %s" % (from_key, str(e)))
+            val_res = "ERR"
+            if self.stats_url:
+                stats['err'] += 1
+
+        self.log_message("SUCCESS OTP %s PT hsm %s", from_key, val_res)
+        return val_res
 
     def log_error(self, fmt, *fmt_args):
         """ Log to syslog. """
         msg = self.my_address_string() + " - - " + fmt % fmt_args
-        my_log_message(args, syslog.LOG_ERR, msg)
+        my_log_message(self.verbose, syslog.LOG_ERR, msg)
 
     def log_message(self, fmt, *fmt_args):
         """ Log to syslog. """
         msg = self.my_address_string() + " - - " + fmt % fmt_args
-        my_log_message(args, syslog.LOG_INFO, msg)
+        my_log_message(self.verbose, syslog.LOG_INFO, msg)
 
     def my_address_string(self):
         """ For logging client host without resolving. """
@@ -136,13 +228,13 @@ class YHSM_KSMRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
             for row in result:
                 kh_int = row['keyhandle']
-                aead = pyhsm.aead_cmd.YHSM_GeneratedAEAD(None, kh_int, '');
+                aead = pyhsm.aead_cmd.YHSM_GeneratedAEAD(None, kh_int, '')
                 aead.data = row['aead']
                 aead.nonce = row['nonce']
 
             trans.commit()
 
-        except Exception, e:
+        except Exception as e:
             self.log_error("No AEAD in DB for public_id %s (%s)" % (public_id, str(e)))
             aead = None
 
@@ -151,6 +243,7 @@ class YHSM_KSMRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
         connection.close()
         return aead
+
 
 class YHSM_KSMServer(BaseHTTPServer.HTTPServer):
     """
@@ -161,87 +254,6 @@ class YHSM_KSMServer(BaseHTTPServer.HTTPServer):
             self.address_family = socket.AF_INET6
         BaseHTTPServer.HTTPServer.__init__(self, server_address, req_handler)
 
-def dbconnect(my_args):
-    """
-    Connect to a database
-    """
-
-    engine = None
-    try:
-        engine = sqlalchemy.create_engine(my_args.db_url)
-        metadata = sqlalchemy.MetaData()
-        aead_table = sqlalchemy.Table('aead_table', metadata, autoload=True, autoload_with=engine)
-    except:
-        my_log_message(my_args, syslog.LOG_ERR, "Could not connect to database: %s" % (my_args.db_url))
-        sys.exit(1)
-
-    return (engine, aead_table)
-
-def decrypt_yubikey_otp(self, from_key):
-    """
-    Try to decrypt a YubiKey OTP.
-
-    Returns a string starting with either 'OK' or 'ERR' :
-
-       'OK counter=ab12 low=dd34 high=2a use=0a'
-
-       'ERR Unknown public_id'
-
-    on YubiHSM errors (or bad OTP), only 'ERR' is returned.
-    """
-    if not re.match(valid_input_from_key, from_key):
-        self.log_error("IN: %s, Invalid OTP" % (from_key))
-        if args.stats_url:
-            stats['invalid'] += 1
-        return "ERR Invalid OTP"
-
-    public_id, _otp = pyhsm.yubikey.split_id_otp(from_key)
-
-    aead_kh_int = None
-    fn_list = []
-
-    if args.db_url is not None:
-        #loads an AEAD from the DB with the specific public_id
-        aead = self.dbload(public_id)
-        if(aead):
-            aead_kh_int = aead.key_handle
-    else :
-        for kh, kh_int in args.key_handles:
-            aead = pyhsm.aead_cmd.YHSM_GeneratedAEAD(None, kh_int, '')
-            filename = aead_filename(args.aead_dir, kh, public_id)
-            fn_list.append(filename)
-            try:
-                aead.load(filename)
-                if not aead.nonce:
-                    aead.nonce = pyhsm.yubikey.modhex_decode(public_id).decode('hex')
-                aead_kh_int = kh_int
-                break
-            except IOError:
-                continue
-
-    if aead_kh_int == None:
-        self.log_error("IN: %s, Found no (readable) AEAD for public_id %s" % (from_key, public_id))
-        self.log_message("Tried to load AEAD from : %s" % (fn_list))
-        if args.stats_url:
-            stats['no_aead'] += 1
-        return "ERR Unknown public_id"
-
-    try:
-        res = pyhsm.yubikey.validate_yubikey_with_aead(hsm, from_key, aead, aead_kh_int)
-        # XXX double-check public_id in res, in case BaseHTTPServer suddenly becomes multi-threaded
-        # XXX fix use vs session counter confusion
-        val_res = "OK counter=%04x low=%04x high=%02x use=%02x" % \
-            (res.use_ctr, res.ts_low, res.ts_high, res.session_ctr)
-        if args.stats_url:
-            stats['ok'] += 1
-    except pyhsm.exception.YHSM_Error, e:
-        self.log_error ("IN: %s, Validate FAILED: %s" % (from_key, str(e)))
-        val_res = "ERR"
-        if args.stats_url:
-            stats['err'] += 1
-
-    self.log_message("SUCCESS OTP %s PT hsm %s", from_key, val_res)
-    return val_res
 
 def aead_filename(aead_dir, key_handle, public_id):
     """
@@ -250,13 +262,14 @@ def aead_filename(aead_dir, key_handle, public_id):
     parts = [aead_dir, key_handle] + pyhsm.util.group(public_id, 2) + [public_id]
     return os.path.join(*parts)
 
+
 def parse_args():
     """
     Parse the command line arguments
     """
-    parser = argparse.ArgumentParser(description = "Decrypt YubiKey OTPs using YubiHSM",
-                                     add_help = True,
-                                     formatter_class = argparse.ArgumentDefaultsHelpFormatter
+    parser = argparse.ArgumentParser(description="Decrypt YubiKey OTPs using YubiHSM",
+                                     add_help=True,
+                                     formatter_class=argparse.ArgumentDefaultsHelpFormatter
                                      )
     parser.add_argument('-D', '--device',
                         dest='device',
@@ -344,28 +357,19 @@ def parse_args():
 
     return parser.parse_args()
 
-def args_fixup(my_args):
+
+def args_fixup(args):
     """
     Additional checks/cleanups of parsed arguments.
     """
-    if not os.path.isdir(my_args.aead_dir):
-        my_log_message(my_args, syslog.LOG_ERR, "AEAD directory '%s' does not exist." % (my_args.aead_dir))
-        sys.exit(1)
-
     # cache key_handle_to_int of all key handles, turning args.key_handles into
     # a list of tuples with both original value and integer
     res = []
-    for kh in my_args.key_handles:
+    for kh in args.key_handles:
         kh_int = pyhsm.util.key_handle_to_int(kh)
         res.append((kh, kh_int,))
-    my_args.key_handles = res
+    args.key_handles = res
 
-    #evaluate database url and connect to the database
-    #execute only if in database mode
-    if my_args.db_url is not None:
-        (my_args.engine,my_args.aead_table) = dbconnect(my_args)
-    else:
-        my_args.engine = None
 
 def write_pid_file(fn):
     """ Create a file with our PID. """
@@ -378,26 +382,31 @@ def write_pid_file(fn):
     f.write("%s\n" % (os.getpid()))
     f.close()
 
-def run(args):
+
+def run(hsm, args):
     """
     Start a BaseHTTPServer.HTTPServer and serve requests forever.
     """
 
     write_pid_file(args.pid_file)
-    
+
     server_address = (args.listen_addr, args.listen_port)
-    httpd = YHSM_KSMServer(server_address, YHSM_KSMRequestHandler)
-    my_log_message(args, syslog.LOG_INFO, "Serving requests to 'http://%s:%s%s' with key handle(s) %s (YubiHSM: '%s', AEADs in '%s', DB in '%s')" \
-                       % (args.listen_addr, args.listen_port, args.serve_url, args.key_handles, args.device, args.aead_dir, args.db_url))
+    httpd = YHSM_KSMServer(server_address,
+                           partial(YHSM_KSMRequestHandler, hsm, args))
+    my_log_message(args.debug or args.verbose, syslog.LOG_INFO,
+                   "Serving requests to 'http://%s:%s%s' with key handle(s) %s (YubiHSM: '%s', AEADs in '%s', DB in '%s')"
+                   % (args.listen_addr, args.listen_port, args.serve_url, args.key_handles, args.device, args.aead_dir, args.db_url))
     httpd.serve_forever()
 
-def my_log_message(my_args, prio, msg):
+
+def my_log_message(verbose, prio, msg):
     """
     Log to syslog, and possibly also to stderr.
     """
     syslog.syslog(prio, msg)
-    if my_args.debug or my_args.verbose or prio == syslog.LOG_ERR:
+    if verbose or prio == syslog.LOG_ERR:
         sys.stderr.write("%s\n" % (msg))
+
 
 def main():
     """
@@ -408,29 +417,29 @@ def main():
         my_name = "yhsm-yubikey-ksm"
     syslog.openlog(my_name, syslog.LOG_PID, syslog.LOG_LOCAL0)
 
-    global args
     args = parse_args()
     args_fixup(args)
 
-    global hsm
     try:
         hsm = pyhsm.YHSM(device = args.device, debug = args.debug)
-    except serial.SerialException, e:
-        my_log_message(args, syslog.LOG_ERR, 'Failed opening YubiHSM device "%s" : %s' %(args.device, e))
+    except serial.SerialException as e:
+        my_log_message(args.debug or args.verbose, syslog.LOG_ERR,
+                       'Failed opening YubiHSM device "%s" : %s' % (args.device, e))
         sys.exit(1)
 
     context.files_preserve = [hsm.get_raw_device()]
 
     if args.daemon:
         with context:
-            run(args)
+            run(hsm, args)
     else:
-         try:
-             run(args)
-         except KeyboardInterrupt:
-             print ""
-             print "Shutting down"
-             print ""
+        try:
+            run(hsm, args)
+        except KeyboardInterrupt:
+            print ""
+            print "Shutting down"
+            print ""
+
 
 if __name__ == '__main__':
     main()
