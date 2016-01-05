@@ -70,7 +70,6 @@ import sqlite3
 import argparse
 import urlparse
 import BaseHTTPServer
-sys.path.append('Lib')
 import pyhsm
 import pyhsm.yubikey
 

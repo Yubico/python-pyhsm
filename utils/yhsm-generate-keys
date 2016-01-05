@@ -34,7 +34,6 @@ Example :
 import os
 import sys
 import argparse
-sys.path.append('Lib')
 import pyhsm
 import pyhsm.yubikey
 

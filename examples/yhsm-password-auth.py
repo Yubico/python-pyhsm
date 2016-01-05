@@ -38,7 +38,6 @@
 #
 
 import sys
-sys.path.append('Lib');
 import pyhsm
 import argparse
 import getpass

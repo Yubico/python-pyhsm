@@ -15,7 +15,6 @@ import re
 import sys
 import struct
 import argparse
-sys.path.append('Lib');
 import pyhsm
 import pyhsm.yubikey
 

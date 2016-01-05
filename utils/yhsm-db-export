@@ -19,7 +19,6 @@ import sqlalchemy
 
 from os.path import abspath
 
-sys.path.append('Lib')
 from pyhsm.util import key_handle_to_int
 import pyhsm.aead_cmd
 

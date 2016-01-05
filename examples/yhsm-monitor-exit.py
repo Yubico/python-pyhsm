@@ -14,7 +14,6 @@
 #
 
 import sys
-sys.path.append('Lib');
 import pyhsm
 
 device = "/dev/ttyACM0"
