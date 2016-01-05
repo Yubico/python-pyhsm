@@ -144,21 +144,37 @@ def crc16(data):
 
 
 class SoftYHSM(object):
-    def __init__(self, fname, debug=False):
+    def __init__(self, keys, debug=False):
         self.debug = debug
-
-        with open(fname, 'r') as f:
-            keys = json.load(f)
-        if not isinstance(keys, dict):
-            raise ValueError('File does not contain object as root element.')
-        self.keys = {}
-        for kh, aes_key_hex in keys.items():
-            self.keys[int(kh)] = aes_key_hex.decode('hex')
+        self.keys = keys
         if len(self.keys) == 0:
-            raise ValueError('File contains no key handles!')
+            raise ValueError('Data contains no key handles!')
+
+    @classmethod
+    def from_file(cls, filename, debug=False):
+        with open(filename, 'r') as f:
+            return cls.from_json(f.read(), debug)
+
+    @classmethod
+    def from_json(cls, data, debug=False):
+        data = json.loads(data)
+        if not isinstance(data, dict):
+            raise ValueError('Data does not contain object as root element.')
+        keys = {}
+        for kh, aes_key_hex in data.items():
+            keys[int(kh)] = aes_key_hex.decode('hex')
+        return cls(keys, debug)
+
+    def _get_key(self, kh, cmd):
+        try:
+            return self.keys[kh]
+        except KeyError:
+            raise pyhsm.exception.YHSM_CommandFailed(
+                pyhsm.defines.cmd2str(cmd),
+                pyhsm.defines.YSM_KEY_HANDLE_INVALID)
 
     def validate_aead_otp(self, public_id, otp, key_handle, aead):
-        aes_key = self.keys[key_handle]
+        aes_key = self._get_key(key_handle, pyhsm.defines.YSM_AEAD_YUBIKEY_OTP_DECODE)
         cmd = pyhsm.validate_cmd.YHSM_Cmd_AEAD_Validate_OTP(
             None, public_id, otp, key_handle, aead)
 
@@ -179,3 +195,12 @@ class SoftYHSM(object):
 
         raise pyhsm.exception.YHSM_CommandFailed(
             pyhsm.defines.cmd2str(cmd.command), pyhsm.defines.YSM_OTP_INVALID)
+
+    def load_secret(self, secret):
+        self._secret = secret.pack()
+
+    def generate_aead(self, nonce, key_handle):
+        aes_key = self._get_key(key_handle, pyhsm.defines.YSM_BUFFER_AEAD_GENERATE)
+        ct = pyhsm.soft_hsm.aesCCM(aes_key, key_handle, nonce, self._secret,
+                                   False)
+        return pyhsm.aead_cmd.YHSM_GeneratedAEAD(nonce, key_handle, ct)

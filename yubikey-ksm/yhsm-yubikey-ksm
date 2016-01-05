@@ -424,7 +424,7 @@ def main():
     if os.path.isfile(args.device):
         # Using a soft-HSM
         try:
-            hsm = SoftYHSM(args.device, debug=args.debug)
+            hsm = SoftYHSM.from_file(args.device, debug=args.debug)
         except ValueError as e:
             my_log_message(args.debug or args.verbose, syslog.LOG_ERR,
                            'Failed opening soft YHSM "%s" : %s' % (args.device, e))
