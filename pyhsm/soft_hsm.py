@@ -7,6 +7,7 @@ functions for implementing parts of the HSMs machinery in software
 
 import struct
 import json
+import os
 
 __all__ = [
     # constants
@@ -145,6 +146,7 @@ def crc16(data):
 
 class SoftYHSM(object):
     def __init__(self, keys, debug=False):
+        self._buffer = ''
         self.debug = debug
         self.keys = keys
         if len(self.keys) == 0:
@@ -197,10 +199,13 @@ class SoftYHSM(object):
             pyhsm.defines.cmd2str(cmd.command), pyhsm.defines.YSM_OTP_INVALID)
 
     def load_secret(self, secret):
-        self._secret = secret.pack()
+        self._buffer = secret.pack()
+
+    def load_random(self, num_bytes, offset = 0):
+        self._buffer = self._buffer[:offset] + os.urandom(num_bytes)
 
     def generate_aead(self, nonce, key_handle):
         aes_key = self._get_key(key_handle, pyhsm.defines.YSM_BUFFER_AEAD_GENERATE)
-        ct = pyhsm.soft_hsm.aesCCM(aes_key, key_handle, nonce, self._secret,
+        ct = pyhsm.soft_hsm.aesCCM(aes_key, key_handle, nonce, self._buffer,
                                    False)
         return pyhsm.aead_cmd.YHSM_GeneratedAEAD(nonce, key_handle, ct)

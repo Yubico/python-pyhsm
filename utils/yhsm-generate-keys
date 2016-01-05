@@ -203,7 +203,10 @@ def main():
     print "YHSM device		: %s" % (args.device)
     print ""
 
-    hsm = pyhsm.YHSM(device = args.device)
+    if os.path.isfile(args.device):
+        hsm = pyhsm.soft_hsm.SoftYHSM.from_file(args.device)
+    else:
+        hsm = pyhsm.YHSM(device=args.device)
 
     gen_keys(hsm, args)
 
