@@ -78,7 +78,7 @@ class YHSM_KSMRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     to decrypt the OTP using the AEAD and return the result (counter and timestamp information).
     """
 
-    def __init__(self, hsm, args, *other_args, **kwargs):
+    def __init__(self, hsm, db, args, *other_args, **kwargs):
         self.hsm = hsm
         self.verbose = args.debug or args.verbose
 
@@ -91,7 +91,7 @@ class YHSM_KSMRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         self.stats_url = args.stats_url
         self.key_handles = args.key_handles
         self.timeout = args.reqtimeout
-        self.engine = self.dbconnect(args.db_url)
+        self.db = db
         BaseHTTPServer.BaseHTTPRequestHandler.__init__(self, *other_args, **kwargs)
 
     def do_GET(self):
@@ -120,23 +120,6 @@ class YHSM_KSMRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             self.send_response(403, 'Forbidden')
             self.end_headers()
 
-    def dbconnect(self, db_url):
-        """
-        Connect to a database
-        """
-
-        if not db_url:
-            return None
-
-        try:
-            engine = sqlalchemy.create_engine(db_url)
-            metadata = sqlalchemy.MetaData()
-            self.aead_table = sqlalchemy.Table('aead_table', metadata, autoload=True, autoload_with=engine)
-            return engine
-        except:
-            self.log_error("Could not connect to database: %s" % (db_url))
-            sys.exit(1)
-
     def decrypt_yubikey_otp(self, from_key):
         """
         Try to decrypt a YubiKey OTP.
@@ -160,9 +143,12 @@ class YHSM_KSMRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         aead_kh_int = None
         fn_list = []
 
-        if self.engine is not None:
+        if self.db is not None:
             #loads an AEAD from the DB with the specific public_id
-            aead = self.dbload(public_id)
+            try:
+                aead = self.db.load_aead(public_id)
+            except Exception as e:
+                self.log_error("No AEAD in DB for public_id %s (%s)" % (public_id, str(e)))
             if(aead):
                 aead_kh_int = aead.key_handle
         else :
@@ -218,11 +204,18 @@ class YHSM_KSMRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         """ For logging client host without resolving. """
         return getattr(self, 'client_address', ('', None))[0]
 
-    def dbload(self, public_id):
+
+class AEAD_Database(object):
+    def __init__(self, db_url):
+        self.engine = sqlalchemy.create_engine(db_url)
+        metadata = sqlalchemy.MetaData()
+        self.aead_table = sqlalchemy.Table('aead_table', metadata, autoload=True, autoload_with=self.engine)
+
+    def load_aead(self, public_id):
         """ Loads AEAD from the specified database. """
         connection = self.engine.connect()
         trans = connection.begin()
-        aead = None
+
         try:
             s = sqlalchemy.select([self.aead_table]).where(self.aead_table.c.public_id == public_id)
             result = connection.execute(s)
@@ -232,18 +225,12 @@ class YHSM_KSMRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                 aead = pyhsm.aead_cmd.YHSM_GeneratedAEAD(None, kh_int, '')
                 aead.data = row['aead']
                 aead.nonce = row['nonce']
-
-            trans.commit()
-
-        except Exception as e:
-            self.log_error("No AEAD in DB for public_id %s (%s)" % (public_id, str(e)))
-            aead = None
-
-        if aead is None:
+            return aead
+        except Exception:
             trans.rollback()
-
-        connection.close()
-        return aead
+            raise
+        finally:
+            connection.close()
 
 
 class YHSM_KSMServer(BaseHTTPServer.HTTPServer):
@@ -384,7 +371,7 @@ def write_pid_file(fn):
     f.close()
 
 
-def run(hsm, args):
+def run(hsm, db, args):
     """
     Start a BaseHTTPServer.HTTPServer and serve requests forever.
     """
@@ -393,7 +380,7 @@ def run(hsm, args):
 
     server_address = (args.listen_addr, args.listen_port)
     httpd = YHSM_KSMServer(server_address,
-                           partial(YHSM_KSMRequestHandler, hsm, args))
+                           partial(YHSM_KSMRequestHandler, hsm, db, args))
     my_log_message(args.debug or args.verbose, syslog.LOG_INFO,
                    "Serving requests to 'http://%s:%s%s' with key handle(s) %s (YubiHSM: '%s', AEADs in '%s', DB in '%s')"
                    % (args.listen_addr, args.listen_port, args.serve_url, args.key_handles, args.device, args.aead_dir, args.db_url))
@@ -421,6 +408,15 @@ def main():
     args = parse_args()
     args_fixup(args)
 
+    db = None
+    if args.db_url:
+        try:
+            db = AEAD_Database(args.db_url)
+        except Exception as e:
+            my_log_message(args.debug or args.verbose, syslog.LOG_ERR,
+                           'Could not connect to database "%s" : %s' % (args.db_url, e))
+            sys.exit(1)
+
     if os.path.isfile(args.device):
         # Using a soft-HSM
         try:
@@ -441,10 +437,10 @@ def main():
 
     if args.daemon:
         with context:
-            run(hsm, args)
+            run(hsm, db, args)
     else:
         try:
-            run(hsm, args)
+            run(hsm, db, args)
         except KeyboardInterrupt:
             print ""
             print "Shutting down"
