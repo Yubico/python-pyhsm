@@ -129,7 +129,7 @@ class YHSM_KSMRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             return None
 
         try:
-            engine = sqlalchemy.create_engine(self.db_url)
+            engine = sqlalchemy.create_engine(db_url)
             metadata = sqlalchemy.MetaData()
             self.aead_table = sqlalchemy.Table('aead_table', metadata, autoload=True, autoload_with=engine)
             return engine
@@ -216,7 +216,7 @@ class YHSM_KSMRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
     def my_address_string(self):
         """ For logging client host without resolving. """
-        return self.client_address[0]
+        return getattr(self, 'client_address', ('', None))[0]
 
     def dbload(self, public_id):
         """ Loads AEAD from the specified database. """
