@@ -97,7 +97,9 @@ and then use the import utility /usr/sbin/yhsm-import-keys to create AEAD's for
 all YubiKey's listed in the text file.
 
 === Running without a hardware YubiHSM
+
 _Available in pyhsm 1.0.4m and later_
+
 It's also possible to run the yubikey-ksm server without a physical YubiHSM.
 This can be useful for testing or staging purposes, or other situations where
 is it inpractical or infeasable to use a real YubiHSM.
