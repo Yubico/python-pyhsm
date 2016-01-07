@@ -9,7 +9,7 @@ by the "public id" part of the OTP, and return the counter values of the
 OTP to the querying validation server, which decides if the OTP is valid
 or not.
 
-The application "yubikey-ksm" bundled with pyhsm is a KSM backend using
+The application "yhsm-yubikey-ksm" bundled with pyhsm is a KSM backend using
 the YubiHSM to further protect the AES keys.
 
 The interface exposed to the validation servers is a simple REST web
@@ -95,3 +95,34 @@ export all the secrets into a text file of this format :
 
 and then use the import utility /usr/sbin/yhsm-import-keys to create AEAD's for
 all YubiKey's listed in the text file.
+
+=== Running without a hardware YubiHSM
+_Available in pyhsm 1.0.4m and later_
+It's also possible to run the yubikey-ksm server without a physical YubiHSM.
+This can be useful for testing or staging purposes, or other situations where
+is it inpractical or infeasable to use a real YubiHSM.
+
+NOTE: When running completely in software the AES keys will be stored in a file
+on disk, and can be compromised in the event of an attack.
+
+To run without a physical YubiHSM, specify a properly formatted JSON file as
+the device when invoking the yhsm-yubikey-ksm executable (this also works for
+yhsm-import-keys as well as yhsm-generate-keys). The file should contain the
+numeric key-handles associated with the corresponding AES keys, as follows:
+
+....
+{
+  "1": "0000000100020003000400050006000700080009000a000b000c000d000e000f",
+  "2": "0000111122223333444455556666777788889999aaaabbbbccccddddeeeeffff"
+}
+....
+
+Keys must be strings that parse into integers corresponding with the numeric
+key handles used in the YubiHSM, and values must be the hex representation of
+the AES key for each key handle.
+
+For example:
+[source, sh]
+----
+$ yhsm-yubikey-ksm -D /path/to/my/secrets.json  [other args here...]
+----
