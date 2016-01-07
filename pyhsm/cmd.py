@@ -154,6 +154,7 @@ def reset(stick):
     res = YHSM_Cmd(stick, pyhsm.defines.YSM_NULL, payload = nulls).execute(read_response = False)
     unlock = stick.acquire()
     try:
+        stick.drain()
         stick.flush()
     finally:
         unlock()
