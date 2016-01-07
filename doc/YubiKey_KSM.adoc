@@ -98,7 +98,7 @@ all YubiKey's listed in the text file.
 
 === Running without a hardware YubiHSM
 
-_Available in pyhsm 1.0.4m and later_
+_Available in pyhsm 1.0.4m and later._
 
 It's also possible to run the yubikey-ksm server without a physical YubiHSM.
 This can be useful for testing or staging purposes, or other situations where
