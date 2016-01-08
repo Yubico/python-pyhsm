@@ -41,7 +41,7 @@ Z:\tmp\pyhsm>c:\Python26\python.exe
 Python 2.6.6 (r266:84297, Aug 24 2010, 18:46:32) [MSC v.1500 32 bit (Intel)] on win32
 Type "help", "copyright", "credits" or "license" for more information.
 >>> import sys
->>> sys.path.append("Z:\\tmp\\pyhsm\\Lib")
+>>> sys.path.append("Z:\\tmp\\pyhsm")
 >>> import pyhsm
 >>> hsm = pyhsm.YHSM(device = "COM3")
 >>> hsm.info()
