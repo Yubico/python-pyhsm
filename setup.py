@@ -26,15 +26,28 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 
-from pyhsm.yubicommon.setup import setup
+from setuptools import setup, find_packages
+import re
+
+VERSION_PATTERN = re.compile(r"(?m)^__version__\s*=\s*['\"](.+)['\"]$")
+
+
+def get_version():
+    """Return the current version as defined by yubico/yubico_version.py."""
+
+    with open('pyhsm/__init__.py', 'r') as f:
+        match = VERSION_PATTERN.search(f.read())
+        return match.group(1)
 
 setup(
     name='pyhsm',
+    version=get_version(),
     description='Python code for talking to a YubiHSM',
     author='Dain Nilsson',
     author_email='dain@yubico.com',
     url='https://github.com/Yubico/python-pyhsm',
     license='BSD 2 clause',
+    packages=find_packages(),
     test_suite='test',
     tests_require=[],
     install_requires=[

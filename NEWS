@@ -1,3 +1,6 @@
+* Version 1.1.1 (released 2016-01-08)
+ ** Fixup release.
+
 * Version 1.1.0 (released 2016-01-08)
  ** Restructured the repository and build process.
  ** Use Semantic Versioning (semver.org).
