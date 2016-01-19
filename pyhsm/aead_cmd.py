@@ -26,6 +26,8 @@ import pyhsm.exception
 from pyhsm.cmd import YHSM_Cmd
 
 YHSM_AEAD_File_Marker = 'YubiHSM AEAD\n'
+# AEADs generated on Windows using pyhsm <= 1.1.1 will have CRLF instead of LF.
+YHSM_AEAD_CRLF_File_Marker = YHSM_AEAD_File_Marker[:-1] + '\r\n'
 
 class YHSM_AEAD_Cmd(YHSM_Cmd):
     """
@@ -216,7 +218,7 @@ class YHSM_GeneratedAEAD():
         @param filename: File to create/overwrite
         @type filename: string
         """
-        aead_f = open(filename, "w")
+        aead_f = open(filename, "wb")
         fmt = "< B I %is %is" % (pyhsm.defines.YSM_AEAD_NONCE_SIZE, len(self.data))
         version = 1
         packed = struct.pack(fmt, version, self.key_handle, self.nonce, self.data)
@@ -230,8 +232,10 @@ class YHSM_GeneratedAEAD():
         @param filename: File to read AEAD from
         @type filename: string
         """
-        aead_f = open(filename, "r")
+        aead_f = open(filename, "rb")
         buf = aead_f.read(1024)
+        if buf.startswith(YHSM_AEAD_CRLF_File_Marker):
+            buf = YHSM_AEAD_File_Marker + buf[len(YHSM_AEAD_CRLF_File_Marker):]
         if buf.startswith(YHSM_AEAD_File_Marker):
             if buf[len(YHSM_AEAD_File_Marker)] == chr(1):
                 # version 1 format

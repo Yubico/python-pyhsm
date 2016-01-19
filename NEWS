@@ -1,4 +1,6 @@
 * Version 1.1.2 (unreleased)
+ ** Fix AEAD generation on Windows by writing in binary mode.
+ ** Support AEADs generated on Windows using pyhsm <= 1.1.1.
 
 * Version 1.1.1 (released 2016-01-08)
  ** Fixup release.
