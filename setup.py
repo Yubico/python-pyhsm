@@ -47,7 +47,7 @@ setup(
     author_email='dain@yubico.com',
     url='https://github.com/Yubico/python-pyhsm',
     license='BSD 2 clause',
-    packages=find_packages(),
+    packages=find_packages(exclude=['test']),
     test_suite='test',
     tests_require=[],
     install_requires=[
