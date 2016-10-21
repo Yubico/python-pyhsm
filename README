@@ -96,5 +96,3 @@ Run these commands to check out the source code:
 
   git clone https://github.com/Yubico/python-pyhsm.git
   cd python-pyhsm
-  git submodules init
-  git submodules update
