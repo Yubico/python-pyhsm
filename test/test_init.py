@@ -36,7 +36,8 @@ test_modules = [test_aead,
                 ]
 
 # special, should not be addded to test_modules
-import test_configure
+import configure_hsm
+
 
 def suite():
     """
@@ -49,14 +50,12 @@ def suite():
     in DEBUG mode.
     """
 
-    global test_modules
-
     # Check if we have a YubiHSM present, and start with locking it's keystore
     # XXX produce a better error message than 'error: None' when initializing fails
     hsm = pyhsm.YHSM(device = os.getenv('YHSM_DEVICE', '/dev/ttyACM0'))
     try:
         hsm.unlock("BADPASSPHRASE99")
-    except pyhsm.exception.YHSM_CommandFailed, e:
+    except pyhsm.exception.YHSM_CommandFailed as e:
         if hsm.version.have_key_store_decrypt():
             if e.status != pyhsm.defines.YSM_MISMATCH:
                 raise
@@ -65,14 +64,17 @@ def suite():
                     e.status != pyhsm.defines.YSM_FUNCTION_DISABLED:
                 raise
 
-    zap = []
-    if 'YHSM_ZAP' in os.environ:
-        if os.environ['YHSM_ZAP']:
-            zap = [unittest.TestLoader().loadTestsFromModule(test_configure)]
+    tests = []
+    if os.environ.get('YHSM_ZAP'):
+        tests.append(unittest.TestLoader().loadTestsFromModule(configure_hsm))
+    tests += [unittest.TestLoader().loadTestsFromModule(this) for this in test_modules]
 
-    l = zap + [unittest.TestLoader().loadTestsFromModule(this) for this in test_modules]
+    return unittest.TestSuite(tests)
 
-    return unittest.TestSuite(l)
+
+def load_tests(loader, rests, pattern):
+    return suite()
+
 
 if __name__ == '__main__':
     unittest.main()

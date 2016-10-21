@@ -48,7 +48,7 @@ setup(
     url='https://github.com/Yubico/python-pyhsm',
     license='BSD 2 clause',
     packages=find_packages(exclude=['test']),
-    test_suite='test',
+    test_suite='test.test_init',
     tests_require=[],
     install_requires=[
         'pyserial >= 2.3',
