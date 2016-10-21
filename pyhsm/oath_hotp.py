@@ -5,18 +5,17 @@ helper functions to work with OATH HOTP (RFC4226) OTP's and YubiHSM
 # Copyright (c) 2011 Yubico AB
 # See the file COPYING for licence statement.
 
-import string
 import struct
+import pyhsm.exception
+import pyhsm.aead_cmd
+
 
 __all__ = [
     # constants
     # functions
-    'validate_oath_hotp_with_aead',
+    'search_for_oath_code',
     # classes
  ]
-
-import pyhsm.exception
-import pyhsm.aead_cmd
 
 def search_for_oath_code(hsm, key_handle, nonce, aead, counter, user_code, look_ahead=1):
     """

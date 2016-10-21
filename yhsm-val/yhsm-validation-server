@@ -81,7 +81,6 @@ import re
 import os
 import sys
 import time
-import datetime
 import hmac
 import syslog
 import serial
@@ -103,6 +102,7 @@ default_db_file = "/var/yubico/yhsm-validation-server.db"
 default_clients_file = "/var/yubico/yhsm-validation-server_client-id.conf"
 default_hotp_window = 5
 default_totp_interval = 30
+default_totp_tolerance = 5
 default_pid_file = None
 
 ykotp_valid_input = re.compile('^[cbdefghijklnrtuv]{32,48}$')
@@ -409,11 +409,11 @@ def validate_oath_totp(self, params):
     # Check for correct OATH-TOTP OTP
     nonce = entry.data["nonce"].decode('hex')
     aead = entry.data["aead"].decode('hex')
-    new_timecounter = pyhsm.oath_totp.search_for_oath_code(hsm, entry.data["key_handle"], nonce, aead, \
-                                                           entry.data["oath_c"], otp, args.interval)
+    new_timecounter = pyhsm.oath_totp.search_for_oath_code(
+        hsm, entry.data["key_handle"], nonce, aead, otp, args.interval)
 
     if args.debug:
-        print "OATH-TOTP counter: %i ,interval: %i -> new timecounter == %s" \
+        print "OATH-TOTP counter: %i, interval: %i -> new timecounter == %s" \
              % (entry.data["oath_c"], args.interval, new_timecounter)
     if type(new_timecounter) != int:
         return "ERR Could not validate OATH-TOTP OTP"
@@ -607,6 +607,13 @@ def parse_args():
                         type=int, required=False,
                         default = default_totp_interval,
                         help='Timeframe in seconds for a valid OATH-TOTP code',
+                        metavar='NUM',
+                        )
+    parser.add_argument('--totp-tolerance',
+                        dest='interval',
+                        type=int, required=False,
+                        default = default_totp_tolerance,
+                        help='Tolerance in time-steps for a valid OATH-TOTP code',
                         metavar='NUM',
                         )
     parser.add_argument('--pid-file',

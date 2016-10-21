@@ -47,6 +47,12 @@ key handle to use for HMAC\(hySHA\(hy1. Examples : "1", "0xabcd".
 \fB\-\-hotp-window\fR num
 number of OATH counter values to try (default: 5)
 .TP
+\fB\-\-totp-interval\fR num
+interval for TOTP time-step to use in seconds (default: 30)
+.TP
+\fB\-\-totp-tolerance\fR num
+number of time-steps on either side of now to allow TOTP codes for (default: 1)
+.TP
 \fB\-\-db-file\fR fn
 db file holding AEADs (see \fIyhsm-init-oath-token\fR\|(1)) (default: /var/yubico/yhsm-validation-server.db)
 .TP
@@ -70,6 +76,9 @@ Returns a single line with the decrypted information from the OTP, compatible wi
 .TP
 \fB\-\-hotp\fR
 Validate codes using the OATH HOTP algorithm, performing the HMAC\(hySHA\(hy1 inside the YubiHSM.
+.TP
+\fB\-\-totp\fR
+Validate codes using the OATH TOTP algorithm, performing the HMAC\(hySHA\(hy1 inside the YubiHSM.
 .TP
 \fB\-\-pwhash\fR
 Validate that a string (a PBKDF2 hash of a password for example) matches the one in an AEAD.
