@@ -65,6 +65,7 @@ __all__ = ["base",
            "debug_cmd",
            "hmac_cmd",
            "oath_hotp",
+           "oath_totp",
            "validate_cmd",
            ]
 
