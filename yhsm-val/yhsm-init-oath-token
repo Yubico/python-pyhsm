@@ -12,6 +12,7 @@ import sqlite3
 import argparse
 import pyhsm
 import pyhsm.oath_hotp
+from hashlib import sha1
 
 default_device = "/dev/ttyACM0"
 default_db_file = "/var/yubico/yhsm-validation-server.db"
@@ -138,9 +139,10 @@ def get_oath_k(args):
     else:
         t = raw_input("Enter OATH key (hex encoded) : ")
         decoded = t.decode('hex')
-    if len(decoded) != 20:
-        sys.stderr.write("Supplied OATH key is not 20 bytes (%i).\n" % (len(decoded)))
-        sys.exit(1)
+
+    if len(decoded) > 20:
+        decoded = sha1(decoded).digest()
+    decoded = decoded.ljust(20, '\0')
     return decoded
 
 class ValOathDb():

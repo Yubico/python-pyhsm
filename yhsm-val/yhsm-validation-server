@@ -102,7 +102,7 @@ default_db_file = "/var/yubico/yhsm-validation-server.db"
 default_clients_file = "/var/yubico/yhsm-validation-server_client-id.conf"
 default_hotp_window = 5
 default_totp_interval = 30
-default_totp_tolerance = 5
+default_totp_tolerance = 1
 default_pid_file = None
 
 ykotp_valid_input = re.compile('^[cbdefghijklnrtuv]{32,48}$')
@@ -410,7 +410,7 @@ def validate_oath_totp(self, params):
     nonce = entry.data["nonce"].decode('hex')
     aead = entry.data["aead"].decode('hex')
     new_timecounter = pyhsm.oath_totp.search_for_oath_code(
-        hsm, entry.data["key_handle"], nonce, aead, otp, args.interval)
+        hsm, entry.data["key_handle"], nonce, aead, otp, args.interval, args.tolerance)
 
     if args.debug:
         print "OATH-TOTP counter: %i, interval: %i -> new timecounter == %s" \
@@ -610,7 +610,7 @@ def parse_args():
                         metavar='NUM',
                         )
     parser.add_argument('--totp-tolerance',
-                        dest='interval',
+                        dest='tolerance',
                         type=int, required=False,
                         default = default_totp_tolerance,
                         help='Tolerance in time-steps for a valid OATH-TOTP code',
