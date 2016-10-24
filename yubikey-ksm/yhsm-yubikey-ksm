@@ -418,7 +418,7 @@ def main():
             aead_backend = FSBackend(args.aead_dir, args.key_handles)
         except Exception as e:
             my_log_message(args.debug or args.verbose, syslog.LOG_ERR,
-                           'Could not create AEAD FSBackend "%s" : %s' % e)
+                           'Could not create AEAD FSBackend: %s' % e)
             sys.exit(1)
 
     if os.path.isfile(args.device):
