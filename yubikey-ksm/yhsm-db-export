@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 #
 # Copyright (c) 2013-2014 Yubico AB
 # See the file COPYING for licence statement.
@@ -92,7 +92,7 @@ key_handle = None
 
 aead = pyhsm.aead_cmd.YHSM_GeneratedAEAD(nonce, key_handle, aead)
 
-#get data from the database   
+#get data from the database
 result = connection.execute("SELECT * from aead_table")
 
 #cycle through resutls
@@ -116,7 +116,7 @@ for row in result:
     #reset path constructor
     path = sys.argv[1]
 
-#close connection    
+#close connection
 connection.close()
 
 #exit without error
