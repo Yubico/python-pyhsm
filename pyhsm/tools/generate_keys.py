@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 #
 """
 Tool to generate YubiKey secret keys using YubiHSM.
@@ -209,9 +208,3 @@ def main():
         hsm = pyhsm.YHSM(device=args.device)
 
     gen_keys(hsm, args)
-
-
-if __name__ == '__main__':
-    if main():
-        sys.exit(0)
-    sys.exit(1)

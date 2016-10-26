@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 #
 # Copyright (C) 2012-2013 Yubico AB. All rights reserved.
 #
@@ -283,7 +282,7 @@ def main():
     args = parse_args()
 
     if not args:
-        return False
+        return 1
 
     state = MyState(args)
 
@@ -296,12 +295,6 @@ def main():
             break
     if state.failed_files:
         sys.stderr.write("error: %i/%i AEADs failed\n" % (len(state.failed_files), state.file_count))
-        return False
+        return 1
     if args.debug:
         sys.stderr.write("Successfully processed %i AEADs\n" % (state.file_count))
-    return True
-
-if __name__ == '__main__':
-    if main():
-        sys.exit(0)
-    sys.exit(1)

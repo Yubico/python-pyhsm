@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 #
 # Copyright (C) 2013 Yubico AB. All rights reserved.
 #
@@ -139,7 +138,7 @@ class YHSM_Stick_Server():
             socket.close()
 
 
-if __name__ == '__main__':
+def main():
     parser = argparse.ArgumentParser(
         description='YubiHSM server daemon',
         add_help=True,
@@ -168,7 +167,7 @@ if __name__ == '__main__':
     server = YHSM_Stick_Server(args.device, (args.interface, args.port))
     print 'You can connect to the server using the following device string:'
     print 'yhsm://127.0.0.1:%d' % args.port
-    
+
     server.pidfile = args.pid_file
     context.files_preserve = [server.socket]
     if args.daemon:

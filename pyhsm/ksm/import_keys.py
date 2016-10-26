@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 #
 """
 Tool to import YubiKey secrets to YubiHSM.
@@ -11,9 +10,9 @@ validation of virtually unlimited numbers of YubiKey's OTPs.
 If --internal-db is used, the YubiKey secret will be stored inside
 the YubiHSM, and complete validation (including counter management)
 will be done inside the YubiHSM. The internal database is currently
-limited to 1024 entrys.
+limited to 1024 entries.
 
-The input is supposed to be a comma-separated list of entrys like this
+The input is supposed to be a comma-separated list of entries like this
 
   # ykksm 1
   123456,ftftftcccc,534543524554,fcacd309a20ce1809c2db257f0e8d6ea,000000000000,,,

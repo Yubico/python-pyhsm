@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 #
 # Tool to add an OATH token to the yhsm-validation-server database.
 #
@@ -216,9 +215,9 @@ def main():
 
     nonce, aead = generate_aead(hsm, args)
     oath_c = validate_oath_c(hsm, args, nonce, aead)
-    return store_oath_entry(args, nonce, aead, oath_c)
+    if not store_oath_entry(args, nonce, aead, oath_c):
+        return 1
+
 
 if __name__ == '__main__':
-    if main():
-        sys.exit(0)
-    sys.exit(1)
+    sys.exit(main())

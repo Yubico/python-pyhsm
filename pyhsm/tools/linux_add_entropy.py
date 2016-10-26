@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 #
 # Copyright (c) 2011 Yubico AB
 # See the file COPYING for licence statement.
@@ -89,9 +88,6 @@ def main():
         s = pyhsm.base.YHSM(device=args.device, debug=args.debug)
         get_entropy(s, args.iterations, args.ratio)
         return 0
-    except pyhsm.exception.YHSM_Error, e:
+    except pyhsm.exception.YHSM_Error as e:
         sys.stderr.write("ERROR: %s" % (e.reason))
         return 1
-
-if __name__ == '__main__':
-    sys.exit(main())

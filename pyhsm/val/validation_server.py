@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 #
 # Copyright (c) 2011, 2012 Yubico AB
 # See the file COPYING for licence statement.
@@ -332,7 +331,7 @@ def make_signature(params, hmac_key):
 
     Returns base64 encoded signature as string.
     """
-    # produce a list of "key=value" for all entrys in params except `h'
+    # produce a list of "key=value" for all entries in params except `h'
     pairs = [x + "=" + ''.join(params[x]) for x in sorted(params.keys()) if x != "h"]
     sha = hmac.new(hmac_key, '&'.join(pairs), hashlib.sha1)
     return base64.b64encode(sha.digest())
@@ -743,7 +742,7 @@ def main():
         hsm = pyhsm.YHSM(device = args.device, debug = args.debug)
     except serial.SerialException, e:
         my_log_message(args, syslog.LOG_ERR, 'Failed opening YubiHSM device "%s" : %s' %(args.device, e))
-        sys.exit(1)
+        return 1
 
     write_pid_file(args.pid_file)
 
@@ -754,5 +753,6 @@ def main():
         print "Shutting down"
         print ""
 
+
 if __name__ == '__main__':
-    main()
+    sys.exit(main())

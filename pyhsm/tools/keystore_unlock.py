@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 #
 # Copyright (c) 2011 Yubico AB
 # See the file COPYING for licence statement.
@@ -130,6 +129,3 @@ def main():
         return 1
 
     return 0
-
-if __name__ == '__main__':
-    sys.exit(main())

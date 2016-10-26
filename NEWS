@@ -1,6 +1,7 @@
 * Version 1.2.0 (unreleased)
  ** yhsm-validation-server: Support OATH TOTP.
  ** yhsm-init-oath-token: Handle keys with length != 20.
+ ** Moved utils, yubikey-ksm and validation-server to be included when installing using pip.
  ** Bugfix: Fix AEAD generation on Windows by writing in binary mode.
  ** Bugfix: Support AEADs generated on Windows using pyhsm <= 1.1.1.
  ** Bugfix: Avoid installing unit test package.

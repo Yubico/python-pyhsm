@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 #
 # Tool to validate a YubiKey OTP using the YubiHSM internal database.
 #
@@ -104,7 +103,8 @@ def main():
     elif args.oath:
         status = validate_oath(hsm, args)
 
-    sys.exit(status)
+    return status
+
 
 if __name__ == '__main__':
-    main()
+    sys.exit(main())
