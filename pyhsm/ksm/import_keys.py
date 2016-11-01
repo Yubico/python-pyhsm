@@ -259,7 +259,7 @@ def main():
     print ""
 
     if args.aes_key:
-        keys = {kh: args.aes_key.decode('hex') for kh in args.key_handles}
+        keys = {kh: args.aes_key for kh in args.key_handles}
         hsm = SoftYHSM(keys, args.debug)
     elif os.path.isfile(args.device):
         hsm = SoftYHSM.from_file(args.device, debug=args.debug)

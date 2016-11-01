@@ -7,6 +7,7 @@
  ** Bugfix: Fix AEAD generation on Windows by writing in binary mode.
  ** Bugfix: Support AEADs generated on Windows using pyhsm <= 1.1.1.
  ** Bugfix: Avoid installing unit test package.
+ ** Bugfix: yhsm-import-keys: Fix --aes-key argument used when importing without a YubiHSM.
 
 * Version 1.1.1 (released 2016-01-08)
  ** Fixup release.
