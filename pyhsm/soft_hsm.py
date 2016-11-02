@@ -148,11 +148,11 @@ class SoftYHSM(object):
     def __init__(self, keys, debug=False):
         self._buffer = ''
         self.debug = debug
+        if not keys:
+            raise ValueError('Data contains no key handles!')
         for k, v in keys.items():
             if len(v) not in AES.key_size:
                 raise ValueError('Keyhandle of unsupported length: %d (was %d bytes)' % (k, len(v)))
-        else:
-            raise ValueError('Data contains no key handles!')
         self.keys = keys
 
     @classmethod
