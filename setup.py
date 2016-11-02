@@ -57,7 +57,7 @@ setup(
             'yhsm-keystore-unlock = pyhsm.tools.keystore_unlock:main',
             'yhsm-linux-add-entropy = pyhsm.tools.linux_add_entropy:main',
             # ksm
-            'yhsm-yubikey-ksm = pyhsm.ksm.yubikey_ksm:main [daemon]',
+            'yhsm-yubikey-ksm = pyhsm.ksm.yubikey_ksm:main [db,daemon]',
             'yhsm-import-keys = pyhsm.ksm.import_keys:main',
             'yhsm-db-export = pyhsm.ksm.db_export:main [db]',
             'yhsm-db-import = pyhsm.ksm.db_import:main [db]',
