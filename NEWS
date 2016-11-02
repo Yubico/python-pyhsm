@@ -1,4 +1,4 @@
-* Version 1.2.0 (unreleased)
+* Version 1.2.0 (released 2016-11-02)
  ** yhsm-validation-server: Support OATH TOTP.
  ** yhsm-init-oath-token: Handle keys with length != 20.
  ** yhsm-yubikey-ksm: Allow passing soft-HSM keys via stdin by passing "-" as
