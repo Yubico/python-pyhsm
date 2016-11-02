@@ -333,7 +333,9 @@ def parse_args():
                         dest='db_url',
                         default=default_db_url,
                         required=False,
-                        help='The database url to read the AEADs from',
+                        help='The database url to read the AEADs from, you can '
+                        'also use env:YOURENVVAR to instead read the URL from '
+                        'the YOURENVVAR environment variable.',
                         metavar='DBURL',
                         )
 
@@ -351,6 +353,12 @@ def args_fixup(args):
         kh_int = pyhsm.util.key_handle_to_int(kh)
         res.append((kh, kh_int,))
     args.key_handles = res
+
+    # Check if the DB url should be read from an environment variable
+    if args.db_url and args.db_url.startswith('env:'):
+        env_var = args.db_url[4:]
+        if env_var in os.environ:
+            args.db_url = os.environ[env_var]
 
 
 def write_pid_file(fn):
