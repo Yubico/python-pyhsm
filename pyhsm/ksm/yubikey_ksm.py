@@ -410,7 +410,7 @@ def main():
         except Exception as e:
             my_log_message(args.debug or args.verbose, syslog.LOG_ERR,
                            'Could not connect to database "%s" : %s' % (args.db_url, e))
-            sys.exit(1)
+            return 1
     else:
         # Using the filesystem for AEADs
         try:
@@ -418,16 +418,24 @@ def main():
         except Exception as e:
             my_log_message(args.debug or args.verbose, syslog.LOG_ERR,
                            'Could not create AEAD FSBackend: %s' % e)
-            sys.exit(1)
+            return 1
 
-    if os.path.isfile(args.device):
-        # Using a soft-HSM
+    if args.device == '-':
+        # Using a soft-HSM with keys from stdin
+        try:
+            hsm = SoftYHSM.from_json(sys.stdin.read(), debug=args.debug)
+        except ValueError as e:
+            my_log_message(args.debug or args.verbose, syslog.LOG_ERR,
+                           'Failed opening soft YHSM from stdin : %s' % (e))
+            return 1
+    elif os.path.isfile(args.device):
+        # Using a soft-HSM from file
         try:
             hsm = SoftYHSM.from_file(args.device, debug=args.debug)
         except ValueError as e:
             my_log_message(args.debug or args.verbose, syslog.LOG_ERR,
                            'Failed opening soft YHSM "%s" : %s' % (args.device, e))
-            sys.exit(1)
+            return 1
     else:
         # Using a real HSM
         try:
@@ -436,7 +444,7 @@ def main():
         except serial.SerialException as e:
             my_log_message(args.debug or args.verbose, syslog.LOG_ERR,
                            'Failed opening YubiHSM device "%s" : %s' % (args.device, e))
-            sys.exit(1)
+            return 1
 
     if args.daemon:
         with context:
