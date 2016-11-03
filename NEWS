@@ -1,4 +1,4 @@
-** Version 1.2.2 (unreleased)
+* Version 1.2.2 (unreleased)
 
 * Version 1.2.1 (released 2016-11-03)
  ** Fixup release: Remove minimum version for sqlalchemy dependency which was
