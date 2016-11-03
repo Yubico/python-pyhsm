@@ -1,3 +1,9 @@
+* Version 1.2.1 (released 2016-11-03)
+ ** Fixup release: Remove minimum version for sqlalchemy dependency which was
+    set too high.
+ ** yhsm-yubikey-ksm: Add --proxy/--proxies argument for logging proxies
+    requests.
+
 * Version 1.2.0 (released 2016-11-02)
  ** yhsm-validation-server: Support OATH TOTP.
  ** yhsm-init-oath-token: Handle keys with length != 20.
