@@ -74,7 +74,7 @@ setup(
         'pycrypto >= 2.1'
     ],
     extras_require={
-        'db': ['sqlalchemy>=0.9.7'],
+        'db': ['sqlalchemy'],
         'daemon': ['python-daemon']
     },
     classifiers=[
