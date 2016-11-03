@@ -61,6 +61,12 @@ number of seconds before a request times out (default: 5)
 .TP
 \fB\-\-pid-file\fR fn
 write process id of server to this file
+.TP
+\fB\-\-db-url\fR url
+read AEAD data from this database
+.TP
+\fB\-\-proxies\fR ip, \fB\-\-proxy\fR ip
+log X-Forwarded-For header for requests from these IPs.
 
 .SH "BUGS"
 Report python-pyhsm/yhsm-yubikey-ksm bugs in

@@ -86,6 +86,7 @@ class YHSM_KSMRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         self.key_handles = args.key_handles
         self.timeout = args.reqtimeout
         self.aead_backend = aead_backend
+        self.proxy_ips = args.proxies
         BaseHTTPServer.BaseHTTPRequestHandler.__init__(self, *other_args, **kwargs)
 
     def do_GET(self):
@@ -172,7 +173,12 @@ class YHSM_KSMRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
     def my_address_string(self):
         """ For logging client host without resolving. """
-        return getattr(self, 'client_address', ('', None))[0]
+        addr = getattr(self, 'client_address', ('', None))[0]
+
+        # If listed in proxy_ips, use the X-Forwarded-For header, if present.
+        if addr in self.proxy_ips:
+            return self.headers.getheader('x-forwarded-for', addr)
+        return addr
 
 
 class FSBackend(object):
@@ -337,6 +343,15 @@ def parse_args():
                         'also use env:YOURENVVAR to instead read the URL from '
                         'the YOURENVVAR environment variable.',
                         metavar='DBURL',
+                        )
+    parser.add_argument('--proxy', '--proxies',
+                        dest='proxies',
+                        nargs='+',
+                        required=False,
+                        default=[],
+                        help='IP addresses of proxies where the IP in '
+                        'X-Forwarded-For should be used for logging purposes.',
+                        metavar='IP',
                         )
 
     return parser.parse_args()
