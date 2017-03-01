@@ -226,7 +226,7 @@ class SQLBackend(object):
                 aead.data = row['aead']
                 aead.nonce = row['nonce']
             return aead
-        except Exception:
+        except Exception as e:
             trans.rollback()
             raise Exception("No AEAD in DB for public_id %s (%s)" % (public_id, str(e)))
         finally:
