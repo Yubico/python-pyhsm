@@ -206,10 +206,11 @@ class FSBackend(object):
 
 
 class SQLBackend(object):
-    def __init__(self, db_url):
+    def __init__(self, db_url, key_handles):
         self.engine = sqlalchemy.create_engine(db_url)
         metadata = sqlalchemy.MetaData()
         self.aead_table = sqlalchemy.Table('aead_table', metadata, autoload=True, autoload_with=self.engine)
+        self.key_handles = key_handles
 
     def load_aead(self, public_id):
         """ Loads AEAD from the specified database. """
@@ -217,7 +218,9 @@ class SQLBackend(object):
         trans = connection.begin()
 
         try:
-            s = sqlalchemy.select([self.aead_table]).where(self.aead_table.c.public_id == public_id)
+            s = sqlalchemy.select([self.aead_table]).where(
+                (self.aead_table.c.public_id == public_id)
+                & self.aead_table.c.keyhandle.in_(self.key_handles.values()))
             result = connection.execute(s)
 
             for row in result:
@@ -429,7 +432,7 @@ def main():
     if args.db_url:
         # Using an SQL database for AEADs
         try:
-            aead_backend = SQLBackend(args.db_url)
+            aead_backend = SQLBackend(args.db_url, args.key_handles)
         except Exception as e:
             my_log_message(args.debug or args.verbose, syslog.LOG_ERR,
                            'Could not connect to database "%s" : %s' % (args.db_url, e))
