@@ -220,7 +220,7 @@ class SQLBackend(object):
         try:
             s = sqlalchemy.select([self.aead_table]).where(
                 (self.aead_table.c.public_id == public_id)
-                & self.aead_table.c.keyhandle.in_(self.key_handles.values()))
+                & self.aead_table.c.keyhandle.in_([kh[1] for kh in self.key_handles]))
             result = connection.execute(s)
 
             for row in result:
