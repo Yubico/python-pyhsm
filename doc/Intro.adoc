@@ -1,15 +1,6 @@
 == Installation
 
-=== API
-
-To learn about the API, either download an official release tar.gz file and
-look in doc/html/ (more details in doc/README file), or install pyhsm and start
-reading the pydoc documentation.
-
-
-=== Installation
-
-==== Quick Ubuntu guide
+=== Quick Ubuntu guide
 
 [source, sh]
 ----
@@ -20,7 +11,7 @@ $ pydoc pyhsm
 $ pydoc pyhsm.base
 ----
 
-==== Windows
+=== Windows
 
 python-pyhsm has been tested on Windows with Python 2.6 (2.7 will probably also
 work) from http://www.python.org/.
