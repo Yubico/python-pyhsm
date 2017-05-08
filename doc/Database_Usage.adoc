@@ -38,8 +38,11 @@ IMPORT: yhsm-db-import aeads_source_folder database_url
 EXPORT: yhsm-db-export aeads_destination_folder database_url
 
 [CAUTION]
-It is not safe to execute the command with the database url containing username
-and password.
+You need to be extra careful when providing sensitive data, such as database
+credentials, as command line arguments. In some cases these may be logged or
+visible to other parts of the system. If this is a concern then it is advised
+to change the database password after importing or exporting data with these
+scripts.
 
 
 ==== IMPORT
