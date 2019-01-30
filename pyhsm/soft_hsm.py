@@ -208,6 +208,9 @@ class SoftYHSM(object):
         self._buffer = self._buffer[:offset] + os.urandom(num_bytes)
 
     def generate_aead(self, nonce, key_handle):
+        if nonce == "":
+            # no hardware to generate it for us, so do it here.
+            nonce = os.urandom(6)
         aes_key = self._get_key(key_handle, pyhsm.defines.YSM_BUFFER_AEAD_GENERATE)
         ct = pyhsm.soft_hsm.aesCCM(aes_key, key_handle, nonce, self._buffer,
                                    False)
