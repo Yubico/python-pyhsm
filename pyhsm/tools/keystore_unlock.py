@@ -126,6 +126,8 @@ def main():
                     print "OK\n"
     except pyhsm.exception.YHSM_Error, e:
         sys.stderr.write("ERROR: %s\n" % (e.reason))
+        if e.reason == "YubiHSM did not respond to command YSM_SYSTEM_INFO_QUERY":
+            sys.stderr.write("Please check whether your YubiHSM is really at " + args.device + ", you can specify an alternate device using the option -D")
         return 1
 
     return 0
