@@ -207,7 +207,7 @@ class FSBackend(object):
 
 class SQLBackend(object):
     def __init__(self, db_url, key_handles):
-        self.engine = sqlalchemy.create_engine(db_url)
+        self.engine = sqlalchemy.create_engine(db_url, pool_pre_ping=True)
         metadata = sqlalchemy.MetaData()
         self.aead_table = sqlalchemy.Table('aead_table', metadata, autoload=True, autoload_with=self.engine)
         self.key_handles = key_handles
