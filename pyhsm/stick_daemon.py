@@ -41,13 +41,13 @@ COMMANDS = {
 context = daemon.DaemonContext()
 
 def pack_data(data):
-    if isinstance(data, basestring):
+    if isinstance(data, str):
         return data.encode('base64')
     return data
 
 
 def unpack_data(data):
-    if isinstance(data, basestring):
+    if isinstance(data, str):
         return data.decode('base64')
     return data
 
@@ -85,7 +85,7 @@ class YHSM_Stick_Server():
                                           args=(cs,))
                 thread.start()
         except Exception as e:
-            print e
+            print(e)
             sys.exit(1)
 
     def invoke(self, cmd, *args):
@@ -95,7 +95,7 @@ class YHSM_Stick_Server():
             res = getattr(self._stick, COMMANDS[cmd])(*args)
         except Exception as e:
             res = e
-            print e
+            print(e)
             self._stick = None
         return res
 
@@ -107,7 +107,7 @@ class YHSM_Stick_Server():
             while True:
                 data = json.loads(socket_file.readline())
                 cmd = data[0]
-                args = map(unpack_data, data[1:])
+                args = list(map(unpack_data, data[1:]))
                 if cmd == CMD_LOCK:
                     if not has_lock:
                         self.lock.acquire()
@@ -123,7 +123,7 @@ class YHSM_Stick_Server():
                         socket_file.flush()
                 else:
                     err = 'Command run without holding lock!'
-                    print err
+                    print(err)
                     json.dump({'error': err}, socket_file)
                     socket_file.write("\n")
                     socket_file.flush()
@@ -161,12 +161,12 @@ def main():
 
     args = parser.parse_args()
 
-    print 'Starting YubiHSM daemon for device: %s, listening on: %s:%d' % \
-        (args.device, args.interface, args.port)
+    print('Starting YubiHSM daemon for device: %s, listening on: %s:%d' % \
+        (args.device, args.interface, args.port))
 
     server = YHSM_Stick_Server(args.device, (args.interface, args.port))
-    print 'You can connect to the server using the following device string:'
-    print 'yhsm://127.0.0.1:%d' % args.port
+    print('You can connect to the server using the following device string:')
+    print('yhsm://127.0.0.1:%d' % args.port)
 
     server.pidfile = args.pid_file
     context.files_preserve = [server.socket]

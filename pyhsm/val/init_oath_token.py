@@ -111,14 +111,14 @@ def generate_aead(hsm, args):
     nonce = hsm.get_nonce().nonce
     aead = hsm.generate_aead(nonce, args.key_handle)
     if args.debug:
-        print "AEAD: %s (%s)" % (aead.data.encode('hex'), aead)
+        print("AEAD: %s (%s)" % (aead.data, aead))
     return nonce, aead
 
 def validate_oath_c(hsm, args, nonce, aead):
     if args.test_code:
         if args.verbose:
-            print "Trying to validate the OATH counter value in the range %i..%i." \
-                % (args.oath_c, args.oath_c + args.look_ahead)
+            print("Trying to validate the OATH counter value in the range %i..%i." \
+                % (args.oath_c, args.oath_c + args.look_ahead))
         counter = pyhsm.oath_hotp.search_for_oath_code(hsm, args.key_handle, nonce, aead, \
                                                            args.oath_c, args.test_code, args.look_ahead \
                                                            )
@@ -127,21 +127,21 @@ def validate_oath_c(hsm, args, nonce, aead):
                                  % (args.test_code, args.oath_c, args.oath_c + args.look_ahead))
             sys.exit(1)
         if args.verbose:
-            print "OATH C==%i validated with code %s" % (counter - 1, args.test_code)
+            print("OATH C==%i validated with code %s" % (counter - 1, args.test_code))
         return counter
     return args.oath_c
 
 def get_oath_k(args):
     """ Get the OATH K value (secret key), either from args or by prompting. """
     if args.oath_k:
-        decoded = args.oath_k.decode('hex')
+        decoded = bytes.fromhex(args.oath_k)
     else:
-        t = raw_input("Enter OATH key (hex encoded) : ")
-        decoded = t.decode('hex')
+        t = input("Enter OATH key (hex encoded) : ")
+        decoded = bytes.fromhex(t)
 
     if len(decoded) > 20:
         decoded = sha1(decoded).digest()
-    decoded = decoded.ljust(20, '\0')
+    decoded = decoded.ljust(20, b'\0')
     return decoded
 
 class ValOathDb():
@@ -185,8 +185,8 @@ class ValOathEntry():
 def store_oath_entry(args, nonce, aead, oath_c):
     """ Store the AEAD in the database. """
     data = {"key": args.uid,
-            "aead": aead.data.encode('hex'),
-            "nonce": nonce.encode('hex'),
+            "aead": aead.data,
+            "nonce": nonce,
             "key_handle": args.key_handle,
             "oath_C": oath_c,
             "oath_T": None,
@@ -197,7 +197,7 @@ def store_oath_entry(args, nonce, aead, oath_c):
         if args.force:
             db.delete(entry)
         db.add(entry)
-    except sqlite3.IntegrityError, e:
+    except sqlite3.IntegrityError as e:
         sys.stderr.write("ERROR: %s\n" % (e))
         return False
     return True
@@ -207,9 +207,9 @@ def main():
 
     args_fixup(args)
 
-    print "Key handle		: %s" % (args.key_handle)
-    print "YHSM device		: %s" % (args.device)
-    print ""
+    print("Key handle		: %s" % (args.key_handle))
+    print("YHSM device		: %s" % (args.device))
+    print("")
 
     hsm = pyhsm.YHSM(device = args.device, debug=args.debug)
 

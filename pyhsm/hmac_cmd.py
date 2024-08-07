@@ -133,6 +133,8 @@ class YHSM_GeneratedHMACSHA1():
             self.__class__.__name__,
             hex(id(self)),
             self.key_handle,
-            self.hash_result[:4].encode('hex'),
+            self.hash_result[:4],
             self.final,
             )
+
+

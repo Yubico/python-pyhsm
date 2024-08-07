@@ -121,7 +121,7 @@ def args_fixup(args):
         sys.exit(1)
 
     if args.aes_key:
-        args.aes_key = args.aes_key.decode('hex')
+        args.aes_key = bytes.fromhex(args.aes_key).decode()
     keyhandles_fixup(args)
 
 
@@ -154,29 +154,29 @@ def import_keys(hsm, args):
 
         l = line.split(',')
         modhex_id = l[1]
-        uid = l[2].decode('hex')
-        key = l[3].decode('hex')
+        uid = l[2]
+        key = l[3]
 
         if modhex_id and uid and key:
             public_id = pyhsm.yubikey.modhex_decode(modhex_id)
             padded_id = modhex_id.rjust(args.public_id_chars, 'c')
 
         if int(public_id, 16) == 0:
-            print "WARNING: Skipping import of key with public ID: %s" % (padded_id)
-            print "This public ID is unsupported by the YubiHSM.\n"
+            print("WARNING: Skipping import of key with public ID: %s" % (padded_id))
+            print("This public ID is unsupported by the YubiHSM.\n")
             continue
 
         if args.verbose:
-            print "  %s" % (padded_id)
+            print("  %s" % (padded_id))
 
         secret = pyhsm.aead_cmd.YHSM_YubiKeySecret(key, uid)
         hsm.load_secret(secret)
 
-        for kh in args.key_handles.keys():
+        for kh in list(args.key_handles.keys()):
             if(args.random_nonce):
-                nonce = ""
+                nonce = b""
             else:
-                nonce = public_id.decode('hex')
+                nonce = bytes.fromhex(public_id)
             aead = hsm.generate_aead(nonce, kh)
 
             if args.internal_db:
@@ -189,43 +189,43 @@ def import_keys(hsm, args):
                 args.output_dir, args.key_handles[kh], padded_id)
 
             if args.verbose:
-                print "    %4s, %i bytes (%s) -> %s" % \
-                    (args.key_handles[kh], len(aead.data), shorten_aead(aead), filename)
+                print("    %4s, %i bytes (%s) -> %s" % \
+                    (args.key_handles[kh], len(aead.data), shorten_aead(aead), filename))
 
             aead.save(filename)
 
         if args.verbose:
-            print ""
+            print("")
 
     if res:
-        print "\nDone\n"
+        print("\nDone\n")
     else:
-        print "\nDone (one or more entries rejected)"
+        print("\nDone (one or more entries rejected)")
     return res
 
 
 def store_in_internal_db(args, hsm, modhex_id, public_id, kh, aead):
     """ Store record (AEAD) in YubiHSM internal DB """
     if args.verbose:
-        print "    %i bytes (%s) -> internal db..." % \
-            (len(aead.data), shorten_aead(aead)),
+        print("    %i bytes (%s) -> internal db..." % \
+            (len(aead.data), shorten_aead(aead)), end=' ')
     try:
-        hsm.db_store_yubikey(public_id.decode('hex'), kh, aead)
+        hsm.db_store_yubikey(bytes.fromhex(public_id), kh, aead)
         if args.verbose:
-            print "OK"
+            print("OK")
     except pyhsm.exception.YHSM_CommandFailed as e:
         if args.verbose:
-            print "%s" % (pyhsm.defines.status2str(e.status))
+            print("%s" % (pyhsm.defines.status2str(e.status)))
         else:
-            print "Storing ID %s FAILED: %s" % (modhex_id, pyhsm.defines.status2str(e.status))
+            print("Storing ID %s FAILED: %s" % (modhex_id, pyhsm.defines.status2str(e.status)))
         return False
     return True
 
 
 def shorten_aead(aead):
     """ Produce pretty-printable version of long AEAD. """
-    head = aead.data[:4].encode('hex')
-    tail = aead.data[-4:].encode('hex')
+    head = aead.data[:4]
+    tail = aead.data[-4:]
     return "%s...%s" % (head, tail)
 
 
@@ -253,10 +253,10 @@ def main():
             "Did not get '# ykksm 1' header as first line of input.\n")
         sys.exit(1)
 
-    print "output dir		: %s" % (args.output_dir)
-    print "key handles		: %s" % (args.key_handles)
-    print "YHSM device		: %s" % (args.device)
-    print ""
+    print("output dir		: %s" % (args.output_dir))
+    print("key handles		: %s" % (args.key_handles))
+    print("YHSM device		: %s" % (args.device))
+    print("")
 
     if args.aes_key:
         keys = {kh: args.aes_key for kh in args.key_handles}

@@ -34,7 +34,7 @@ def search_for_oath_code(hsm, key_handle, nonce, aead, counter, user_code, look_
     hsm.load_temp_key(nonce, key_handle, aead)
     # User might have produced codes never sent to us, so we support trying look_ahead
     # codes to see if we find the user's current code.
-    for j in xrange(look_ahead):
+    for j in range(look_ahead):
         this_counter = counter + j
         secret = struct.pack("> Q", this_counter)
         hmac_result = hsm.hmac_sha1(pyhsm.defines.YSM_TEMP_KEY_HANDLE, secret).get_hash()
@@ -46,9 +46,9 @@ def search_for_oath_code(hsm, key_handle, nonce, aead, counter, user_code, look_
 def truncate(hmac_result, length=6):
     """ Perform the truncating. """
     assert(len(hmac_result) == 20)
-    offset   =  ord(hmac_result[19]) & 0xf
-    bin_code = (ord(hmac_result[offset]) & 0x7f) << 24 \
-        | (ord(hmac_result[offset+1]) & 0xff) << 16 \
-        | (ord(hmac_result[offset+2]) & 0xff) <<  8 \
-        | (ord(hmac_result[offset+3]) & 0xff)
+    offset   =  hmac_result[19] & 0xf
+    bin_code = (hmac_result[offset] & 0x7f) << 24 \
+        | (hmac_result[offset+1] & 0xff) << 16 \
+        | (hmac_result[offset+2] & 0xff) <<  8 \
+        | (hmac_result[offset+3] & 0xff)
     return bin_code % (10 ** length)

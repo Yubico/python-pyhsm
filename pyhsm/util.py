@@ -26,14 +26,14 @@ def hexdump(src, length=8):
     offset = 0
     result = ''
     for this in group(src, length):
-        hex_s = ' '.join(["%02x" % ord(x) for x in this])
+        hex_s = ' '.join(["%02x" % x for x in this])
         result += "%04X   %s\n" % (offset, hex_s)
         offset += length
     return result
 
 def group(data, num):
     """ Split data into chunks of num chars each """
-    return [data[i:i+num] for i in xrange(0, len(data), num)]
+    return [data[i:i+num] for i in range(0, len(data), num)]
 
 def key_handle_to_int(this):
     """
@@ -50,14 +50,14 @@ def key_handle_to_int(this):
         if this[:2] == "0x":
             return int(this, 16)
         if (len(this) == 4):
-            num = struct.unpack('<I', this)[0]
+            num = struct.unpack('<I', this.encode())[0]
             return num
     raise pyhsm.exception.YHSM_Error("Could not parse key_handle '%s'" % (this))
 
 def input_validate_str(string, name, max_len=None, exact_len=None):
-    """ Input validation for strings. """
-    if type(string) is not str:
-        raise pyhsm.exception.YHSM_WrongInputType(name, str, type(string))
+    """ Input validation for strings. NOW CHANGED TO BYTES""" 
+    if type(string) is not bytes:
+        raise pyhsm.exception.YHSM_WrongInputType(name, bytes, type(string))
     if max_len != None and len(string) > max_len:
         raise pyhsm.exception.YHSM_InputTooLong(name, max_len, len(string))
     if exact_len != None and len(string) != exact_len:
@@ -73,25 +73,25 @@ def input_validate_int(value, name, max_value=None):
     return value
 
 def input_validate_nonce(nonce, name='nonce', pad = False):
-    """ Input validation for nonces. """
-    if type(nonce) is not str:
+    """ Input validation for nonces. NOW CHANGED TO BYTES"""
+    if type(nonce) is not bytes:
         raise pyhsm.exception.YHSM_WrongInputType( \
-            name, str, type(nonce))
+            name, bytes, type(nonce))
     if len(nonce) > pyhsm.defines.YSM_AEAD_NONCE_SIZE:
         raise pyhsm.exception.YHSM_InputTooLong(
             name, pyhsm.defines.YSM_AEAD_NONCE_SIZE, len(nonce))
     if pad:
-        return nonce.ljust(pyhsm.defines.YSM_AEAD_NONCE_SIZE, chr(0x0))
+        return nonce.ljust(pyhsm.defines.YSM_AEAD_NONCE_SIZE, b'\x00')
     else:
         return nonce
 
 def input_validate_key_handle(key_handle, name='key_handle'):
-    """ Input validation for key_handles. """
-    if type(key_handle) is not int:
+    """ Input validation for key_handles. NOW CHANGED TO BYTES"""
+    if type(key_handle) is not bytes:
         try:
             return key_handle_to_int(key_handle)
         except pyhsm.exception.YHSM_Error:
-            raise pyhsm.exception.YHSM_WrongInputType(name, int, type(key_handle))
+            raise pyhsm.exception.YHSM_WrongInputType(name, bytes, type(key_handle))
     return key_handle
 
 def input_validate_yubikey_secret(data, name='data'):
@@ -140,8 +140,8 @@ def validate_cmd_response_str(name, got, expected, hex_encode=True):
     """
     if got != expected:
         if hex_encode:
-            got_s = got.encode('hex')
-            exp_s = expected.encode('hex')
+            got_s = got
+            exp_s = expected
         else:
             got_s = got
             exp_s = expected
@@ -156,9 +156,9 @@ def validate_cmd_response_nonce(got, used):
     A request nonce of 000000000000 means the HSM should generate a nonce internally though,
     so if 'used' is all zeros we actually check that 'got' does NOT match 'used'.
     """
-    if used == '000000000000'.decode('hex'):
+    if used == bytes.fromhex('000000000000'):
         if got == used:
             raise(pyhsm.exception.YHSM_Error("Bad nonce in response (got %s, expected HSM generated nonce)" \
-                                                 % (got.encode('hex'))))
+                                                 % (bytes.fromhex(got))))
         return got
     return validate_cmd_response_str('nonce', got, used)

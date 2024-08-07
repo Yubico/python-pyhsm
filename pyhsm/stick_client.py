@@ -33,13 +33,13 @@ DEFAULT_PORT = 5348
 
 
 def pack_data(data):
-    if isinstance(data, basestring):
+    if isinstance(data, str):
         return data.encode('base64')
     return data
 
 
 def unpack_data(data):
-    if isinstance(data, basestring):
+    if isinstance(data, str):
         return data.decode('base64')
     elif isinstance(data, dict) and 'error' in data:
         return pyhsm.exception.YHSM_Error(data['error'])
@@ -52,7 +52,7 @@ def read_sock(sf):
 
 
 def write_sock(sf, cmd, *args):
-    json.dump([cmd] + map(pack_data, args), sf)
+    json.dump([cmd] + list(map(pack_data, args)), sf)
     sf.write("\n")
     sf.flush()
 

@@ -97,7 +97,7 @@ def main():
                 aead.key_handle = key_handle_to_int(keyhandle)
 
             if not insert_query(connection, public_id, aead, keyhandle, aeadobj):
-                print("WARNING: could not insert %s" % public_id)
+                print(("WARNING: could not insert %s" % public_id))
 
     #close sqlalchemy
     connection.close()

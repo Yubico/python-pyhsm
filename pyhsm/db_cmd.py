@@ -105,7 +105,7 @@ class YHSM_Cmd_DB_Validate_OTP(YHSM_Cmd):
             return '<%s instance at %s: public_id=%s, status=0x%x>' % (
                 self.__class__.__name__,
                 hex(id(self)),
-                self.public_id.encode('hex'),
+                bytes.fromhex(self.public_id),
                 self.status
                 )
         else:

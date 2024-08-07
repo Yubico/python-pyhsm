@@ -78,7 +78,7 @@ class YHSM_Cmd_AES_ECB_Encrypt(YHSM_Cmd_AES_ECB):
         #   uint8_t plaintext[YHSM_BLOCK_SIZE];  // Plaintext block
         # } YHSM_ECB_BLOCK_ENCRYPT_REQ;
         payload = struct.pack('<I', key_handle) + \
-            plaintext.ljust(pyhsm.defines.YSM_BLOCK_SIZE, chr(0x0))
+            plaintext.ljust(pyhsm.defines.YSM_BLOCK_SIZE, b'\x00')
         YHSM_Cmd_AES_ECB.__init__(self, stick, pyhsm.defines.YSM_AES_ECB_BLOCK_ENCRYPT, payload)
 
 

@@ -27,9 +27,9 @@ class YHSM_TestCase(unittest.TestCase):
         # unlock keystore if our test configuration contains a passphrase
         if HsmPassphrase is not None and HsmPassphrase != "":
             try:
-                self.hsm.unlock(password = HsmPassphrase.decode("hex"))
-                self.otp_unlock()
-            except pyhsm.exception.YHSM_CommandFailed, e:
+                self.hsm.unlock(password = bytes.fromhex(HsmPassphrase))
+                #self.otp_unlock()
+            except pyhsm.exception.YHSM_CommandFailed as e:
                 # ignore errors from the unlock function, in case our test configuration
                 # hasn't been loaded into the YubiHSM yet
                 pass
@@ -43,14 +43,14 @@ class YHSM_TestCase(unittest.TestCase):
         Try the lambda what() with all key handles between 1 and 32, except the expected one.
         Fail on anything but YSM_FUNCTION_DISABLED.
         """
-        for kh in list(xrange(1, 32)) + extra_khs:
+        for kh in list(range(1, 32)) + extra_khs:
             if kh in expected:
                 continue
             res = None
             try:
                 res = what(kh)
                 self.fail("Expected YSM_FUNCTION_DISABLED for key handle 0x%0x, got '%s'" % (kh, res))
-            except pyhsm.exception.YHSM_CommandFailed, e:
+            except pyhsm.exception.YHSM_CommandFailed as e:
                 if e.status != pyhsm.defines.YSM_FUNCTION_DISABLED:
                     self.fail("Expected YSM_FUNCTION_DISABLED for key handle 0x%0x, got %s" \
                                   % (kh, e.status_str))
@@ -64,8 +64,8 @@ class YHSM_TestCase(unittest.TestCase):
         if not self.hsm.version.have_unlock():
             return None
         Params = PrimaryAdminYubiKey
-        YK = FakeYubiKey(pyhsm.yubikey.modhex_decode(Params[0]).decode('hex'),
-                         Params[1].decode('hex'), Params[2].decode('hex')
+        YK = FakeYubiKey(bytes.fromhex(pyhsm.yubikey.modhex_decode(Params[0])),
+                         bytes.fromhex(Params[1]), bytes.fromhex(Params[2])
                          )
         YK.session_ctr = 0
         use_ctr = 1	# the 16 bit power-up counter of the YubiKey
@@ -77,7 +77,7 @@ class YHSM_TestCase(unittest.TestCase):
                 self.assertTrue(res)
                 # OK - if we got here we've got a successful response for this OTP
                 break
-            except pyhsm.exception.YHSM_CommandFailed, e:
+            except pyhsm.exception.YHSM_CommandFailed as e:
                 if e.status != pyhsm.defines.YSM_OTP_REPLAY:
                     raise
             # don't bother with the session_ctr - test run 5 would mean we first have to
@@ -144,9 +144,8 @@ class YubiKeyEmu():
         Return what the YubiKey would have returned when the button was pressed.
         """
         from pyhsm.yubikey import modhex_encode, modhex_decode
-
         otp = self.get_otp(key)
-        from_key = modhex_encode(public_id.encode('hex')) + modhex_encode(otp.encode('hex'))
+        from_key = modhex_encode(public_id) + modhex_encode(otp)
         return from_key
 
 class YubiKeyRnd(YubiKeyEmu):

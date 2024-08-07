@@ -101,7 +101,7 @@ class YHSM():
         pyhsm.cmd.reset(self.stick)
         if test_sync:
             # Now verify we are in sync
-            data = 'ekoeko'
+            data = b'ekoeko'
             echo = self.echo(data)
             # XXX analyze 'echo' to see if we are in config mode, and produce a
             # nice exception if we are.
@@ -134,18 +134,18 @@ class YHSM():
         In some scenarios, communications with the YubiHSM might be affected
         by terminal line settings turning CR into LF for example.
         """
-        data = ''.join([chr(x) for x in range(256)])
-        data = data + '0d0a0d0a'.decode('hex')
+        data = bytes(range(256))
+        data+= bytes.fromhex('0d0a0d0a')
         chunk_size = pyhsm.defines.YSM_MAX_PKT_SIZE - 10 # max size of echo
         count = 0
         while data:
             this = data[:chunk_size]
             data = data[chunk_size:]
             res = self.echo(this)
-            for i in xrange(len(this)):
+            for i in range(len(this)):
                 if res[i] != this[i]:
                     msg = "Echo test failed at position %i (0x%x != 0x%x)" \
-                        % (count + i, ord(res[i]), ord(this[i]))
+                        % (count + i, res[i], this[i])
                     raise pyhsm.exception.YHSM_Error(msg)
             count += len(this)
 
@@ -276,8 +276,8 @@ class YHSM():
             res = True
         if res and otp is not None:
             (public_id, otp,) = pyhsm.yubikey.split_id_otp(otp)
-            public_id = pyhsm.yubikey.modhex_decode(public_id).decode('hex')
-            otp = pyhsm.yubikey.modhex_decode(otp).decode('hex')
+            public_id = pyhsm.yubikey.modhex_decode(public_id)
+            otp = pyhsm.yubikey.modhex_decode(otp)
             return pyhsm.basic_cmd.YHSM_Cmd_HSM_Unlock(self.stick, public_id, otp).execute()
         return res
 
@@ -452,13 +452,13 @@ class YHSM():
 
         @see: L{pyhsm.validate_cmd.YHSM_Cmd_AEAD_Validate_OTP}
         """
-        if type(public_id) is not str:
+        if type(public_id) is not bytes:
             assert()
-        if type(otp) is not str:
+        if type(otp) is not bytes:
             assert()
         if type(key_handle) is not int:
             assert()
-        if type(aead) is not str:
+        if type(aead) is not bytes:
             assert()
         return pyhsm.validate_cmd.YHSM_Cmd_AEAD_Validate_OTP( \
             self.stick, public_id, otp, key_handle, aead).execute()

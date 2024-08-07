@@ -61,7 +61,9 @@ class YHSM_Cmd():
             # YSM_NULL is the exception to the rule - it should NOT be prefixed with YSM_PKT.bcnt
             cmd_buf = struct.pack('BB', len(self.payload) + 1, self.command)
         else:
-            cmd_buf = chr(self.command)
+            cmd_buf = bytes([self.command])
+        if not isinstance(self.payload, (bytes, bytearray)):
+            self.payload = self.payload.encode()
         cmd_buf += self.payload
         debug_info = None
         unlock = self.stick.acquire()
@@ -127,16 +129,16 @@ class YHSM_Cmd():
         if not res:
             reset(self.stick)
             raise pyhsm.exception.YHSM_Error('YubiHSM did not respond to command %s' \
-                                                 % (pyhsm.defines.cmd2str(self.command)) )
+                                                 % (pyhsm.defines.cmd2str(self.command)))
         # try to check if it is a YubiHSM in configuration mode
-        self.stick.write('\r\r\r', '(mode test)')
-        res2 = self.stick.read(50) # expect a timeout
+        self.stick.write(b'\r\r\r', '(mode test)')
+        res2 = self.stick.read(50).decode() # expect a timeout
         lines = res2.split('\n')
         for this in lines:
             if re.match('^(NO_CFG|WSAPI|HSM).*> .*', this):
                 raise pyhsm.exception.YHSM_Error('YubiHSM is in configuration mode')
         raise pyhsm.exception.YHSM_Error('Unknown response from serial device %s : "%s"' \
-                                             % (self.stick.device, res.encode('hex')))
+                                             % (self.stick.device, res()))
 
     def parse_result(self, data):
         """

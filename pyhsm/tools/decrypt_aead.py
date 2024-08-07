@@ -101,7 +101,7 @@ def parse_args():
     args = parser.parse_args()
     # argument fixups
     args.format = args.format.lower()
-    args.aes_key = args.aes_key.decode('hex')
+    args.aes_key = bytes.fromhex(args.aes_key)
     if args.key_handle:
         args.key_handle = pyhsm.util.key_handle_to_int(args.key_handle)
     if args.start_id is not None:
@@ -133,7 +133,7 @@ def parse_args():
             sys.stderr.write("error: --key-handle-out is required when using --format aead.\n")
             return False
         # argument fixups
-        args.aes_key_out = args.aes_key_out.decode('hex')
+        args.aes_key_out = bytes.fromhex(args.aes_key_out)
         args.key_handle_out_orig = args.key_handle_out # save to use in AEAD output paths
         args.key_handle_out = pyhsm.util.key_handle_to_int(args.key_handle_out)
     return args
@@ -192,18 +192,18 @@ def process_file(path, fn, args, state):
             state.log_failed(full_fn)
             return False
         aead.key_handle = args.key_handle
-        aead.nonce = pyhsm.yubikey.modhex_decode(fn).decode('hex')
+        aead.nonce = bytes.fromhex(pyhsm.yubikey.modhex_decode(fn))
 
     if args.debug:
         sys.stderr.write("%s\n" % aead)
-        sys.stderr.write("AEAD len %i : %s\n" % (len(aead.data), aead.data.encode('hex')))
+        sys.stderr.write("AEAD len %i : %s\n" % (len(aead.data), aead.data))
     pt = pyhsm.soft_hsm.aesCCM(args.aes_key, aead.key_handle, aead.nonce, aead.data, decrypt = True)
 
     if args.print_filename:
-        print("%s " % (full_fn)),
+        print(("%s " % (full_fn)), end=' ')
 
     if args.format == 'raw':
-        print(pt.encode('hex'))
+        print(pt)
     elif args.format == 'aead':
         # encrypt secrets with new key
         ct = pyhsm.soft_hsm.aesCCM(args.aes_key_out, args.key_handle_out, aead.nonce, pt, decrypt = False)
@@ -211,7 +211,7 @@ def process_file(path, fn, args, state):
         filename = aead_filename(args.output_dir, args.key_handle_out_orig, fn)
         aead_out.save(filename)
         if args.print_filename:
-            print ""
+            print("")
     elif args.format == 'yubikey-csv':
         key = pt[:pyhsm.defines.KEY_SIZE]
         uid = pt[pyhsm.defines.KEY_SIZE:]
@@ -219,13 +219,13 @@ def process_file(path, fn, args, state):
         timestamp = ''
         global yknum
         yknum += 1
-        print("%i,%s,%s,%s,%s,%s,,,,," % (yknum,
+        print(("%i,%s,%s,%s,%s,%s,,,,," % (yknum,
                                           fn,
-                                          uid.encode('hex'),
-                                          key.encode('hex'),
+                                          uid,
+                                          key,
                                           access_code,
                                           timestamp,
-                                          ))
+                                          )))
 
     state.log_success(full_fn)
 
@@ -254,7 +254,7 @@ def safe_process_files(path, files, args, state):
         try:
             if not process_file(path, fn, args, state):
                 return False
-        except Exception, e:
+        except Exception as e:
             sys.stderr.write("error: %s\n%s\n" % (os.path.join(path, fn), traceback.format_exc()))
             state.log_failed(full_fn)
         if state.should_quit():

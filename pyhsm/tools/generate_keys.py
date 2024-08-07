@@ -138,42 +138,42 @@ def gen_keys(hsm, args):
     """
 
     if args.verbose:
-        print "Generating %i keys :\n" % (args.count)
+        print("Generating %i keys :\n" % (args.count))
     else:
-        print "Generating %i keys" % (args.count)
+        print("Generating %i keys" % (args.count))
 
     for int_id in range(args.start_id, args.start_id + args.count):
         public_id = ("%x" % int_id).rjust(args.public_id_chars, '0')
         padded_id = pyhsm.yubikey.modhex_encode(public_id)
 
         if args.verbose:
-            print "  %s" % (padded_id)
+            print("  %s" % (padded_id))
 
-        num_bytes = len(pyhsm.aead_cmd.YHSM_YubiKeySecret('a' * 16, 'b' * 6).pack())
+        num_bytes = len(pyhsm.aead_cmd.YHSM_YubiKeySecret(b'a' * 16, b'b' * 6).pack())
         hsm.load_random(num_bytes)
-        for kh in args.key_handles.keys():
+        for kh in list(args.key_handles.keys()):
             if args.random_nonce:
-                nonce = ""
+                nonce = b""
             else:
-                nonce = public_id.decode('hex')
+                nonce = bytes.fromhex(public_id)
             aead = hsm.generate_aead(nonce, kh)
 
             filename = output_filename(args.output_dir, args.key_handles[kh], padded_id)
 
             if args.verbose:
-                print "    %4s, %i bytes (%s) -> %s" % \
-                    (args.key_handles[kh], len(aead.data), shorten_aead(aead), filename)
+                print("    %4s, %i bytes (%s) -> %s" % \
+                    (args.key_handles[kh], len(aead.data), shorten_aead(aead), filename))
             aead.save(filename)
 
         if args.verbose:
-            print ""
+            print("")
 
-    print "\nDone\n"
+    print("\nDone\n")
 
 def shorten_aead(aead):
     """ Produce pretty-printable version of long AEAD. """
-    head = aead.data[:4].encode('hex')
-    tail = aead.data[-4:].encode('hex')
+    head = aead.data[:4]
+    tail = aead.data[-4:]
     return "%s...%s" % (head, tail)
 
 def output_filename(output_dir, key_handle, public_id):
@@ -195,12 +195,12 @@ def main():
 
     args_fixup(args)
 
-    print "output dir		: %s" % (args.output_dir)
-    print "keys to generate	: %s" % (args.count)
-    print "key handles		: %s" % (args.key_handles)
-    print "start public_id		: %s (0x%x)" % (args.start_id, args.start_id)
-    print "YHSM device		: %s" % (args.device)
-    print ""
+    print("output dir		: %s" % (args.output_dir))
+    print("keys to generate	: %s" % (args.count))
+    print("key handles		: %s" % (args.key_handles))
+    print("start public_id		: %s (0x%x)" % (args.start_id, args.start_id))
+    print("YHSM device		: %s" % (args.device))
+    print("")
 
     if os.path.isfile(args.device):
         hsm = pyhsm.soft_hsm.SoftYHSM.from_file(args.device)

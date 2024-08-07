@@ -6,17 +6,17 @@ import unittest
 import pyhsm
 import pyhsm.oath_hotp
 
-import test_common
+from . import test_common
 
 class TestOath(test_common.YHSM_TestCase):
 
     def setUp(self):
         test_common.YHSM_TestCase.setUp(self)
 
-        key = "3132333435363738393031323334353637383930".decode('hex')
+        key = bytes.fromhex("3132333435363738393031323334353637383930")
 	# Enabled flags 00010000 = YSM_HMAC_SHA1_GENERATE
         flags = struct.pack("< I", 0x10000)
-        self.nonce = 'f1f2f3f4f5f6'.decode('hex')
+        self.nonce = bytes.fromhex('f1f2f3f4f5f6')
         # key 0x2000 has all flags set
         self.key_handle = 0x2000
         self.phantom = pyhsm.defines.YSM_TEMP_KEY_HANDLE
@@ -46,7 +46,7 @@ class TestOath(test_common.YHSM_TestCase):
 
         for c, expected, code in test_vectors:
             hmac_result = self.hsm.hmac_sha1(self.phantom, struct.pack("> Q", c)).get_hash()
-            self.assertEqual(expected, hmac_result.encode('hex'))
+            self.assertEqual(bytes.fromhex(expected), hmac_result)
             self.assertEqual(code, pyhsm.oath_hotp.truncate(hmac_result, length=6))
 
     def test_OATH_HOTP_validation(self):

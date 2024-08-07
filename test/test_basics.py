@@ -7,7 +7,7 @@ import pyhsm
 import serial
 import struct
 
-import test_common
+from . import test_common
 
 class TestBasics(test_common.YHSM_TestCase):
 
@@ -16,7 +16,7 @@ class TestBasics(test_common.YHSM_TestCase):
 
     def test_echo(self):
         """ Test echo command. """
-        self.assertTrue(self.hsm.echo('test'))
+        self.assertTrue(self.hsm.echo(b'test'))
 
     def test_random(self):
         """ Test random number generator . """
@@ -48,14 +48,14 @@ class TestBasics(test_common.YHSM_TestCase):
     def test_nonce_class(self):
         """ Test nonce class. """
         # test repr method
-        self.assertEquals(str, type(str(self.hsm.get_nonce(0))))
+        self.assertEqual(str, type(str(self.hsm.get_nonce(0))))
 
     def test_random_reseed(self):
         """
         Tets random reseed.
         """
         # Unsure if we can test anything except the status returned is OK
-        self.assertTrue(self.hsm.random_reseed('A' * 32))
+        self.assertTrue(self.hsm.random_reseed(b'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'))
         # at least test we didn't disable the RNG
         r1 = self.hsm.random(10)
         r2 = self.hsm.random(10)
@@ -63,14 +63,14 @@ class TestBasics(test_common.YHSM_TestCase):
 
     def test_load_temp_key(self):
         """ Test load_temp_key. """
-        key = "A" * 16
-        uid = '\x4d\x01\x4d\x02'
-        nonce = 'f1f2f3f4f5f6'.decode('hex')
+        key = b"AAAAAAAAAAAAAAAA" 
+        uid = b'\x4d\x01\x4d\x02'
+        nonce = bytes.fromhex('f1f2f3f4f5f6')
         # key 0x2000 has all flags set
         key_handle = 0x2000
 
         my_flags = struct.pack("< I", 0xffffffff) # full permissions when loaded into phantom key handle
-        my_key = 'C' * pyhsm.defines.YSM_MAX_KEY_SIZE
+        my_key = b'C' * pyhsm.defines.YSM_MAX_KEY_SIZE
         self.hsm.load_secret(my_key + my_flags)
 
         aead = self.hsm.generate_aead(nonce, key_handle)
@@ -81,7 +81,7 @@ class TestBasics(test_common.YHSM_TestCase):
         self.assertTrue(self.hsm.load_temp_key(nonce, key_handle, aead))
 
         # Encrypt something with the phantom key
-        plaintext = 'Testing'.ljust(pyhsm.defines.YSM_BLOCK_SIZE)	# pad for compare after decrypt
+        plaintext = b'Testing'.ljust(pyhsm.defines.YSM_BLOCK_SIZE)	# pad for compare after decrypt
         ciphertext = self.hsm.aes_ecb_encrypt(pyhsm.defines.YSM_TEMP_KEY_HANDLE, plaintext)
         self.assertNotEqual(plaintext, ciphertext)
 
@@ -92,12 +92,12 @@ class TestBasics(test_common.YHSM_TestCase):
     def test_yhsm_class(self):
         """ Test YHSM class. """
         # test repr method
-        self.assertEquals(str, type(str(self.hsm)))
+        self.assertEqual(str, type(str(self.hsm)))
 
     def test_yhsm_stick_class(self):
         """ Test YHSM_Stick class. """
         # test repr method
-        self.assertEquals(str, type(str(self.hsm.stick)))
+        self.assertEqual(str, type(str(self.hsm.stick)))
 
     def test_set_debug(self):
         """ Test set_debug on YHSM. """
@@ -115,14 +115,14 @@ class TestBasics(test_common.YHSM_TestCase):
         """ Test YHSM_Cmd_System_Info class. """
         this = pyhsm.basic_cmd.YHSM_Cmd_System_Info(None)
         # test repr method
-        self.assertEquals(str, type(str(this)))
+        self.assertEqual(str, type(str(this)))
 
     def test_sysinfo(self):
         """ Test sysinfo. """
         info = self.hsm.info()
         self.assertTrue(info.version_major > 0 or info.version_minor > 0)
         self.assertEqual(12, len(info.system_uid))
-        self.assertEquals(str, type(str(info)))
+        self.assertEqual(str, type(str(info)))
 
     def test_drain(self):
         """ Test YubiHSM drain. """

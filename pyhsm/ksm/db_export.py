@@ -18,7 +18,7 @@ import pyhsm.aead_cmd
 
 def insert_slash(string, every=2):
     """insert_slash insert / every 2 char"""
-    return os.path.join(string[i:i+every] for i in xrange(0, len(string), every))
+    return os.path.join(string[i:i+every] for i in range(0, len(string), every))
 
 
 def mkdir_p(path):

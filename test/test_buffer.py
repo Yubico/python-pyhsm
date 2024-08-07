@@ -5,7 +5,7 @@ import sys
 import unittest
 import pyhsm
 
-import test_common
+from . import test_common
 
 class TestBuffer(test_common.YHSM_TestCase):
 
@@ -14,7 +14,7 @@ class TestBuffer(test_common.YHSM_TestCase):
 
     def test_load_random(self):
         """ Test load_random. """
-        nonce = "abc123"
+        nonce = b"abc123"
         # key 0x2000 has all flags set
         key_handle = 0x2000
         self.hsm.load_random(16)
@@ -29,7 +29,7 @@ class TestBuffer(test_common.YHSM_TestCase):
 
     def test_would_overflow_buffer(self):
         """ Test overflow of buffer. """
-        nonce = "abc123"
+        nonce = b"abc123"
         # key 0x2000 has all flags set
         key_handle = 0x2000
 
@@ -42,14 +42,14 @@ class TestBuffer(test_common.YHSM_TestCase):
 
     def test_load_data(self):
         """ Test loading data into buffer. """
-        c1 = self.hsm.load_data('Samp', offset = 0)
+        c1 = self.hsm.load_data(b'Samp', offset = 0)
         self.assertEqual(c1, 4)
-        c2 = self.hsm.load_data('123', offset = 3)
+        c2 = self.hsm.load_data(b'123', offset = 3)
         self.assertEqual(c2, 6)
-        c3 = self.hsm.load_data('ple #2', offset = 3)
+        c3 = self.hsm.load_data(b'ple #2', offset = 3)
         self.assertEqual(c3, 9)
-        nonce = "abc123"
+        nonce = b"abc123"
         # key 0x2000 has all flags set
         key_handle = 0x2000
         aead = self.hsm.generate_aead(nonce, key_handle)
-        self.assertEqual(aead.data.encode('hex'), '18a88fbd7bd2275ba0a722bf80423ffab7')
+        self.assertEqual(aead.data, bytes.fromhex('18a88fbd7bd2275ba0a722bf80423ffab7'))

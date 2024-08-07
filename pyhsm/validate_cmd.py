@@ -107,7 +107,7 @@ class YHSM_ValidationResult():
         return '<%s instance at %s: public_id=%s, use_ctr=%i, session_ctr=%i, ts=%i/%i>' % (
             self.__class__.__name__,
             hex(id(self)),
-            self.public_id.encode('hex'),
+            bytes.fromhex(self.public_id),
             self.use_ctr,
             self.session_ctr,
             self.ts_high,

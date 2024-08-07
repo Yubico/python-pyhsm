@@ -5,7 +5,7 @@ import sys
 import unittest
 import pyhsm
 
-import test_common
+from . import test_common
 
 class TestUtil(test_common.YHSM_TestCase):
 
@@ -19,7 +19,7 @@ class TestUtil(test_common.YHSM_TestCase):
 
     def test_debug_output(self):
         """ Test debug output of YubiHSM communication. """
-        self.assertTrue(self.hsm.echo('testing'))
+        self.assertTrue(self.hsm.echo(b'testing'))
         self.assertTrue(self.hsm.drain())
 
     def tearDown(self):

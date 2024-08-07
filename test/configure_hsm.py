@@ -9,17 +9,17 @@ import unittest
 import pyhsm
 import pyhsm.util
 
-import test_common
+from . import test_common
 
-from StringIO import StringIO
-from test_common import CfgPassphrase, AdminYubiKeys, HsmPassphrase, PrimaryAdminYubiKey
+from io import StringIO
+from .test_common import CfgPassphrase, AdminYubiKeys, HsmPassphrase, PrimaryAdminYubiKey
 
 
 class ConfigureYubiHSMforTest(test_common.YHSM_TestCase):
 
     def test_aaa_echo(self):
         """ Test echo before reconfiguration. """
-        self.assertTrue(self.hsm.echo('test'))
+        self.assertTrue(self.hsm.echo(b'test'))
 
     def test_configure_YHSM(self):
         """
@@ -54,7 +54,7 @@ class ConfigureYubiHSMforTest(test_common.YHSM_TestCase):
             self.config_do ("hsm ffffffff\r%s\r%s\r%s\ryes" % (CfgPassphrase, AdminYubiKeysStr, HsmPassphrase))
 
         self.hsm.drain()
-        self.add_keys(xrange(31))
+        self.add_keys(range(31))
         self.hsm.drain()
 
         self.config_do("keylist")
@@ -70,7 +70,7 @@ class ConfigureYubiHSMforTest(test_common.YHSM_TestCase):
 
         # get back into HSM mode
         sys.stderr.write("exit")
-        self.ser.write("exit\r")
+        self.ser.write(b"exit\r")
 
         self.hsm.drain()
 
@@ -80,8 +80,8 @@ class ConfigureYubiHSMforTest(test_common.YHSM_TestCase):
         """ Test unlock of keystore after reconfiguration. """
         if self.hsm.version.have_unlock():
             Params = PrimaryAdminYubiKey
-            YK = test_common.FakeYubiKey(pyhsm.yubikey.modhex_decode(Params[0]).decode('hex'),
-                                        Params[1].decode('hex'), Params[2].decode('hex')
+            YK = test_common.FakeYubiKey(bytes.fromhex(pyhsm.yubikey.modhex_decode(Params[0])),
+                                        bytes.fromhex(Params[1]), bytes.fromhex(Params[2])
                                         )
             # After reconfigure, we know the counter values for PrimaryAdminYubiKey is zero
             # in the internal db. However, the test suite initialization will unlock the keystore
@@ -91,28 +91,28 @@ class ConfigureYubiHSMforTest(test_common.YHSM_TestCase):
             # first verify counters 1/0 gives the expected YSM_OTP_REPLAY
             try:
                 self.hsm.unlock(otp = YK.from_key())
-            except pyhsm.exception.YHSM_CommandFailed, e:
+            except pyhsm.exception.YHSM_CommandFailed as e:
                 if e.status != pyhsm.defines.YSM_OTP_REPLAY:
                     raise
             # now do real unlock with values 2/1 (there is an extra unlock done somewhere...)
             YK.use_ctr = 2
-            self.assertTrue(self.hsm.unlock(password = HsmPassphrase.decode("hex"), otp = YK.from_key()))
+            self.assertTrue(self.hsm.unlock(password = bytes.fromhex(HsmPassphrase), otp = YK.from_key()))
         else:
-            self.assertTrue(self.hsm.unlock(password = HsmPassphrase.decode("hex")))
+            self.assertTrue(self.hsm.unlock(password = bytes.fromhex(HsmPassphrase)))
 
     def test_zzz_echo(self):
         """ Test echo after reconfiguration. """
-        self.assertTrue(self.hsm.echo('test'))
+        self.assertTrue(self.hsm.echo(b'test'))
 
     def config_do(self, cmd, add_cr = True):
         # Don't have to output command - it is echoed
         #sys.__stderr__.write("> " + cmd + "\n")
         if add_cr:
-            self.ser.write(cmd + "\r")
+            self.ser.write(cmd.encode() + b"\r")
         else:
-            self.ser.write(cmd)
+            self.ser.write(cmd.encode())
         #time.sleep(0.5)
-        recv = ''
+        recv = b''
         fail_count = 0
         sys.stderr.write("< ")
         while True:
@@ -121,11 +121,10 @@ class ConfigureYubiHSMforTest(test_common.YHSM_TestCase):
                 fail_count += 1
                 if fail_count == 5:
                     raise Exception("Did not get the next prompt", recv)
-            sys.stderr.write(b)
 
             recv += b
-            lines = recv.split('\n')
-            if re.match('^(NO_CFG|WSAPI|HSM).*> .*', lines[-1]):
+            lines = recv.split(b'\n')
+            if re.match('^(NO_CFG|WSAPI|HSM).*> .*', lines[-1].decode()):
                 break
         return recv
 

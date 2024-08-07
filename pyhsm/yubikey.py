@@ -43,8 +43,8 @@ def validate_otp(hsm, from_key):
     @see: L{pyhsm.db_cmd.YHSM_Cmd_DB_Validate_OTP.parse_result}
     """
     public_id, otp = split_id_otp(from_key)
-    return hsm.db_validate_yubikey_otp(modhex_decode(public_id).decode('hex'),
-                                       modhex_decode(otp).decode('hex')
+    return hsm.db_validate_yubikey_otp(modhex_decode(public_id),
+                                       modhex_decode(otp)
                                        )
 
 def validate_yubikey_with_aead(hsm, from_key, aead, key_handle):
@@ -84,9 +84,9 @@ def validate_yubikey_with_aead(hsm, from_key, aead, key_handle):
     otp = modhex_decode(otp)
 
     if not nonce:
-        nonce = public_id.decode('hex')
+        nonce = bytes.fromhex(public_id)
 
-    return hsm.validate_aead_otp(nonce, otp.decode('hex'),
+    return hsm.validate_aead_otp(nonce, otp,
         key_handle, aead)
 
 def modhex_decode(data):
@@ -99,7 +99,7 @@ def modhex_decode(data):
     @returns: Hex
     @rtype: string
     """
-    t_map = string.maketrans("cbdefghijklnrtuv", "0123456789abcdef")
+    t_map = bytes.maketrans(b"cbdefghijklnrtuv", b"0123456789abcdef")
     return data.translate(t_map)
 
 def modhex_encode(data):
@@ -112,7 +112,7 @@ def modhex_encode(data):
     @returns: Modhex
     @rtype: string
     """
-    t_map = string.maketrans("0123456789abcdef", "cbdefghijklnrtuv")
+    t_map = bytes.maketrans(b"0123456789abcdef", b"cbdefghijklnrtuv")
     return data.translate(t_map)
 
 def split_id_otp(from_key):
@@ -125,12 +125,16 @@ def split_id_otp(from_key):
     @returns: public_id and OTP
     @rtype: tuple of string
     """
-    if len(from_key) > 32:
-        public_id, otp = from_key[:-32], from_key[-32:]
-    elif len(from_key) == 32:
-        public_id = ''
+    if type(from_key) == bytes:
+        from_key_len = 16
+    else:
+        from_key_len = 32
+    if len(from_key) > from_key_len:
+        public_id, otp = from_key[:-from_key_len], from_key[-from_key_len:]
+    elif len(from_key) == from_key_len:
+        public_id = b''
         otp = from_key
     else:
-        raise pyhsm.exception.YHSM_Error("Bad from_key length %i < 32 : %s" \
-                                       % (len(from_key), from_key))
+        raise pyhsm.exception.YHSM_Error("Bad from_key length %i < %i : %s" \
+                                       % (len(from_key), from_key_len, from_key))
     return public_id, otp

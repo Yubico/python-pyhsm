@@ -5,24 +5,24 @@ import sys
 import unittest
 import pyhsm
 
-import test_common
+from . import test_common
 
 class TestAEAD(test_common.YHSM_TestCase):
 
     def setUp(self):
         test_common.YHSM_TestCase.setUp(self)
-        self.nonce = "4d4d4d4d4d4d".decode('hex')
-        self.key = "A" * 16
-        self.uid = '\x4d\x01\x4d\x02\x4d\x03'
+        self.nonce = bytes.fromhex('4d4d4d4d4d4d')
+        self.key = b"AAAAAAAAAAAAAAAA"
+        self.uid = bytes.fromhex('4d014d024d03')
         self.secret = pyhsm.aead_cmd.YHSM_YubiKeySecret(self.key, self.uid)
 
     def test_aead_cmd_class(self):
         """ Test YHSM_AEAD_Cmd class. """
         this = pyhsm.aead_cmd.YHSM_AEAD_Cmd(None, None)
         # test repr method
-        self.assertEquals(str, type(str(this)))
+        self.assertEqual(str, type(str(this)))
         this.executed = True
-        self.assertEquals(str, type(str(this)))
+        self.assertEqual(str, type(str(this)))
 
     def test_generate_aead_simple(self):
         """ Test generate_aead_simple without specifying nonce. """
@@ -30,14 +30,14 @@ class TestAEAD(test_common.YHSM_TestCase):
         # HSM> < keyload - Load key data now using flags 00000002. Press ESC to quit
         # 00000002 - stored ok
         key_handle = 2
-        nonce = ''
+        nonce = b''
         aead = self.hsm.generate_aead_simple(nonce, key_handle, self.secret)
 
         self.assertNotEqual(aead.nonce, nonce)
         self.assertEqual(aead.key_handle, key_handle)
 
         # test repr method
-        self.assertEquals(str, type(str(aead)))
+        self.assertEqual(str, type(str(aead)))
 
     def test_generate_aead_simple_with_nonce(self):
         """ Test generate_aead_simple with specified nonce. """
@@ -62,8 +62,8 @@ class TestAEAD(test_common.YHSM_TestCase):
         try:
             res = self.hsm.generate_aead_simple(self.nonce, key_handle, self.secret)
             self.fail("Expected YSM_FUNCTION_DISABLED, got %s" % (res))
-        except pyhsm.exception.YHSM_CommandFailed, e:
-            self.assertEquals(e.status, pyhsm.defines.YSM_FUNCTION_DISABLED)
+        except pyhsm.exception.YHSM_CommandFailed as e:
+            self.assertEqual(e.status, pyhsm.defines.YSM_FUNCTION_DISABLED)
 
     def test_generate_aead_simple_validates(self):
         """ Test validate_aead of generate_aead_simple result. """
@@ -72,7 +72,7 @@ class TestAEAD(test_common.YHSM_TestCase):
         kh_gen = 0x2000
         kh_val = 0x2000
 
-        aead = self.hsm.generate_aead_simple('', kh_gen, self.secret)
+        aead = self.hsm.generate_aead_simple(b'', kh_gen, self.secret)
 
         # test that the YubiHSM validates the generated AEAD
         # and confirms it contains our secret
@@ -86,7 +86,7 @@ class TestAEAD(test_common.YHSM_TestCase):
         kh_gen = 0x2000
         kh_val = 0x2000
 
-        nonce = '000000000000'.decode('hex')
+        nonce = bytes.fromhex('000000000000')
 
         aead = self.hsm.generate_aead_simple(nonce, kh_gen, self.secret)
 
@@ -106,8 +106,8 @@ class TestAEAD(test_common.YHSM_TestCase):
         try:
             res = self.hsm.generate_aead_random(self.nonce, key_handle, 22)
             self.fail("Expected YSM_FUNCTION_DISABLED, got %s" % (res))
-        except pyhsm.exception.YHSM_CommandFailed, e:
-            self.assertEquals(e.status, pyhsm.defines.YSM_FUNCTION_DISABLED)
+        except pyhsm.exception.YHSM_CommandFailed as e:
+            self.assertEqual(e.status, pyhsm.defines.YSM_FUNCTION_DISABLED)
 
     def test_generate_aead_random_nonce_permitted(self):
         """ Test generate_aead_random with nonce. """
@@ -127,7 +127,7 @@ class TestAEAD(test_common.YHSM_TestCase):
         # 00000004 - stored ok
         key_handle = 4
 
-        nonce = ''
+        nonce = b''
 
         # Test a number of different sizes
         for num_bytes in (1, \
@@ -143,8 +143,8 @@ class TestAEAD(test_common.YHSM_TestCase):
             try:
                 res = self.hsm.generate_aead_random(nonce, key_handle, num_bytes)
                 self.fail("Expected YSM_INVALID_PARAMETER, got %s" % (res))
-            except pyhsm.exception.YHSM_CommandFailed, e:
-                self.assertEquals(e.status, pyhsm.defines.YSM_INVALID_PARAMETER)
+            except pyhsm.exception.YHSM_CommandFailed as e:
+                self.assertEqual(e.status, pyhsm.defines.YSM_INVALID_PARAMETER)
 
     def test_who_can_generate_random(self):
         """ Test what key handles can generate a random AEAD. """
@@ -169,7 +169,7 @@ class TestAEAD(test_common.YHSM_TestCase):
         gen_kh = 2
         # Enabled flags 00000010 = YSM_AEAD_DECRYPT_CMP
         # 00000005 - stored ok
-        aead = self.hsm.generate_aead_simple('', gen_kh, self.secret)
+        aead = self.hsm.generate_aead_simple(b'', gen_kh, self.secret)
 
         this = lambda kh: self.hsm.validate_aead(aead.nonce, kh, \
                                                      aead, cleartext = self.secret.pack())

@@ -65,12 +65,12 @@ def validate_otp(hsm, args):
     try:
         res = pyhsm.yubikey.validate_otp(hsm, args.otp)
         if args.verbose:
-            print "OK counter=%04x low=%04x high=%02x use=%02x" % \
-                (res.use_ctr, res.ts_low, res.ts_high, res.session_ctr)
+            print("OK counter=%04x low=%04x high=%02x use=%02x" % \
+                (res.use_ctr, res.ts_low, res.ts_high, res.session_ctr))
         return 0
-    except pyhsm.exception.YHSM_CommandFailed, e:
+    except pyhsm.exception.YHSM_CommandFailed as e:
         if args.verbose:
-            print "%s" % (pyhsm.defines.status2str(e.status))
+            print("%s" % (pyhsm.defines.status2str(e.status)))
         # figure out numerical response code
         for r in [pyhsm.defines.YSM_OTP_INVALID, \
                       pyhsm.defines.YSM_OTP_REPLAY, \
@@ -84,7 +84,7 @@ def validate_oath(hsm, args):
     """
     Validate an OATH OTP.
     """
-    print "ERROR: Not implemented, try 'yhsm-validation-server'."
+    print("ERROR: Not implemented, try 'yhsm-validation-server'.")
     return 0
 
 
@@ -92,8 +92,8 @@ def main():
     args = parse_args()
 
     if args.debug:
-        print "YHSM device		: %s" % (args.device)
-        print ""
+        print("YHSM device		: %s" % (args.device))
+        print("")
 
     hsm = pyhsm.YHSM(device = args.device, debug=args.debug)
 

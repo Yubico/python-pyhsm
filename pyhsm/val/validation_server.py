@@ -88,8 +88,8 @@ import base64
 import hashlib
 import sqlite3
 import argparse
-import urlparse
-import BaseHTTPServer
+import urllib.parse
+import http.server
 import pyhsm
 import pyhsm.yubikey
 import pyhsm.oath_hotp
@@ -114,7 +114,7 @@ saved_key_handle = None
 
 client_ids = {}
 
-class YHSM_VALRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
+class YHSM_VALRequestHandler(http.server.BaseHTTPRequestHandler):
     """
     Handle HTTP GET requests according to configuration in global variable `args'.
     """
@@ -130,7 +130,7 @@ class YHSM_VALRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             res = None
             log_res = None
             mode = None
-            params = urlparse.parse_qs(self.path[len(args.serve_url):])
+            params = urllib.parse.parse_qs(self.path[len(args.serve_url):])
             if "otp" in params:
                 if args.mode_short_otp:
                     # YubiKey internal db OTP in KSM mode
@@ -170,12 +170,12 @@ class YHSM_VALRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
             self.log_message("%s validation result: %s -> %s", mode, self.path, log_res)
 
-            if res != None:
+            if res is not None:
                 self.send_response(200)
                 self.send_header('Content-type', 'text/plain')
                 self.end_headers()
-                self.wfile.write(res)
-                self.wfile.write("\n")
+                self.wfile.write(bytes(res, "utf8"))
+                self.wfile.write(bytes("\n", "utf8"))
             else:
                 self.log_error ("No validation result to '%s' (responding 403)" % (self.path))
                 self.send_response(403, 'Forbidden')
@@ -199,14 +199,14 @@ class YHSM_VALRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         """ For logging client host without resolving. """
         return self.client_address[0]
 
-class YHSM_VALServer(BaseHTTPServer.HTTPServer):
+class YHSM_VALServer(http.server.HTTPServer):
     """
     Wrapper class to properly initialize address_family for IPv6 addresses.
     """
     def __init__(self, server_address, req_handler):
         if ":" in server_address[0]:
             self.address_family = socket.AF_INET6
-        BaseHTTPServer.HTTPServer.__init__(self, server_address, req_handler)
+        http.server.HTTPServer.__init__(self, server_address, req_handler)
 
 
 def validate_yubikey_otp_short(self, params):
@@ -221,7 +221,7 @@ def validate_yubikey_otp_short(self, params):
         res = pyhsm.yubikey.validate_otp(hsm, from_key)
         return "OK counter=%04x low=%04x high=%02x use=%02x" % \
             (res.use_ctr, res.ts_low, res.ts_high, res.session_ctr)
-    except pyhsm.exception.YHSM_CommandFailed, e:
+    except pyhsm.exception.YHSM_CommandFailed as e:
         return "ERR %s" % (pyhsm.defines.status2str(e.status))
 
 def validate_yubikey_otp(self, params):
@@ -270,7 +270,7 @@ def validate_yubikey_otp(self, params):
                 vres["sl"] = "100"
                 if "timestamp" in params:
                     vres["t"] = time.strftime("%FT%TZ0000", time.gmtime())
-        except pyhsm.exception.YHSM_CommandFailed, e:
+        except pyhsm.exception.YHSM_CommandFailed as e:
             if e.status == pyhsm.defines.YSM_ID_NOT_FOUND:
                 vres["status"] = "BAD_OTP"
             elif e.status == pyhsm.defines.YSM_OTP_REPLAY:
@@ -350,24 +350,24 @@ def validate_oath_hotp(self, params):
         self.log_error("IN: %s, could not get UID/OTP ('%s'/'%s')" % (params, uid, otp))
         return "ERR Invalid OATH-HOTP input"
     if args.debug:
-        print "OATH-HOTP uid %s, OTP %s" % (uid, otp)
+        print("OATH-HOTP uid %s, OTP %s" % (uid, otp))
 
     # Fetch counter value for `uid' from database
     try:
         db = ValOathDb(args.db_file)
         entry = db.get(uid)
-    except Exception, e:
+    except Exception as e:
         self.log_error("IN: %s, database error : '%s'" % (params, e))
         return "ERR Internal error"
 
     # Check for correct OATH-HOTP OTP
-    nonce = entry.data["nonce"].decode('hex')
-    aead = entry.data["aead"].decode('hex')
+    nonce = bytes.fromhex(entry.data["nonce"])
+    aead = bytes.fromhex(entry.data["aead"])
     new_counter = pyhsm.oath_hotp.search_for_oath_code(hsm, entry.data["key_handle"], nonce, aead, \
                                                            entry.data["oath_c"], otp, args.look_ahead)
     if args.debug:
-        print "OATH-HOTP %i..%i -> new C == %s" \
-            % (entry.data["oath_c"], entry.data["oath_c"] + args.look_ahead, new_counter)
+        print("OATH-HOTP %i..%i -> new C == %s" \
+            % (entry.data["oath_c"], entry.data["oath_c"] + args.look_ahead, new_counter))
     if type(new_counter) != int:
         # XXX increase 'throttling parameter' to make brute forcing harder/impossible
         return "ERR Could not validate OATH-HOTP OTP"
@@ -377,7 +377,7 @@ def validate_oath_hotp(self, params):
             return "OK counter=%04x" % (new_counter)
         else:
             return "ERR replayed OATH-HOTP"
-    except Exception, e:
+    except Exception as e:
         self.log_error("IN: %s, database error updating counter : %s" % (params, e))
         return "ERR Internal error"
 
@@ -395,25 +395,25 @@ def validate_oath_totp(self, params):
         self.log_error("IN: %s, could not get UID/OTP ('%s'/'%s')" % (params, uid, otp))
         return "ERR Invalid OATH-TOTP input"
     if args.debug:
-        print "OATH-TOTP uid %s, OTP %s" % (uid, otp)
+        print("OATH-TOTP uid %s, OTP %s" % (uid, otp))
 
     # Fetch counter value for `uid' from database
     try:
         db = ValOathDb(args.db_file)
         entry = db.get(uid)
-    except Exception, e:
+    except Exception as e:
         self.log_error("IN: %s, database error : '%s'" % (params, e))
         return "ERR Internal error"
 
     # Check for correct OATH-TOTP OTP
-    nonce = entry.data["nonce"].decode('hex')
-    aead = entry.data["aead"].decode('hex')
+    nonce = bytes.fromhex(entry.data["nonce"])
+    aead = bytes.fromhex(entry.data["aead"])
     new_timecounter = pyhsm.oath_totp.search_for_oath_code(
         hsm, entry.data["key_handle"], nonce, aead, otp, args.interval, args.tolerance)
 
     if args.debug:
-        print "OATH-TOTP counter: %i, interval: %i -> new timecounter == %s" \
-             % (entry.data["oath_c"], args.interval, new_timecounter)
+        print("OATH-TOTP counter: %i, interval: %i -> new timecounter == %s" \
+             % (entry.data["oath_c"], args.interval, new_timecounter))
     if type(new_timecounter) != int:
         return "ERR Could not validate OATH-TOTP OTP"
     try:
@@ -423,7 +423,7 @@ def validate_oath_totp(self, params):
             return "OK timecounter=%04x" % (new_timecounter)
         else:
             return "ERR replayed OATH-TOTP"
-    except Exception, e:
+    except Exception as e:
         self.log_error("IN: %s, database error updating counter : %s" % (params, e))
         return "ERR Internal error"
 
@@ -432,10 +432,10 @@ def validate_pwhash(_self, params):
     Validate password hash using YubiHSM.
     """
     pwhash, nonce, aead, key_handle = get_pwhash_bits(params)
-    d_aead = aead.decode('hex')
+    d_aead = bytes.fromhex(aead)
     plaintext_len = len(d_aead) - pyhsm.defines.YSM_AEAD_MAC_SIZE
-    pw = pwhash.ljust(plaintext_len, chr(0x0))
-    if hsm.validate_aead(nonce.decode('hex'), key_handle, d_aead, pw):
+    pw = pwhash.ljust(plaintext_len, chr(0x0)).encode()
+    if hsm.validate_aead(bytes.fromhex(nonce), key_handle, d_aead, pw):
         return "OK pwhash validated"
     return "ERR Could not validate pwhash"
 
@@ -670,7 +670,7 @@ def load_clients_file(filename):
     res = {}
     content = []
     try:
-        fhandle = file(filename)
+        fhandle = open(filename)
         content = fhandle.readlines()
         fhandle.close()
     except IOError:
@@ -740,7 +740,7 @@ def main():
     global hsm
     try:
         hsm = pyhsm.YHSM(device = args.device, debug = args.debug)
-    except serial.SerialException, e:
+    except serial.SerialException as e:
         my_log_message(args, syslog.LOG_ERR, 'Failed opening YubiHSM device "%s" : %s' %(args.device, e))
         return 1
 
@@ -749,9 +749,9 @@ def main():
     try:
         run()
     except KeyboardInterrupt:
-        print ""
-        print "Shutting down"
-        print ""
+        print("")
+        print("Shutting down")
+        print("")
 
 
 if __name__ == '__main__':

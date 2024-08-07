@@ -58,7 +58,7 @@ class YHSM_Cmd_Buffer_Load(YHSM_Cmd):
         # typedef struct {
         #   uint8_t numBytes;                   // Number of bytes in buffer now
         # } YSM_BUFFER_LOAD_RESP;
-        count = ord(data[0])
+        count = data[0]
         if self.offset == 0:
             # if offset was 0, the buffer was reset and
             # we can verify the length returned
@@ -90,7 +90,7 @@ class YHSM_Cmd_Buffer_Random_Load(YHSM_Cmd):
         # typedef struct {
         #   uint8_t numBytes;                   // Number of bytes in buffer now
         # } YSM_BUFFER_LOAD_RESP;
-        count = ord(data[0])
+        count = data[0]
         if self.offset == 0:
             # if offset was 0, the buffer was reset and
             # we can verify the length returned

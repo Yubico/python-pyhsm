@@ -45,7 +45,7 @@ class YHSM_AEAD_Cmd(YHSM_Cmd):
             return '<%s instance at %s: nonce=%s, key_handle=0x%x, status=%s>' % (
                 self.__class__.__name__,
                 hex(id(self)),
-                self.nonce.encode('hex'),
+                self.nonce,
                 self.key_handle,
                 pyhsm.defines.status2str(self.status)
                 )
@@ -200,9 +200,9 @@ class YHSM_GeneratedAEAD():
         self.data = aead
 
     def __repr__(self):
-        nonce_str = "None"
+        nonce_str = b"None"
         if self.nonce is not None:
-            nonce_str = self.nonce.encode('hex')
+            nonce_str = self.nonce
         return '<%s instance at %s: nonce=%s, key_handle=0x%x, data=%i bytes>' % (
             self.__class__.__name__,
             hex(id(self)),
@@ -262,4 +262,4 @@ class YHSM_YubiKeySecret():
         #   uint8_t key[KEY_SIZE];              // AES key
         #   uint8_t uid[UID_SIZE];              // Unique (secret) ID
         # } YUBIKEY_SECRETS;
-        return self.key + self.uid.ljust(pyhsm.defines.UID_SIZE, chr(0))
+        return self.key + self.uid.ljust(pyhsm.defines.UID_SIZE, b'\x00')

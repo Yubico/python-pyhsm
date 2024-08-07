@@ -67,12 +67,12 @@ def get_password(hsm, args):
             password = password[:-1]
     else:
         if args.debug:
-            password = raw_input('Enter %s (press enter to skip) (will be echoed) : ' % (name))
+            password = input('Enter %s (press enter to skip) (will be echoed) : ' % (name))
         else:
             password = getpass.getpass('Enter %s (press enter to skip) : ' % (name))
 
     if len(password) <= expected_len:
-        password = password.decode('hex')
+        password = bytes.fromhex(password)
         if not password:
             return None
         return password
@@ -91,7 +91,7 @@ def get_otp(hsm, args):
             while otp and otp[-1] == '\n':
                 otp = otp[:-1]
         else:
-            otp = raw_input('Enter admin YubiKey OTP (press enter to skip) : ')
+            otp = input('Enter admin YubiKey OTP (press enter to skip) : ')
         if len(otp) == 44:
             # YubiHSM admin OTP's always have a public_id length of 6 bytes
             return otp
@@ -109,25 +109,23 @@ def main():
         hsm = pyhsm.base.YHSM(device=args.device, debug=args.debug)
 
         if args.debug or args.verbose:
-            print "Device  : %s" % (args.device)
-            print "Version : %s" % (hsm.info())
-            print ""
+            print("Device  : %s" % (args.device))
+            print("Version : %s" % (hsm.info()))
+            print("")
 
         password = get_password(hsm, args)
         otp = get_otp(hsm, args)
         if not password and not otp:
-            print "\nAborted\n"
+            print("\nAborted\n")
             return 1
         else:
             if args.debug or args.verbose:
-                print ""
+                print("")
             if hsm.unlock(password = password, otp = otp):
                 if args.debug or args.verbose:
-                    print "OK\n"
-    except pyhsm.exception.YHSM_Error, e:
+                    print("OK\n")
+    except pyhsm.exception.YHSM_Error as e:
         sys.stderr.write("ERROR: %s\n" % (e.reason))
-        if e.reason == "YubiHSM did not respond to command YSM_SYSTEM_INFO_QUERY":
-            sys.stderr.write("Please check whether your YubiHSM is really at " + args.device + ", you can specify an alternate device using the option -D")
         return 1
 
     return 0

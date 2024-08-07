@@ -35,7 +35,7 @@ the database) :
 
 import os
 import sys
-import BaseHTTPServer
+import http.server
 import socket
 import argparse
 import syslog
@@ -68,7 +68,7 @@ stats = { 'ok': 0,
 context = daemon.DaemonContext()
 
 
-class YHSM_KSMRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
+class YHSM_KSMRequestHandler(http.server.BaseHTTPRequestHandler):
     """
     Handle a HTTP request.
 
@@ -87,7 +87,7 @@ class YHSM_KSMRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         self.timeout = args.reqtimeout
         self.aead_backend = aead_backend
         self.proxy_ips = args.proxies
-        BaseHTTPServer.BaseHTTPRequestHandler.__init__(self, *other_args, **kwargs)
+        http.server.BaseHTTPRequestHandler.__init__(self, *other_args, **kwargs)
 
     def do_GET(self):
         """ Handle a HTTP GET request. """
@@ -102,14 +102,14 @@ class YHSM_KSMRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             self.send_response(200)
             self.send_header('Content-type', 'text/html')
             self.end_headers()
-            self.wfile.write(val_res)
-            self.wfile.write("\n")
+            self.wfile.write(bytes(val_res, 'utf-8'))
+            self.wfile.write(bytes("\n", 'utf-8'))
         elif self.stats_url and self.path == self.stats_url:
             self.send_response(200)
             self.send_header('Content-type', 'text/html')
             self.end_headers()
             for key in stats:
-                self.wfile.write("%s %d\n" % (key, stats[key]))
+                self.wfile.write(bytes("%s %d\n" % (key, stats[key]), 'utf-8'))
         else:
             self.log_error("Bad URL '%s' - I'm serving '%s' (responding 403)" % (self.path, self.serve_url))
             self.send_response(403, 'Forbidden')
@@ -198,7 +198,7 @@ class FSBackend(object):
             try:
                 aead.load(filename)
                 if not aead.nonce:
-                    aead.nonce = pyhsm.yubikey.modhex_decode(public_id).decode('hex')
+                    aead.nonce = bytes.fromhex(pyhsm.yubikey.modhex_decode(public_id))
                 return aead
             except IOError:
                 continue
@@ -206,11 +206,10 @@ class FSBackend(object):
 
 
 class SQLBackend(object):
-    def __init__(self, db_url, key_handles):
-        self.engine = sqlalchemy.create_engine(db_url, pool_pre_ping=True)
+    def __init__(self, db_url):
+        self.engine = sqlalchemy.create_engine(db_url)
         metadata = sqlalchemy.MetaData()
         self.aead_table = sqlalchemy.Table('aead_table', metadata, autoload=True, autoload_with=self.engine)
-        self.key_handles = key_handles
 
     def load_aead(self, public_id):
         """ Loads AEAD from the specified database. """
@@ -218,9 +217,7 @@ class SQLBackend(object):
         trans = connection.begin()
 
         try:
-            s = sqlalchemy.select([self.aead_table]).where(
-                (self.aead_table.c.public_id == public_id)
-                & self.aead_table.c.keyhandle.in_([kh[1] for kh in self.key_handles]))
+            s = sqlalchemy.select([self.aead_table]).where(self.aead_table.c.public_id == public_id)
             result = connection.execute(s)
 
             for row in result:
@@ -229,21 +226,21 @@ class SQLBackend(object):
                 aead.data = row['aead']
                 aead.nonce = row['nonce']
             return aead
-        except Exception as e:
+        except Exception:
             trans.rollback()
             raise Exception("No AEAD in DB for public_id %s (%s)" % (public_id, str(e)))
         finally:
             connection.close()
 
 
-class YHSM_KSMServer(BaseHTTPServer.HTTPServer):
+class YHSM_KSMServer(http.server.HTTPServer):
     """
     Wrapper class to properly initialize address_family for IPv6 addresses.
     """
     def __init__(self, server_address, req_handler):
         if ":" in server_address[0]:
             self.address_family = socket.AF_INET6
-        BaseHTTPServer.HTTPServer.__init__(self, server_address, req_handler)
+        http.server.HTTPServer.__init__(self, server_address, req_handler)
 
 
 def aead_filename(aead_dir, key_handle, public_id):
@@ -432,7 +429,7 @@ def main():
     if args.db_url:
         # Using an SQL database for AEADs
         try:
-            aead_backend = SQLBackend(args.db_url, args.key_handles)
+            aead_backend = SQLBackend(args.db_url)
         except Exception as e:
             my_log_message(args.debug or args.verbose, syslog.LOG_ERR,
                            'Could not connect to database "%s" : %s' % (args.db_url, e))
@@ -479,9 +476,9 @@ def main():
         try:
             run(hsm, aead_backend, args)
         except KeyboardInterrupt:
-            print ""
-            print "Shutting down"
-            print ""
+            print("")
+            print("Shutting down")
+            print("")
 
 
 if __name__ == '__main__':

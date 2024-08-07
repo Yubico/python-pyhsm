@@ -70,8 +70,8 @@ setup(
     test_suite='test.test_init',
     tests_require=[],
     install_requires=[
-        'pyserial >= 2.3',
-        'pycrypto >= 2.1'
+        'pyserial >= 3.4',
+        'pycryptodome >= 3.4.6'
     ],
     extras_require={
         'db': ['sqlalchemy'],

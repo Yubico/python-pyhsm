@@ -72,7 +72,7 @@ def get_entropy(hsm, iterations, entropy_ratio):
     #    __u32   buf[0];
     # };
     fmt = 'ii%is' % (pyhsm.defines.YSM_MAX_PKT_SIZE - 1)
-    for _ in xrange(iterations):
+    for _ in range(iterations):
         rnd = hsm.random(pyhsm.defines.YSM_MAX_PKT_SIZE - 1)
         this = struct.pack(fmt, entropy_ratio * len(rnd), len(rnd), rnd)
         fcntl.ioctl(fd, RNDADDENTROPY, this)

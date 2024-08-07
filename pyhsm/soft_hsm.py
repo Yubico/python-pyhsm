@@ -25,7 +25,7 @@ from Crypto.Cipher import AES
 
 def _xor_block(a, b):
     """ XOR two blocks of equal length. """
-    return ''.join([chr(ord(x) ^ ord(y)) for (x, y) in zip(a, b)])
+    return bytes([x ^ y for x, y in zip(a, b)])
 
 
 class _ctr_counter():
@@ -46,7 +46,7 @@ class _ctr_counter():
         return self.pack()
 
     def pack(self):
-        fmt = b'< B I %is BBB 2s' % (pyhsm.defines.YSM_AEAD_NONCE_SIZE)
+        fmt = '< B I %is BBB 2s' % (pyhsm.defines.YSM_AEAD_NONCE_SIZE)
         val = struct.pack('> H', self.value)
         return struct.pack(fmt,
                            self.flags,
@@ -62,14 +62,14 @@ class _cbc_mac():
         """
         Initialize CBC-MAC like the YubiHSM does.
         """
-        flags = (((pyhsm.defines.YSM_AEAD_MAC_SIZE - 2) / 2) << 3) | (pyhsm.defines.YSM_CCM_CTR_SIZE - 1)
+        flags = (((pyhsm.defines.YSM_AEAD_MAC_SIZE - 2) // 2) << 3) | (pyhsm.defines.YSM_CCM_CTR_SIZE - 1)
         t = _ctr_counter(key_handle, nonce, flags = flags, value = data_len)
         t_mac = t.pack()
         self.mac_aes = AES.new(key, AES.MODE_ECB)
         self.mac = self.mac_aes.encrypt(t_mac)
 
     def update(self, block):
-        block = block.ljust(pyhsm.defines.YSM_BLOCK_SIZE, chr(0x0))
+        block = block.ljust(pyhsm.defines.YSM_BLOCK_SIZE, b'\x00')
         t1 = _xor_block(self.mac, block)
         t2 = self.mac_aes.encrypt(t1)
         self.mac = t2
@@ -103,7 +103,7 @@ def aesCCM(key, key_handle, nonce, data, decrypt=False):
     mac = _cbc_mac(key, key_handle, nonce, len(data))
 
     counter = _ctr_counter(key_handle, nonce, value = 0)
-    ctr_aes = AES.new(key, AES.MODE_CTR, counter = counter.next)
+    ctr_aes = AES.new(key, AES.MODE_CTR, initial_value = counter.next(), nonce = b'')
     out = []
     while data:
         (thisblock, data) = _split_data(data, pyhsm.defines.YSM_BLOCK_SIZE)
@@ -126,7 +126,7 @@ def aesCCM(key, key_handle, nonce, data, decrypt=False):
             raise pyhsm.exception.YHSM_Error('AEAD integrity check failed')
     else:
         out.append(mac.get())
-    return ''.join(out)
+    return b''.join(out)
 
 
 def crc16(data):
@@ -135,7 +135,7 @@ def crc16(data):
     """
     m_crc = 0xffff
     for this in data:
-        m_crc ^= ord(this)
+        m_crc ^= this
         for _ in range(8):
             j = m_crc & 1
             m_crc >>= 1
@@ -150,7 +150,7 @@ class SoftYHSM(object):
         self.debug = debug
         if not keys:
             raise ValueError('Data contains no key handles!')
-        for k, v in keys.items():
+        for k, v in list(keys.items()):
             if len(v) not in AES.key_size:
                 raise ValueError('Keyhandle of unsupported length: %d (was %d bytes)' % (k, len(v)))
         self.keys = keys
@@ -166,8 +166,8 @@ class SoftYHSM(object):
         if not isinstance(data, dict):
             raise ValueError('Data does not contain object as root element.')
         keys = {}
-        for kh, aes_key_hex in data.items():
-            keys[int(kh)] = aes_key_hex.decode('hex')
+        for kh, aes_key_hex in list(data.items()):
+            keys[int(kh)] = bytes.fromhex(aes_key_hex)
         return cls(keys, debug)
 
     def _get_key(self, kh, cmd):
@@ -208,9 +208,9 @@ class SoftYHSM(object):
         self._buffer = self._buffer[:offset] + os.urandom(num_bytes)
 
     def generate_aead(self, nonce, key_handle):
-        if nonce == "":
+        if nonce == b"":
             # no hardware to generate it for us, so do it here.
-            nonce = os.urandom(6)
+            nonce = os.urandom(6).encode()
         aes_key = self._get_key(key_handle, pyhsm.defines.YSM_BUFFER_AEAD_GENERATE)
         ct = pyhsm.soft_hsm.aesCCM(aes_key, key_handle, nonce, self._buffer,
                                    False)
